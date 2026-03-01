@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>СКУД — События</title>
+
+  <style>
+    body{font-family:Inter,Arial,sans-serif;background:#0b1220;color:#e5e7eb;margin:0;padding:16px}
+    .wrap{max-width:1200px;margin:0 auto}
+    .top{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    input,select,button{padding:10px;border-radius:10px;border:1px solid #243041;background:#0f172a;color:#e5e7eb}
+    button{cursor:pointer}
+    .card{background:#0f172a;border:1px solid #243041;border-radius:14px;padding:14px;margin-top:12px}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th,td{border-bottom:1px solid #243041;padding:10px;vertical-align:top}
+    th{color:#93c5fd;text-align:left;position:sticky;top:0;background:#0f172a}
+    .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #243041;font-size:11px}
+    .ok{background:#064e3b;border-color:#065f46}
+    .bad{background:#3f1d2a;border-color:#7f1d1d}
+    .in{background:#1d4ed8;border-color:#2563eb}
+    .out{background:#a16207;border-color:#ca8a04}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+    .muted{opacity:.7}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h2>СКУД — Живые события</h2>
+
+  <div class="top">
+    <button onclick="load()">Обновить</button>
+    <label class="muted">Авто:</label>
+    <select id="auto" onchange="toggleAuto()">
+      <option value="1" selected>ON (2s)</option>
+      <option value="0">OFF</option>
+    </select>
+
+    <input id="q" placeholder="Фильтр: ИНН / ФИО / employeeNo / IP" style="min-width:340px"/>
+    <select id="dir">
+      <option value="">Все</option>
+      <option value="in">IN</option>
+      <option value="out">OUT</option>
+    </select>
+    <select id="onlyBad">
+      <option value="">Все</option>
+      <option value="1">Только ошибки</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+      <tr>
+        <th>Время</th>
+        <th>Направление</th>
+        <th>Камера</th>
+        <th>rawName (из терминала)</th>
+        <th>ИНН</th>
+        <th>Студент</th>
+        <th>Статус</th>
+        <th>Детали</th>
+      </tr>
+      </thead>
+      <tbody id="tb"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let timer = null;
+
+function toggleAuto(){
+  const on = document.getElementById('auto').value === '1';
+  if(on){
+    if(timer) clearInterval(timer);
+    timer = setInterval(load, 2000);
+  } else {
+    if(timer) clearInterval(timer);
+    timer = null;
+  }
+}
+
+function passFilter(item){
+  const q = (document.getElementById('q').value || '').toLowerCase().trim();
+  const dir = document.getElementById('dir').value;
+  const onlyBad = document.getElementById('onlyBad').value === '1';
+
+  if(dir && (item.direction||'') !== dir) return false;
+  if(onlyBad && item.ok !== false) return false;
+
+  if(!q) return true;
+
+  const s = [
+    item.deviceIp,
+    item.employeeNo,
+    item.innFromHik,
+    item.rawName,
+    item.studentFio,
+    item.reason
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  return s.includes(q);
+}
+
+function pill(text, cls){
+  return '<span class="pill '+cls+'">'+text+'</span>';
+}
+
+async function load(){
+  const r = await fetch('/api/admin/skud-events?limit=300');
+  const j = await r.json().catch(()=>({}));
+
+  const items = (j.items||[]).filter(passFilter);
+
+  const rows = items.map(it => {
+    const t = it.eventIso || it.time || it.at || '';
+    const dir = it.direction || '';
+    const dirP = dir === 'in' ? pill('IN','in') : (dir === 'out' ? pill('OUT','out') : pill(dir||'-',''));
+    const st = it.ok ? pill('OK','ok') : pill('FAIL','bad');
+    const inn = it.innFromHik || '';
+    const student = it.studentFio
+      ? ('<b>'+it.studentFio+'</b><div class="muted mono">'+(it.studentInn||'')+'</div>')
+      : '<span class="muted">—</span>';
+
+    const details = [
+      it.reason ? ('reason: '+it.reason) : '',
+      it.minor != null ? ('minor: '+it.minor) : '',
+      it.employeeNo ? ('employeeNo: '+it.employeeNo) : '',
+    ].filter(Boolean).join('<br/>');
+
+    return `
+      <tr>
+        <td class="mono">${t}</td>
+        <td>${dirP}</td>
+        <td class="mono">${it.deviceIp || '-'}</td>
+        <td>${it.rawName ? '<span class="mono">'+it.rawName+'</span>' : '<span class="muted">—</span>'}</td>
+        <td class="mono">${inn || '-'}</td>
+        <td>${student}</td>
+        <td>${st}</td>
+        <td class="mono muted">${details || '-'}</td>
+      </tr>
+    `;
+  }).join('');
+
+  document.getElementById('tb').innerHTML =
+    rows || '<tr><td colspan="8" class="muted">Нет событий</td></tr>';
+}
+
+toggleAuto();
+load();
+</script>
+</body>
+</html>
