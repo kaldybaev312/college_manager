@@ -23,7 +23,7 @@ app.use(express.static("public"));
 
 const MONGO_URI =
   process.env.MONGO_URI ||
-  "mongodb+srv://ilimkaldybaev5_db_user:liceyStudents>@riestr.uki8ep8.mongodb.net/?appName=riestr";
+  "mongodb+srv://ilimkaldybaev5_db_user:liceyStudents@riestr.uki8ep8.mongodb.net/PL3_Database?retryWrites=true&w=majority&appName=riestr";
 
 mongoose
   .connect(MONGO_URI)
