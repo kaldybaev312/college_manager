@@ -13,23 +13,52 @@
         --sidebar-bg: #0f172a;
         --accent: #4f46e5;
       }
+      * {
+        box-sizing: border-box;
+      }
       body {
         background: #f1f5f9;
-        font-family: "Inter", sans-serif;
+        font-family: "Inter", "Segoe UI", sans-serif;
         display: flex;
         min-height: 100vh;
         margin: 0;
       }
 
-      /* Sidebar */
+      /* ── Sidebar ── */
       .sidebar {
-        width: 280px;
+        width: 260px;
         background: var(--sidebar-bg);
         color: white;
         position: fixed;
         height: 100vh;
-        padding: 25px;
+        padding: 28px 20px;
         z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+      }
+      .sidebar-logo {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+      .sidebar-logo h4 {
+        font-weight: 800;
+        font-size: 17px;
+        margin: 0;
+        letter-spacing: 0.5px;
+      }
+      .sidebar-logo span {
+        color: #38bdf8;
+        font-size: 12px;
+      }
+      .nav-lbl {
+        font-size: 10px;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 0 14px;
+        margin: 14px 0 5px;
       }
       .nav-btn {
         width: 100%;
@@ -37,26 +66,37 @@
         background: none;
         border: none;
         color: #94a3b8;
-        padding: 12px 15px;
+        padding: 10px 14px;
         border-radius: 10px;
-        margin-bottom: 8px;
+        margin-bottom: 3px;
         font-weight: 600;
-        transition: 0.3s;
+        font-size: 13.5px;
+        transition:
+          background 0.2s,
+          color 0.2s;
+        cursor: pointer;
+        text-decoration: none;
+        display: block;
       }
       .nav-btn:hover {
         background: #1e293b;
-        color: white;
+        color: #e2e8f0;
       }
       .nav-btn.active {
         background: var(--accent);
         color: white;
       }
+      .nav-divider {
+        border: none;
+        border-top: 1px solid #1e293b;
+        margin: 10px 0;
+      }
 
-      /* Main Content */
+      /* ── Main ── */
       .main-content {
-        margin-left: 280px;
-        width: calc(100% - 280px);
-        padding: 40px;
+        margin-left: 260px;
+        width: calc(100% - 260px);
+        padding: 32px 36px;
       }
       .section {
         display: none;
@@ -64,23 +104,478 @@
       .section.active {
         display: block;
       }
-
+      .page-title {
+        font-weight: 800;
+        font-size: 22px;
+        color: #0f172a;
+        margin: 0 0 4px;
+      }
+      .page-sub {
+        color: #64748b;
+        font-size: 13px;
+        margin: 0 0 24px;
+      }
       .card-st {
         background: white;
         border-radius: 16px;
-        padding: 25px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        padding: 24px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
         border: 1px solid #e2e8f0;
       }
 
-      /* Attendance Journal */
+      /* ── Toast ── */
+      #toast-wrap {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast-item {
+        background: white;
+        border-radius: 12px;
+        padding: 13px 18px;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
+        border-left: 4px solid #22c55e;
+        min-width: 270px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        animation: toastIn 0.25s ease;
+      }
+      .toast-item.error {
+        border-color: #ef4444;
+      }
+      .toast-item.info {
+        border-color: #3b82f6;
+      }
+      @keyframes toastIn {
+        from {
+          transform: translateX(110%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      /* ── Modals ── */
+      .m-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        z-index: 5000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        backdrop-filter: blur(2px);
+      }
+      .m-box {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        width: 100%;
+        max-width: 460px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+      }
+      .m-box h5 {
+        font-weight: 800;
+        margin: 0 0 22px;
+        font-size: 17px;
+      }
+      .m-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #374151;
+        margin-bottom: 4px;
+        display: block;
+      }
+      .m-input {
+        border-radius: 10px;
+        border: 1.5px solid #e2e8f0;
+        padding: 9px 13px;
+        font-size: 14px;
+        width: 100%;
+        outline: none;
+        transition: border 0.2s;
+        margin-bottom: 12px;
+      }
+      .m-input:focus {
+        border-color: var(--accent);
+      }
+      .m-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      .m-actions .btn {
+        flex: 1;
+        border-radius: 10px;
+        font-weight: 700;
+        padding: 10px;
+      }
+      .c-box {
+        background: white;
+        border-radius: 20px;
+        padding: 28px;
+        width: 100%;
+        max-width: 380px;
+        text-align: center;
+      }
+      .c-box .c-icon {
+        font-size: 42px;
+        margin-bottom: 10px;
+      }
+      .c-box h5 {
+        font-weight: 800;
+        margin: 0 0 8px;
+      }
+      .c-box p {
+        color: #64748b;
+        font-size: 13px;
+        margin: 0 0 22px;
+      }
+      .c-actions {
+        display: flex;
+        gap: 10px;
+      }
+      .c-actions .btn {
+        flex: 1;
+        border-radius: 10px;
+        font-weight: 700;
+        padding: 10px;
+      }
+
+      /* ── Loader ── */
+      #loader {
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.65);
+        z-index: 4000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(1px);
+      }
+      .spinner {
+        width: 42px;
+        height: 42px;
+        border: 4px solid #e2e8f0;
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ── Stats ── */
+      .stats-bar {
+        display: flex;
+        gap: 14px;
+        margin-bottom: 24px;
+      }
+      .stat-card {
+        flex: 1;
+        background: white;
+        border-radius: 14px;
+        padding: 16px 20px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      }
+      .stat-card .val {
+        font-size: 26px;
+        font-weight: 800;
+        color: #1e293b;
+      }
+      .stat-card .lbl {
+        font-size: 11px;
+        color: #94a3b8;
+        font-weight: 600;
+        margin-top: 2px;
+      }
+      .stat-card .ico {
+        font-size: 20px;
+        float: right;
+      }
+
+      /* ── Search ── */
+      .search-wrap {
+        position: relative;
+        margin-bottom: 22px;
+      }
+      .search-wrap .s-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 17px;
+        pointer-events: none;
+      }
+      .search-wrap input {
+        padding-left: 46px;
+        border-radius: 14px;
+        border: 2px solid #e2e8f0;
+        font-size: 15px;
+        height: 50px;
+        width: 100%;
+        outline: none;
+        transition: border 0.2s;
+        background: white;
+      }
+      .search-wrap input:focus {
+        border-color: var(--accent);
+      }
+
+      /* ── Results header ── */
+      .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+      .results-header h5 {
+        margin: 0;
+        font-weight: 700;
+        color: #1e293b;
+      }
+      .results-count {
+        font-size: 13px;
+        color: #94a3b8;
+        font-weight: 600;
+      }
+
+      /* ── Student cards ── */
+      .students-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(295px, 1fr));
+        gap: 14px;
+      }
+      .stu-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e8edf5;
+        padding: 18px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
+      }
+      .stu-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(79, 70, 229, 0.12);
+        border-color: #c7d2fe;
+      }
+      .stu-card-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .stu-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 800;
+        color: white;
+        flex-shrink: 0;
+      }
+      .stu-card-info h6 {
+        margin: 0;
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1.3;
+      }
+      .group-badge {
+        display: inline-block;
+        margin-top: 4px;
+        background: #ede9fe;
+        color: #6d28d9;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 6px;
+      }
+      .stu-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+      .stu-meta-item {
+        font-size: 11.5px;
+        color: #64748b;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 7px;
+        padding: 3px 9px;
+      }
+      .stu-meta-item span {
+        font-weight: 700;
+        color: #334155;
+      }
+      .stu-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 5px;
+      }
+      .stu-actions button {
+        border: none;
+        border-radius: 8px;
+        padding: 7px 4px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: opacity 0.15s;
+      }
+      .stu-actions button:hover {
+        opacity: 0.82;
+      }
+      .btn-common {
+        background: #1e293b;
+        color: white;
+      }
+      .btn-army {
+        background: #1d4ed8;
+        color: white;
+      }
+      .btn-social {
+        background: #059669;
+        color: white;
+      }
+
+      /* ── Pagination ── */
+      .pag-wrap {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-top: 22px;
+        padding-top: 20px;
+        border-top: 1px solid #e2e8f0;
+      }
+      .pag-btn {
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        background: white;
+        color: #374151;
+        min-width: 36px;
+        transition: background 0.15s;
+      }
+      .pag-btn:hover:not(:disabled) {
+        background: #f1f5f9;
+      }
+      .pag-btn.active {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+        font-weight: 800;
+      }
+      .pag-btn:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .pag-info {
+        font-size: 13px;
+        color: #94a3b8;
+        margin-left: 6px;
+      }
+
+      /* ── Empty ── */
+      .empty-state {
+        text-align: center;
+        padding: 56px 20px;
+        color: #94a3b8;
+        grid-column: 1/-1;
+      }
+      .empty-state .ico {
+        font-size: 44px;
+        margin-bottom: 10px;
+      }
+
+      /* ── Groups list ── */
+      .g-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 9px 13px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background 0.15s;
+        margin-bottom: 3px;
+        border: 1px solid transparent;
+      }
+      .g-item:hover {
+        background: #f1f5f9;
+        border-color: #e2e8f0;
+      }
+      .g-item.active {
+        background: #ede9fe;
+        border-color: #c4b5fd;
+        color: #6d28d9;
+      }
+      .g-item .gname {
+        font-weight: 700;
+        font-size: 13px;
+      }
+
+      /* ── Dropzone ── */
+      .dropzone {
+        border: 2px dashed #c7d2fe;
+        border-radius: 14px;
+        padding: 36px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition:
+          border 0.2s,
+          background 0.2s;
+        background: #fafbff;
+      }
+      .dropzone:hover,
+      .dropzone.drag {
+        border-color: var(--accent);
+        background: #eef2ff;
+      }
+      .dropzone .dz-icon {
+        font-size: 34px;
+        margin-bottom: 8px;
+      }
+      .dropzone .dz-text {
+        font-size: 13px;
+        color: #64748b;
+      }
+      .dropzone .dz-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--accent);
+        margin-top: 6px;
+      }
+
+      /* ── Journal ── */
       .table-journal th,
       .table-journal td {
-        padding: 5px;
+        padding: 4px;
         font-size: 11px;
         border: 1px solid #dee2e6;
-        width: 28px;
-        height: 28px;
+        width: 26px;
+        height: 26px;
         text-align: center;
       }
       .present {
@@ -95,8 +590,6 @@
         background-color: #ef4444 !important;
         color: #cbd5e1;
       }
-
-      /* время внутри ячейки */
       .cell-time {
         display: block;
         font-size: 9px;
@@ -107,19 +600,87 @@
       }
       .fio-col {
         text-align: left !important;
-        width: 220px !important;
-        font-size: 13px !important;
+        width: 200px !important;
+        font-size: 12px !important;
         font-weight: 600;
+        white-space: nowrap;
+      }
+
+      /* ── Prof badge ── */
+      .bp {
+        display: inline-block;
+        background: #dcfce7;
+        color: #15803d;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 10px;
+        border-radius: 99px;
+      }
+      .bp.no {
+        background: #fee2e2;
+        color: #b91c1c;
       }
     </style>
   </head>
   <body>
-    <div class="sidebar">
-      <div class="text-center mb-5">
-        <h4 class="fw-bold text-white m-0">ПРОФЛИЦЕЙ №3</h4>
-        <span class="text-info small">Учебная часть</span>
-      </div>
+    <!-- TOAST -->
+    <div id="toast-wrap"></div>
 
+    <!-- LOADER -->
+    <div id="loader" style="display: none"><div class="spinner"></div></div>
+
+    <!-- EDIT MODAL -->
+    <div
+      class="m-overlay"
+      id="edit-modal"
+      style="display: none"
+      onclick="if (event.target === this) closeEdit();"
+    >
+      <div class="m-box">
+        <h5>✏️ Редактировать студента</h5>
+        <input type="hidden" id="e-id" />
+        <label class="m-label">ФИО</label>
+        <input type="text" id="e-fio" class="m-input" />
+        <label class="m-label">Дата рождения</label>
+        <input
+          type="text"
+          id="e-birth"
+          class="m-input"
+          placeholder="01.01.2007"
+        />
+        <label class="m-label">ИНН</label>
+        <input type="text" id="e-inn" class="m-input" />
+        <label class="m-label">Поименный номер</label>
+        <input type="text" id="e-lycid" class="m-input" />
+        <div class="m-actions">
+          <button class="btn btn-light" onclick="closeEdit()">Отмена</button>
+          <button class="btn btn-primary" onclick="saveEdit()">
+            💾 Сохранить
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFIRM MODAL -->
+    <div class="m-overlay" id="confirm-modal" style="display: none">
+      <div class="c-box">
+        <div class="c-icon" id="c-icon">⚠️</div>
+        <h5 id="c-title">Вы уверены?</h5>
+        <p id="c-text"></p>
+        <div class="c-actions">
+          <button class="btn btn-light" onclick="closeConfirm()">Отмена</button>
+          <button class="btn btn-danger" id="c-ok">Подтвердить</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <h4>ПРОФЛИЦЕЙ №3</h4>
+        <span>Учебная часть</span>
+      </div>
+      <div class="nav-lbl">Основное</div>
       <button class="nav-btn active" onclick="showSection('search', this)">
         🔍 Реестр и Справки
       </button>
@@ -129,37 +690,70 @@
       <button class="nav-btn" onclick="showSection('journal', this)">
         📅 Журнал СКУД
       </button>
+      <div class="nav-lbl">Документы</div>
       <button class="nav-btn" onclick="showSection('food', this)">
         🍱 Ведомость питания
       </button>
       <button class="nav-btn" onclick="showSection('import', this)">
         📥 Импорт данных
       </button>
+      <div class="nav-lbl">Настройки</div>
+      <button class="nav-btn" onclick="showSection('group-settings', this)">
+        ⚙️ Настройка групп
+      </button>
+      <hr class="nav-divider" />
+      <a href="/admin/events" class="nav-btn">📡 СКУД события</a>
     </div>
 
+    <!-- MAIN -->
     <div class="main-content">
+      <!-- РЕЕСТР -->
       <div id="section-search" class="section active">
-        <h2 class="fw-bold mb-4">Поиск студентов</h2>
-        <input
-          type="text"
-          id="searchInput"
-          class="form-control form-control-lg mb-4 shadow-sm"
-          placeholder="Введите фамилию..."
-          oninput="doSearch()"
-        />
-        <div id="results" class="row"></div>
+        <p class="page-title">Реестр студентов</p>
+        <p class="page-sub">Поиск, просмотр и печать справок</p>
+        <div class="stats-bar">
+          <div class="stat-card">
+            <div class="ico">👥</div>
+            <div class="val" id="stat-total">—</div>
+            <div class="lbl">Всего студентов</div>
+          </div>
+          <div class="stat-card">
+            <div class="ico">📂</div>
+            <div class="val" id="stat-groups">—</div>
+            <div class="lbl">Групп</div>
+          </div>
+          <div class="stat-card">
+            <div class="ico">✅</div>
+            <div class="val" id="stat-today">—</div>
+            <div class="lbl">Присутствуют сегодня</div>
+          </div>
+        </div>
+        <div class="search-wrap">
+          <span class="s-icon">🔍</span>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Поиск по фамилии или имени..."
+            oninput="doSearch()"
+          />
+        </div>
+        <div class="results-header">
+          <h5 id="results-title">Все студенты</h5>
+          <span class="results-count" id="results-count"></span>
+        </div>
+        <div id="results" class="students-grid"></div>
+        <div id="pagination"></div>
       </div>
 
+      <!-- ГРУППЫ -->
       <div id="section-groups-man" class="section">
-        <h2 class="fw-bold mb-4">Управление студентами по группам</h2>
-        <div class="row">
+        <p class="page-title">Управление группами</p>
+        <p class="page-sub">Просмотр и редактирование списков студентов</p>
+        <div class="row g-3">
           <div class="col-md-3">
             <div class="card-st">
-              <h6 class="fw-bold mb-3">Группы:</h6>
-              <div
-                id="groups-list-container"
-                class="list-group list-group-flush"
-              ></div>
+              <h6 class="fw-bold mb-3">Группы</h6>
+              <div id="groups-list-container"></div>
             </div>
           </div>
           <div class="col-md-9">
@@ -167,80 +761,128 @@
               <div
                 class="d-flex justify-content-between align-items-center mb-4"
               >
-                <h4 class="fw-bold m-0" id="current-group-title"></h4>
-                <div class="btn-group">
+                <div>
+                  <h4 class="fw-bold m-0" id="current-group-title"></h4>
+                  <span class="text-muted small" id="current-group-prof"></span>
+                </div>
+                <div class="d-flex gap-2">
                   <button
-                    class="btn btn-sm btn-outline-danger"
-                    onclick="clearStudents()"
+                    class="btn btn-sm btn-outline-secondary"
+                    onclick="confirmClearStudents()"
                   >
-                    🧹 Очистить список
+                    🧹 Очистить
                   </button>
-                  <button class="btn btn-sm btn-danger" onclick="deleteGroup()">
+                  <button
+                    class="btn btn-sm btn-danger"
+                    onclick="confirmDeleteGroup()"
+                  >
                     🗑️ Удалить группу
                   </button>
                 </div>
               </div>
-              <table class="table table-hover align-middle">
-                <thead class="table-light">
-                  <tr>
-                    <th>ФИО</th>
-                    <th>Дата рождение</th>
-                    <th>ИНН</th>
-                    <th>Поименный №</th>
-                    <th class="text-end">Правка</th>
-                  </tr>
-                </thead>
-                <tbody id="group-students-body"></tbody>
-              </table>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>#</th>
+                      <th>ФИО</th>
+                      <th>Дата рождения</th>
+                      <th>ИНН</th>
+                      <th>Поименный №</th>
+                      <th class="text-end">Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody id="group-students-body"></tbody>
+                </table>
+              </div>
+            </div>
+            <div
+              id="group-empty-hint"
+              class="card-st text-center py-5 text-muted"
+            >
+              <div style="font-size: 34px; margin-bottom: 8px">📂</div>
+              <p class="mb-0 small">Выберите группу из списка слева</p>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- ЖУРНАЛ -->
       <div id="section-journal" class="section">
-        <h2 class="fw-bold mb-4">Журнал посещаемости</h2>
-        <div class="card-st mb-4">
-          <div class="row g-3">
+        <p class="page-title">Журнал посещаемости</p>
+        <p class="page-sub">Данные СКУД по группе за выбранный месяц</p>
+        <div class="card-st mb-3">
+          <div class="row g-3 align-items-end">
             <div class="col-md-4">
+              <label class="form-label fw-bold small mb-1">Группа</label>
               <select id="j-group-select" class="form-select"></select>
             </div>
             <div class="col-md-3">
-              <input
-                type="month"
-                id="j-month"
-                class="form-control"
-                value="2026-02"
-              />
+              <label class="form-label fw-bold small mb-1">Месяц</label>
+              <input type="month" id="j-month" class="form-control" />
+            </div>
+            <div class="col-md-2">
+              <button
+                class="btn btn-primary w-100 fw-bold"
+                onclick="loadJournal()"
+              >
+                📊 Показать
+              </button>
             </div>
             <div class="col-md-3">
-              <button class="btn btn-primary w-100" onclick="loadJournal()">
-                Показать
-              </button>
+              <div
+                style="
+                  font-size: 12px;
+                  display: flex;
+                  gap: 6px;
+                  flex-wrap: wrap;
+                "
+              >
+                <span class="badge" style="background: #22c55e"
+                  >● Присутствует</span
+                >
+                <span class="badge" style="background: #f59e0b">● Опоздал</span>
+                <span class="badge" style="background: #ef4444"
+                  >● Отсутствует</span
+                >
+              </div>
             </div>
           </div>
         </div>
-        <div class="card-st table-responsive p-0">
-          <table class="table table-journal mb-0">
+        <div class="card-st p-0 table-responsive">
+          <div id="journal-hint" class="text-center py-5 text-muted">
+            <div style="font-size: 30px; margin-bottom: 6px">📅</div>
+            <p class="mb-0 small">
+              Выберите группу и месяц, затем нажмите «Показать»
+            </p>
+          </div>
+          <table
+            class="table table-journal mb-0"
+            id="journal-table"
+            style="display: none"
+          >
             <thead class="table-dark" id="journal-head"></thead>
             <tbody id="journal-body"></tbody>
           </table>
         </div>
       </div>
 
+      <!-- ПИТАНИЕ -->
       <div id="section-food" class="section">
-        <h2 class="fw-bold mb-4">Ведомость на питание (60 сом)</h2>
-        <div class="card-st" style="max-width: 500px">
-          <label class="small fw-bold mb-1">Группа</label>
-          <select id="f-group-select" class="form-select mb-3"></select>
-          <label class="small fw-bold mb-1">Месяц</label>
-          <input
-            type="month"
-            id="f-month"
-            class="form-control mb-4"
-            value="2026-02"
-          />
+        <p class="page-title">Ведомость питания</p>
+        <p class="page-sub">Формирование ведомости (60 сом/день)</p>
+        <div class="card-st" style="max-width: 460px">
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Группа</label>
+            <select id="f-group-select" class="form-select"></select>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-bold small">Месяц</label>
+            <input type="month" id="f-month" class="form-control" />
+          </div>
           <button
             class="btn btn-success w-100 py-3 fw-bold"
+            style="border-radius: 12px"
             onclick="downloadFoodReport()"
           >
             📥 СКАЧАТЬ DOCX
@@ -248,39 +890,317 @@
         </div>
       </div>
 
+      <!-- ИМПОРТ -->
       <div id="section-import" class="section">
-        <h2 class="fw-bold mb-4">Импорт Excel</h2>
-        <div class="card-st" style="max-width: 550px">
-          <input
-            type="text"
-            id="import-gname"
-            class="form-control mb-3"
-            placeholder="Название группы (ЭВМ-1-24)"
-          />
-          <select
-            id="import-prof-select"
-            class="form-select mb-3"
-            onchange="updateDurationHint()"
-          ></select>
-          <div
-            id="duration-info"
-            class="alert alert-info py-2 fw-bold d-none mb-4"
-          ></div>
-          <input type="file" id="import-file" class="form-control mb-4" />
-          <button
-            class="btn btn-primary w-100 py-2 fw-bold"
-            onclick="processImport()"
-          >
-            🚀 ЗАГРУЗИТЬ ГРУППУ
-          </button>
+        <p class="page-title">Импорт данных</p>
+        <p class="page-sub">Загрузка списка группы из файла Excel</p>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="card-st">
+              <div class="mb-3">
+                <label class="form-label fw-bold small">Название группы</label>
+                <input
+                  type="text"
+                  id="import-gname"
+                  class="form-control"
+                  placeholder="Например: ЭВМ-1-24"
+                  style="border-radius: 10px"
+                />
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold small">Профессия</label>
+                <select
+                  id="import-prof-select"
+                  class="form-select"
+                  onchange="updateDurationHint()"
+                  style="border-radius: 10px"
+                ></select>
+              </div>
+              <div
+                id="duration-info"
+                class="alert alert-info py-2 fw-bold d-none mb-3"
+                style="border-radius: 10px; font-size: 13px"
+              ></div>
+              <div class="mb-4">
+                <label class="form-label fw-bold small">Файл Excel</label>
+                <div
+                  class="dropzone"
+                  id="dropzone"
+                  onclick="document.getElementById('import-file').click()"
+                >
+                  <div class="dz-icon">📊</div>
+                  <div class="dz-text">Нажмите или перетащите .xlsx файл</div>
+                  <div class="dz-name" id="dz-name">Файл не выбран</div>
+                </div>
+                <input
+                  type="file"
+                  id="import-file"
+                  accept=".xlsx,.xls"
+                  style="display: none"
+                  onchange="onFileSelect(this)"
+                />
+              </div>
+              <button
+                class="btn btn-primary w-100 py-2 fw-bold"
+                style="border-radius: 12px"
+                id="import-btn"
+                onclick="processImport()"
+              >
+                🚀 ЗАГРУЗИТЬ ГРУППУ
+              </button>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card-st" style="background: #f8fafc">
+              <h6 class="fw-bold mb-3">📋 Формат файла Excel</h6>
+              <table
+                class="table table-sm table-bordered mb-3"
+                style="font-size: 13px"
+              >
+                <thead class="table-light">
+                  <tr>
+                    <th>A</th>
+                    <th>B</th>
+                    <th>C</th>
+                    <th>D</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>ФИО</td>
+                    <td>Дата рождения</td>
+                    <td>ИНН</td>
+                    <td>Поименный №</td>
+                  </tr>
+                  <tr class="text-muted">
+                    <td><em>Иванов Иван</em></td>
+                    <td><em>01.01.2007</em></td>
+                    <td><em>12345678901234</em></td>
+                    <td><em>265748</em></td>
+                  </tr>
+                </tbody>
+              </table>
+              <div
+                class="alert alert-warning py-2"
+                style="font-size: 12px; border-radius: 10px"
+              >
+                ⚠️ Если группа уже существует — студенты добавятся к ней.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- НАСТРОЙКА ГРУПП -->
+      <div id="section-group-settings" class="section">
+        <p class="page-title">Настройка групп</p>
+        <p class="page-sub">
+          Привяжите профессию к группе — это нужно для корректной печати справок
+        </p>
+        <div class="row g-3">
+          <div class="col-md-5">
+            <div class="card-st">
+              <h6 class="fw-bold mb-4">Изменить профессию группы</h6>
+              <div class="mb-3">
+                <label class="form-label fw-bold small">Группа</label>
+                <select
+                  id="gs-group"
+                  class="form-select"
+                  onchange="onGsSelect()"
+                  style="border-radius: 10px"
+                ></select>
+              </div>
+              <div id="gs-cur-block" class="mb-3" style="display: none">
+                <label class="form-label fw-bold small"
+                  >Текущая профессия</label
+                >
+                <div
+                  id="gs-cur"
+                  class="p-3 rounded-3"
+                  style="
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    font-size: 13px;
+                  "
+                ></div>
+              </div>
+              <div class="mb-4">
+                <label class="form-label fw-bold small"
+                  >Назначить профессию</label
+                >
+                <select
+                  id="gs-prof"
+                  class="form-select"
+                  style="border-radius: 10px"
+                ></select>
+              </div>
+              <button
+                class="btn btn-primary w-100 py-2 fw-bold"
+                style="border-radius: 12px"
+                onclick="saveGsProf()"
+              >
+                💾 Сохранить
+              </button>
+              <div id="gs-msg" class="mt-3"></div>
+            </div>
+          </div>
+          <div class="col-md-7">
+            <div class="card-st">
+              <h6 class="fw-bold mb-3">Все группы</h6>
+              <div class="table-responsive">
+                <table
+                  class="table table-hover align-middle mb-0"
+                  style="font-size: 13px"
+                >
+                  <thead class="table-light">
+                    <tr>
+                      <th>Группа</th>
+                      <th>Профессия</th>
+                      <th>Срок</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="gs-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <script>
-      let activeGroupId = null;
-      let professions = [];
+      /* ── Globals ── */
+      let activeGroupId = null,
+        professions = [],
+        allStudents = [],
+        studentMap = {};
+      let gsGroups = [],
+        gsProfessions = [],
+        currentPage = 1,
+        confirmCb = null;
+      const PAGE_SIZE = 60;
 
+      /* ── Helpers ── */
+      const AC = [
+        "#4f46e5",
+        "#0891b2",
+        "#059669",
+        "#d97706",
+        "#dc2626",
+        "#7c3aed",
+        "#db2777",
+        "#2563eb",
+        "#16a34a",
+        "#ea580c",
+      ];
+      function avatarColor(s) {
+        let h = 0;
+        for (let i = 0; i < s.length; i++) h = s.charCodeAt(i) + ((h << 5) - h);
+        return AC[Math.abs(h) % AC.length];
+      }
+      function initials(f) {
+        return f
+          .trim()
+          .split(" ")
+          .slice(0, 2)
+          .map((w) => w[0]?.toUpperCase() || "")
+          .join("");
+      }
+      function curMonth() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      }
+
+      /* ── Toast ── */
+      function toast(msg, type = "success") {
+        const icons = { success: "✅", error: "❌", info: "ℹ️" };
+        const el = document.createElement("div");
+        el.className = `toast-item ${type}`;
+        el.innerHTML = `<span style="font-size:18px">${icons[type] || "✅"}</span><span>${msg}</span>`;
+        document.getElementById("toast-wrap").appendChild(el);
+        setTimeout(() => el.remove(), 3600);
+      }
+
+      /* ── Loader ── */
+      function showLoader() {
+        document.getElementById("loader").style.display = "flex";
+      }
+      function hideLoader() {
+        document.getElementById("loader").style.display = "none";
+      }
+
+      /* ── Confirm ── */
+      function showConfirm(
+        title,
+        text,
+        cb,
+        icon = "⚠️",
+        btnLabel = "Удалить",
+        btnCls = "btn-danger",
+      ) {
+        document.getElementById("c-title").textContent = title;
+        document.getElementById("c-text").textContent = text;
+        document.getElementById("c-icon").textContent = icon;
+        const btn = document.getElementById("c-ok");
+        btn.textContent = btnLabel;
+        btn.className = `btn ${btnCls}`;
+        confirmCb = cb;
+        document.getElementById("confirm-modal").style.display = "flex";
+      }
+      function closeConfirm() {
+        document.getElementById("confirm-modal").style.display = "none";
+        confirmCb = null;
+      }
+      document.getElementById("c-ok").onclick = () => {
+        closeConfirm();
+        confirmCb && confirmCb();
+      };
+
+      /* ── Edit modal ── */
+      function openEdit(id) {
+        const s = studentMap[id];
+        if (!s) return;
+        document.getElementById("e-id").value = s._id;
+        document.getElementById("e-fio").value = s.fio || "";
+        document.getElementById("e-birth").value = s.birthDate || "";
+        document.getElementById("e-inn").value = s.inn || "";
+        document.getElementById("e-lycid").value = s.lyceumId || "";
+        document.getElementById("edit-modal").style.display = "flex";
+        setTimeout(() => document.getElementById("e-fio").focus(), 50);
+      }
+      function closeEdit() {
+        document.getElementById("edit-modal").style.display = "none";
+      }
+      async function saveEdit() {
+        const id = document.getElementById("e-id").value;
+        const fio = document.getElementById("e-fio").value.trim();
+        if (!fio) {
+          toast("ФИО не может быть пустым", "error");
+          return;
+        }
+        showLoader();
+        await fetch(`/api/admin/student/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fio,
+            birthDate: document.getElementById("e-birth").value,
+            inn: document.getElementById("e-inn").value,
+            lyceumId: document.getElementById("e-lycid").value,
+          }),
+        });
+        hideLoader();
+        closeEdit();
+        toast("Данные студента сохранены");
+        viewGroup(
+          activeGroupId,
+          document.getElementById("current-group-title").innerText,
+          "",
+        );
+      }
+
+      /* ── Navigation ── */
       function showSection(id, btn) {
         document
           .querySelectorAll(".section")
@@ -289,78 +1209,257 @@
         document
           .querySelectorAll(".nav-btn")
           .forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-
+        if (btn) btn.classList.add("active");
         if (id === "groups-man") loadGroupsMan();
         if (id === "journal" || id === "food") loadGroupsList();
         if (id === "import") loadProfessions();
+        if (id === "group-settings") loadGroupSettings();
       }
 
-      // --- УПРАВЛЕНИЕ ГРУППАМИ ---
+      /* ── Реестр ── */
+      async function loadStats() {
+        try {
+          const [sRes, gRes] = await Promise.all([
+            fetch("/api/admin/search?q=&limit=2000"),
+            fetch("/api/admin/groups-list"),
+          ]);
+          const sData = await sRes.json();
+          const groups = await gRes.json();
+          const students = Array.isArray(sData) ? sData : sData.students || [];
+          const total = sData.total ?? students.length;
+          allStudents = students;
+          students.forEach((s) => {
+            studentMap[s._id] = s;
+          });
+          document.getElementById("stat-total").textContent = total;
+          document.getElementById("stat-groups").textContent = groups.length;
+          const today = new Date();
+          const dk = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+          document.getElementById("stat-today").textContent = students.filter(
+            (s) =>
+              s.skudDaily?.some((r) => r.date === dk && r.present) ||
+              s.attendance?.some((a) => a.date === dk && a.present),
+          ).length;
+          currentPage = 1;
+          renderCards(students);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      async function doSearch() {
+        const q = document.getElementById("searchInput").value.trim();
+        document.getElementById("results-title").textContent = q
+          ? "Результаты поиска"
+          : "Все студенты";
+        const res = await fetch(
+          "/api/admin/search?q=" + encodeURIComponent(q) + "&limit=2000",
+        );
+        const data = await res.json();
+        const students = Array.isArray(data) ? data : data.students || [];
+        const total = data.total ?? students.length;
+        allStudents = students;
+        students.forEach((s) => {
+          studentMap[s._id] = s;
+        });
+        currentPage = 1;
+        document.getElementById("stat-total").textContent = total;
+        renderCards(students);
+      }
+
+      function renderCards(students) {
+        const count = students.length;
+        const totalPages = Math.ceil(count / PAGE_SIZE);
+        const start = (currentPage - 1) * PAGE_SIZE;
+        const items = students.slice(start, start + PAGE_SIZE);
+        document.getElementById("results-count").textContent =
+          count > 0
+            ? `Показано: ${start + 1}–${Math.min(start + PAGE_SIZE, count)} из ${count}`
+            : "";
+        if (!count) {
+          document.getElementById("results").innerHTML =
+            `<div class="empty-state"><div class="ico">🔎</div><p>Студенты не найдены</p></div>`;
+          document.getElementById("pagination").innerHTML = "";
+          return;
+        }
+        document.getElementById("results").innerHTML = items
+          .map((s) => {
+            const color = avatarColor(s.fio || "?"),
+              ini = initials(s.fio || "?");
+            const group = s.group ? s.group.name : "Без группы";
+            return `<div class="stu-card">
+        <div class="stu-card-top">
+          <div class="stu-avatar" style="background:${color}">${ini}</div>
+          <div class="stu-card-info"><h6>${s.fio}</h6><span class="group-badge">📂 ${group}</span></div>
+        </div>
+        <div class="stu-meta">
+          <div class="stu-meta-item">🎂 <span>${s.birthDate || "—"}</span></div>
+          <div class="stu-meta-item">🪪 <span>${s.inn || "—"}</span></div>
+          <div class="stu-meta-item">№ <span>${s.lyceumId || "—"}</span></div>
+        </div>
+        <div class="stu-actions">
+          <button class="btn-common" onclick="window.open('/api/admin/print/${s._id}/common')">📄 Обычная</button>
+          <button class="btn-army"   onclick="window.open('/api/admin/print/${s._id}/army')">🎖 Военкомат</button>
+          <button class="btn-social" onclick="window.open('/api/admin/print/${s._id}/social')">🏥 Соцфонд</button>
+        </div>
+      </div>`;
+          })
+          .join("");
+        // Пагинация
+        const pag = document.getElementById("pagination");
+        if (totalPages <= 1) {
+          pag.innerHTML = "";
+          return;
+        }
+        let btns = "";
+        for (let p = 1; p <= totalPages; p++) {
+          if (p !== 1 && p !== totalPages && Math.abs(p - currentPage) > 2) {
+            if (p === currentPage - 3 || p === currentPage + 3)
+              btns += `<span class="pag-info">…</span>`;
+            continue;
+          }
+          btns += `<button class="pag-btn ${p === currentPage ? "active" : ""}" onclick="goPage(${p})">${p}</button>`;
+        }
+        pag.innerHTML = `<div class="pag-wrap">
+      <button class="pag-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? "disabled" : ""}>← Пред</button>
+      ${btns}
+      <button class="pag-btn" onclick="goPage(${currentPage + 1})" ${currentPage === totalPages ? "disabled" : ""}>След →</button>
+      <span class="pag-info">Страница ${currentPage} из ${totalPages} · ${count} студентов</span>
+    </div>`;
+      }
+
+      function goPage(p) {
+        const max = Math.ceil(allStudents.length / PAGE_SIZE);
+        if (p < 1 || p > max) return;
+        currentPage = p;
+        renderCards(allStudents);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      /* ── Группы ── */
       async function loadGroupsMan() {
         const res = await fetch("/api/admin/groups-list");
         const groups = await res.json();
         document.getElementById("groups-list-container").innerHTML = groups
           .map(
             (g) => `
-            <button class="list-group-item list-group-item-action" onclick="viewGroup('${g._id}', '${g.name}')">🏢 ${g.name}</button>
-        `,
+      <div class="g-item" id="gi-${g._id}" onclick="viewGroup('${g._id}','${g.name.replace(/'/g, "\\'")}','${(g.profRu || "").replace(/'/g, "\\'")}')">
+        <span class="gname">${g.name}</span>
+      </div>`,
           )
           .join("");
       }
 
-      async function viewGroup(id, name) {
+      async function viewGroup(id, name, profRu) {
         activeGroupId = id;
+        document
+          .querySelectorAll(".g-item")
+          .forEach((el) => el.classList.remove("active"));
+        const gi = document.getElementById("gi-" + id);
+        if (gi) gi.classList.add("active");
         document
           .getElementById("group-details-card")
           .classList.remove("d-none");
+        document.getElementById("group-empty-hint").classList.add("d-none");
         document.getElementById("current-group-title").innerText = name;
-
-        const res = await fetch(`/api/admin/group-students/${id}`);
-        const students = await res.json();
-
-        document.getElementById("group-students-body").innerHTML = students
-          .map(
-            (s) => `
-        <tr>
-            <td class="fw-bold">${s.fio}</td>
-            <td>${s.birthDate}</td>
-            <td><code>${s.inn || "—"}</code></td> <td><span class="badge bg-secondary">${s.lyceumId}</span></td>
-            <td class="text-end">
-                <button class="btn btn-sm btn-light" onclick="editStudent('${s._id}','${s.fio}','${s.birthDate}','${s.inn}','${s.lyceumId}')">✏️</button>
-            </td>
-        </tr>
-    `,
-          )
-          .join("");
-      }
-
-      async function deleteGroup() {
-        if (!activeGroupId) return;
-        if (confirm("УДАЛИТЬ ГРУППУ И ВСЕХ СТУДЕНТОВ?")) {
-          await fetch(`/api/admin/group/${activeGroupId}`, {
-            method: "DELETE",
+        document.getElementById("current-group-prof").innerText = profRu || "";
+        showLoader();
+        try {
+          const res = await fetch(`/api/admin/group-students/${id}`);
+          const students = await res.json();
+          students.forEach((s) => {
+            studentMap[s._id] = s;
           });
-          loadGroupsMan();
-          document.getElementById("group-details-card").classList.add("d-none");
+          document.getElementById("group-students-body").innerHTML =
+            students.length
+              ? students
+                  .map(
+                    (s, i) => `<tr>
+          <td class="text-muted" style="font-size:12px">${i + 1}</td>
+          <td class="fw-bold">${s.fio}</td>
+          <td style="font-size:13px">${s.birthDate || "—"}</td>
+          <td><code style="font-size:12px">${s.inn || "—"}</code></td>
+          <td><span class="badge bg-secondary">${s.lyceumId || "—"}</span></td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEdit('${s._id}')">✏️</button>
+            <button class="btn btn-sm btn-outline-danger"       onclick="confirmDeleteStudent('${s._id}','${s.fio.replace(/'/g, "\\'")}')">🗑️</button>
+          </td></tr>`,
+                  )
+                  .join("")
+              : `<tr><td colspan="6" class="text-center text-muted py-4">Студентов нет</td></tr>`;
+        } finally {
+          hideLoader();
         }
       }
 
-      async function clearStudents() {
+      function confirmDeleteGroup() {
         if (!activeGroupId) return;
-        if (confirm("Удалить всех студентов из группы? Группа останется.")) {
-          await fetch(`/api/admin/group/${activeGroupId}/clear`, {
-            method: "DELETE",
-          });
-          viewGroup(
-            activeGroupId,
-            document.getElementById("current-group-title").innerText,
-          );
-        }
+        showConfirm(
+          "Удалить группу?",
+          `Группа «${document.getElementById("current-group-title").innerText}» и все студенты будут удалены.`,
+          async () => {
+            showLoader();
+            await fetch(`/api/admin/group/${activeGroupId}`, {
+              method: "DELETE",
+            });
+            hideLoader();
+            toast("Группа удалена");
+            loadGroupsMan();
+            document
+              .getElementById("group-details-card")
+              .classList.add("d-none");
+            document
+              .getElementById("group-empty-hint")
+              .classList.remove("d-none");
+          },
+        );
       }
 
-      // --- ИМПОРТ ---
+      function confirmClearStudents() {
+        if (!activeGroupId) return;
+        showConfirm(
+          "Очистить список?",
+          `Все студенты группы «${document.getElementById("current-group-title").innerText}» будут удалены. Группа останется.`,
+          async () => {
+            showLoader();
+            await fetch(`/api/admin/group/${activeGroupId}/clear`, {
+              method: "DELETE",
+            });
+            hideLoader();
+            toast("Список очищен");
+            viewGroup(
+              activeGroupId,
+              document.getElementById("current-group-title").innerText,
+              "",
+            );
+          },
+          "🧹",
+          "Очистить",
+          "btn-warning",
+        );
+      }
+
+      function confirmDeleteStudent(id, fio) {
+        showConfirm(
+          "Удалить студента?",
+          `«${fio}» будет удалён безвозвратно.`,
+          async () => {
+            showLoader();
+            await fetch(`/api/admin/student/${id}`, { method: "DELETE" });
+            hideLoader();
+            toast("Студент удалён");
+            viewGroup(
+              activeGroupId,
+              document.getElementById("current-group-title").innerText,
+              "",
+            );
+          },
+        );
+      }
+
+      /* ── Импорт ── */
       async function loadProfessions() {
+        if (professions.length) return;
         const res = await fetch("/api/admin/professions");
         professions = await res.json();
         document.getElementById("import-prof-select").innerHTML =
@@ -371,8 +1470,9 @@
       }
 
       function updateDurationHint() {
-        const pId = document.getElementById("import-prof-select").value;
-        const prof = professions.find((p) => p.id == pId);
+        const prof = professions.find(
+          (p) => p.id == document.getElementById("import-prof-select").value,
+        );
         const info = document.getElementById("duration-info");
         if (prof) {
           info.innerText = "⏳ Срок обучения: " + prof.duration;
@@ -380,133 +1480,244 @@
         }
       }
 
+      function onFileSelect(input) {
+        document.getElementById("dz-name").textContent =
+          input.files[0]?.name || "Файл не выбран";
+      }
+
+      const dz = document.getElementById("dropzone");
+      dz.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dz.classList.add("drag");
+      });
+      dz.addEventListener("dragleave", () => dz.classList.remove("drag"));
+      dz.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dz.classList.remove("drag");
+        const file = e.dataTransfer.files[0];
+        if (file) {
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          document.getElementById("import-file").files = dt.files;
+          document.getElementById("dz-name").textContent = file.name;
+        }
+      });
+
       async function processImport() {
+        const gname = document.getElementById("import-gname").value.trim();
+        const profId = document.getElementById("import-prof-select").value;
+        const file = document.getElementById("import-file").files[0];
+        if (!gname) {
+          toast("Введите название группы", "error");
+          return;
+        }
+        if (!profId) {
+          toast("Выберите профессию", "error");
+          return;
+        }
+        if (!file) {
+          toast("Выберите файл Excel", "error");
+          return;
+        }
+        const btn = document.getElementById("import-btn");
+        btn.disabled = true;
+        btn.textContent = "⏳ Загружаем...";
+        showLoader();
         const fd = new FormData();
-        fd.append("file", document.getElementById("import-file").files[0]);
-        fd.append("groupName", document.getElementById("import-gname").value);
-        fd.append(
-          "profId",
-          document.getElementById("import-prof-select").value,
-        );
-        const res = await fetch("/api/admin/import", {
-          method: "POST",
-          body: fd,
-        });
-        if (res.ok) {
-          alert("Успешно!");
-          location.reload();
+        fd.append("file", file);
+        fd.append("groupName", gname);
+        fd.append("profId", profId);
+        try {
+          const res = await fetch("/api/admin/import", {
+            method: "POST",
+            body: fd,
+          });
+          const data = await res.json();
+          if (res.ok) {
+            toast(
+              `Импортировано ${data.created} студентов в группу «${gname}»`,
+            );
+            document.getElementById("import-gname").value = "";
+            document.getElementById("import-prof-select").value = "";
+            document.getElementById("import-file").value = "";
+            document.getElementById("dz-name").textContent = "Файл не выбран";
+            document.getElementById("duration-info").classList.add("d-none");
+          } else {
+            toast("Ошибка: " + (data.error || "неизвестная"), "error");
+          }
+        } catch (e) {
+          toast("Ошибка соединения", "error");
+        } finally {
+          hideLoader();
+          btn.disabled = false;
+          btn.textContent = "🚀 ЗАГРУЗИТЬ ГРУППУ";
         }
       }
 
-      // --- ЖУРНАЛ И ПИТАНИЕ ---
+      /* ── Журнал и питание ── */
       async function loadGroupsList() {
         const res = await fetch("/api/admin/groups-list");
         const groups = await res.json();
         const opts = groups
           .map((g) => `<option value="${g._id}">${g.name}</option>`)
           .join("");
-        document.getElementById("j-group-select").innerHTML = opts;
-        document.getElementById("f-group-select").innerHTML = opts;
+        const jS = document.getElementById("j-group-select");
+        const fS = document.getElementById("f-group-select");
+        if (jS) jS.innerHTML = opts;
+        if (fS) fS.innerHTML = opts;
       }
+
       async function loadJournal() {
         const gid = document.getElementById("j-group-select").value;
         const month = document.getElementById("j-month").value;
-
-        const res = await fetch(`/api/admin/attendance-matrix/${gid}/${month}`);
-        const data = await res.json();
-
-        let h = `<tr><th class="fio-col">ФИО</th>`;
-        for (let i = 1; i <= data.daysInMonth; i++) h += `<th>${i}</th>`;
-        document.getElementById("journal-head").innerHTML = h + `</tr>`;
-
-        document.getElementById("journal-body").innerHTML = data.matrix
-          .map((r) => {
-            const tds = r.days
-              .map((d) => {
-                // backward-compatible:
-                // если сервер пока не отдаёт late/time, то d.late будет undefined
-                const isPresent = !!d.present;
-                const isLate = !!d.late; // true/false
-                const time = d.time || ""; // "08:51"
-
-                let cls = "absent";
-                let content = "";
-
-                if (isPresent) {
-                  cls = isLate ? "late" : "present";
-                  content = `●${time ? `<span class="cell-time">${time}</span>` : ""}`;
-                }
-
-                // подсказка при наведении (удобно)
-                const title = isPresent
-                  ? isLate
-                    ? `Опоздал: ${time || "-"}`
-                    : `Пришел: ${time || "-"}`
-                  : "Нет отметки";
-
-                return `<td class="${cls}" title="${title}">${content}</td>`;
-              })
-              .join("");
-
-            return `<tr><td class="fio-col">${r.fio}</td>${tds}</tr>`;
-          })
-          .join("");
+        if (!gid || !month) {
+          toast("Выберите группу и месяц", "info");
+          return;
+        }
+        showLoader();
+        try {
+          const res = await fetch(
+            `/api/admin/attendance-matrix/${gid}/${month}`,
+          );
+          const data = await res.json();
+          let h = `<tr><th class="fio-col">ФИО</th>`;
+          for (let i = 1; i <= data.daysInMonth; i++) h += `<th>${i}</th>`;
+          document.getElementById("journal-head").innerHTML = h + `</tr>`;
+          document.getElementById("journal-body").innerHTML = data.matrix
+            .map((r) => {
+              const tds = r.days
+                .map((d) => {
+                  const isP = !!d.present,
+                    isL = !!d.late,
+                    t = d.time || "";
+                  let cls = "absent",
+                    cnt = "";
+                  if (isP) {
+                    cls = isL ? "late" : "present";
+                    cnt = `●${t ? `<span class="cell-time">${t}</span>` : ""}`;
+                  }
+                  const title = isP
+                    ? isL
+                      ? `Опоздал: ${t || "-"}`
+                      : `Пришел: ${t || "-"}`
+                    : "Нет отметки";
+                  return `<td class="${cls}" title="${title}">${cnt}</td>`;
+                })
+                .join("");
+              return `<tr><td class="fio-col">${r.fio}</td>${tds}</tr>`;
+            })
+            .join("");
+          document.getElementById("journal-hint").style.display = "none";
+          document.getElementById("journal-table").style.display = "";
+        } finally {
+          hideLoader();
+        }
       }
 
       function downloadFoodReport() {
         const gid = document.getElementById("f-group-select").value;
         const month = document.getElementById("f-month").value;
+        if (!gid || !month) {
+          toast("Выберите группу и месяц", "info");
+          return;
+        }
         window.open(`/api/admin/report-food/${gid}/${month}`);
       }
 
-      // --- ПОИСК ---
-      async function doSearch() {
-        const q = document.getElementById("searchInput").value;
-        const res = await fetch("/api/admin/search?q=" + q);
-        const data = await res.json();
-        document.getElementById("results").innerHTML = data
+      /* ── Настройка групп ── */
+      async function loadGroupSettings() {
+        const [gRes, pRes] = await Promise.all([
+          fetch("/api/admin/groups-list"),
+          fetch("/api/admin/professions"),
+        ]);
+        gsGroups = await gRes.json();
+        gsProfessions = await pRes.json();
+        document.getElementById("gs-group").innerHTML =
+          '<option value="" disabled selected>-- Выберите группу --</option>' +
+          gsGroups
+            .map((g) => `<option value="${g._id}">${g.name}</option>`)
+            .join("");
+        document.getElementById("gs-prof").innerHTML =
+          '<option value="" disabled selected>-- Выберите профессию --</option>' +
+          gsProfessions
+            .map((p) => `<option value="${p.id}">${p.ru}</option>`)
+            .join("");
+        renderGsTable();
+      }
+
+      function renderGsTable() {
+        document.getElementById("gs-body").innerHTML = gsGroups
           .map(
-            (s) => `
-            <div class="col-md-6 mb-3">
-                <div class="card p-3 shadow-sm border-start border-4 border-primary">
-                    <div class="fw-bold">${s.fio}</div>
-                    <div class="small text-muted mb-3">${s.group ? s.group.name : "—"}</div>
-                    <div class="btn-group w-100">
-                        <button class="btn btn-sm btn-outline-dark" onclick="window.open('/api/admin/print/${s._id}/common')">Обычная</button>
-                        <button class="btn btn-sm btn-outline-primary" onclick="window.open('/api/admin/print/${s._id}/army')">Военкомат</button>
-                        <button class="btn btn-sm btn-outline-success" onclick="window.open('/api/admin/print/${s._id}/social')">Соцфонд</button>
-                    </div>
-                </div>
-            </div>
-        `,
+            (g) => `
+      <tr>
+        <td class="fw-bold">${g.name}</td>
+        <td>${g.profRu ? `<span class="bp">${g.profRu}</span>` : `<span class="bp no">Не задана</span>`}</td>
+        <td style="font-size:12px;color:#64748b">${g.duration || "—"}</td>
+        <td><button class="btn btn-outline-primary" style="font-size:11px;padding:2px 8px;border-radius:6px" onclick="gsQuickSelect('${g._id}')">Изменить</button></td>
+      </tr>`,
           )
           .join("");
       }
 
-      async function editStudent(id, f, b, i, l) {
-        const nF = prompt("ФИО:", f);
-        const nB = prompt("Дата рождение:", b);
-        const nI = prompt("ИНН:", i);
-        const nL = prompt("Поименный номер:", l);
-        if (nF) {
-          await fetch(`/api/admin/student/${id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              fio: nF,
-              birthDate: nB,
-              inn: nI,
-              lyceumId: nL,
-            }),
-          });
-          viewGroup(
-            activeGroupId,
-            document.getElementById("current-group-title").innerText,
-          );
+      function gsQuickSelect(id) {
+        document.getElementById("gs-group").value = id;
+        onGsSelect();
+        document
+          .getElementById("gs-group")
+          .scrollIntoView({ behavior: "smooth" });
+      }
+
+      function onGsSelect() {
+        const gid = document.getElementById("gs-group").value;
+        const g = gsGroups.find((x) => x._id === gid);
+        document.getElementById("gs-cur-block").style.display = "";
+        document.getElementById("gs-cur").innerHTML = g?.profRu
+          ? `<b>${g.profRu}</b><br><span style="color:#64748b">${g.profKg || ""}</span><br><span style="color:#94a3b8;font-size:12px">Срок: ${g.duration || "—"}</span>`
+          : `<span style="color:#b91c1c">Профессия не задана</span>`;
+        document.getElementById("gs-msg").innerHTML = "";
+      }
+
+      async function saveGsProf() {
+        const gid = document.getElementById("gs-group").value;
+        const profId = document.getElementById("gs-prof").value;
+        if (!gid) {
+          toast("Выберите группу", "error");
+          return;
+        }
+        if (!profId) {
+          toast("Выберите профессию", "error");
+          return;
+        }
+        showLoader();
+        const res = await fetch(`/api/admin/group/${gid}/set-prof`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ profId }),
+        });
+        hideLoader();
+        if (res.ok) {
+          const data = await res.json();
+          const g = gsGroups.find((x) => x._id === gid);
+          if (g) {
+            g.profRu = data.profRu;
+            g.profKg = data.profKg;
+            g.duration = data.duration;
+          }
+          onGsSelect();
+          renderGsTable();
+          toast("Профессия сохранена: " + data.profRu);
+        } else {
+          toast("Ошибка сохранения", "error");
         }
       }
 
-      window.onload = doSearch;
+      /* ── Init ── */
+      window.onload = () => {
+        const cm = curMonth();
+        document.getElementById("j-month").value = cm;
+        document.getElementById("f-month").value = cm;
+        loadStats();
+      };
     </script>
   </body>
 </html>

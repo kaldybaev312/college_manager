@@ -3,152 +3,493 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>СКУД — События</title>
-
+  <title>СКУД — События | ПЛ №3</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <style>
-    body{font-family:Inter,Arial,sans-serif;background:#0b1220;color:#e5e7eb;margin:0;padding:16px}
-    .wrap{max-width:1200px;margin:0 auto}
-    .top{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    input,select,button{padding:10px;border-radius:10px;border:1px solid #243041;background:#0f172a;color:#e5e7eb}
-    button{cursor:pointer}
-    .card{background:#0f172a;border:1px solid #243041;border-radius:14px;padding:14px;margin-top:12px}
-    table{width:100%;border-collapse:collapse;font-size:12px}
-    th,td{border-bottom:1px solid #243041;padding:10px;vertical-align:top}
-    th{color:#93c5fd;text-align:left;position:sticky;top:0;background:#0f172a}
-    .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #243041;font-size:11px}
-    .ok{background:#064e3b;border-color:#065f46}
-    .bad{background:#3f1d2a;border-color:#7f1d1d}
-    .in{background:#1d4ed8;border-color:#2563eb}
-    .out{background:#a16207;border-color:#ca8a04}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-    .muted{opacity:.7}
+    :root {
+      --sidebar-bg: #0f172a;
+      --accent: #4f46e5;
+      --bg: #f1f5f9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      font-family: "Inter","Segoe UI",sans-serif;
+      display: flex;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 260px;
+      background: var(--sidebar-bg);
+      color: white;
+      position: fixed;
+      height: 100vh;
+      padding: 28px 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-logo { text-align: center; margin-bottom: 36px; }
+    .sidebar-logo h4 { font-weight: 800; font-size: 18px; margin: 0; letter-spacing: .5px; }
+    .sidebar-logo span { color: #38bdf8; font-size: 12px; }
+
+    .nav-btn {
+      width: 100%; text-align: left;
+      background: none; border: none;
+      color: #94a3b8; padding: 11px 14px;
+      border-radius: 10px; margin-bottom: 4px;
+      font-weight: 600; font-size: 14px;
+      transition: background .2s, color .2s; cursor: pointer;
+      text-decoration: none; display: block;
+    }
+    .nav-btn:hover  { background: #1e293b; color: #e2e8f0; }
+    .nav-btn.active { background: var(--accent); color: white; }
+
+    /* ── Main ── */
+    .main-content {
+      margin-left: 260px;
+      width: calc(100% - 260px);
+      padding: 36px 40px;
+    }
+
+    /* ── Top controls ── */
+    .controls-bar {
+      background: white;
+      border-radius: 16px;
+      padding: 18px 22px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .controls-bar input,
+    .controls-bar select {
+      padding: 9px 14px;
+      border-radius: 10px;
+      border: 1.5px solid #e2e8f0;
+      background: #f8fafc;
+      color: #1e293b;
+      font-size: 13px;
+      font-weight: 500;
+      outline: none;
+      transition: border .2s;
+    }
+    .controls-bar input:focus,
+    .controls-bar select:focus { border-color: var(--accent); background: white; }
+    .controls-bar input { min-width: 280px; flex: 1; }
+
+    .btn-refresh {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 9px 20px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: opacity .2s;
+      white-space: nowrap;
+    }
+    .btn-refresh:hover { opacity: .88; }
+
+    /* ── Auto badge ── */
+    .auto-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f0fdf4;
+      border: 1.5px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #15803d;
+      white-space: nowrap;
+    }
+    .auto-badge.off {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #b91c1c;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: pulse 1.4s infinite;
+    }
+    .off .dot { background: #ef4444; animation: none; }
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: .5; transform: scale(1.3); }
+    }
+
+    /* ── Stats row ── */
+    .stats-row {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .stat-pill {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+      flex: 1;
+    }
+    .stat-pill .ico   { font-size: 22px; }
+    .stat-pill .info  { }
+    .stat-pill .val   { font-size: 22px; font-weight: 800; color: #1e293b; line-height: 1; }
+    .stat-pill .lbl   { font-size: 11px; color: #94a3b8; font-weight: 600; margin-top: 2px; }
+
+    /* ── Table card ── */
+    .table-card {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 12px rgba(0,0,0,.05);
+      overflow: hidden;
+    }
+    .table-card table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .table-card thead th {
+      background: #f8fafc;
+      color: #64748b;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      padding: 12px 16px;
+      border-bottom: 2px solid #e2e8f0;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .table-card tbody tr {
+      border-bottom: 1px solid #f1f5f9;
+      transition: background .12s;
+    }
+    .table-card tbody tr:last-child { border-bottom: none; }
+    .table-card tbody tr:hover { background: #f8fafc; }
+    .table-card tbody td { padding: 11px 16px; vertical-align: middle; }
+
+    /* ── Pills ── */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .pill-ok     { background: #dcfce7; color: #15803d; }
+    .pill-fail   { background: #fee2e2; color: #b91c1c; }
+    .pill-in     { background: #dbeafe; color: #1d4ed8; }
+    .pill-out    { background: #fef3c7; color: #b45309; }
+    .pill-none   { background: #f1f5f9; color: #64748b; }
+
+    /* ── Student cell ── */
+    .stu-cell { display: flex; align-items: center; gap: 10px; }
+    .stu-ava {
+      width: 34px; height: 34px;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; color: white; flex-shrink: 0;
+    }
+    .stu-name  { font-weight: 700; font-size: 13px; color: #1e293b; }
+    .stu-inn   { font-size: 11px; color: #94a3b8; font-family: monospace; }
+
+    /* ── Time cell ── */
+    .time-val  { font-weight: 700; font-size: 13px; color: #1e293b; font-family: monospace; }
+    .time-date { font-size: 11px; color: #94a3b8; }
+
+    /* ── Device cell ── */
+    .device-ip { font-family: monospace; font-size: 12px; color: #475569; }
+
+    /* ── Raw name ── */
+    .raw-name { font-family: monospace; font-size: 12px; color: #334155; }
+
+    /* ── Details ── */
+    .detail-txt { font-family: monospace; font-size: 11px; color: #94a3b8; }
+
+    /* ── Empty state ── */
+    .empty-row td {
+      text-align: center;
+      padding: 60px 20px !important;
+      color: #94a3b8;
+      font-size: 15px;
+    }
+    .empty-row .ico { font-size: 40px; display: block; margin-bottom: 10px; }
   </style>
 </head>
 <body>
-<div class="wrap">
-  <h2>СКУД — Живые события</h2>
 
-  <div class="top">
-    <button onclick="load()">Обновить</button>
-    <label class="muted">Авто:</label>
-    <select id="auto" onchange="toggleAuto()">
-      <option value="1" selected>ON (2s)</option>
-      <option value="0">OFF</option>
-    </select>
-
-    <input id="q" placeholder="Фильтр: ИНН / ФИО / employeeNo / IP" style="min-width:340px"/>
-    <select id="dir">
-      <option value="">Все</option>
-      <option value="in">IN</option>
-      <option value="out">OUT</option>
-    </select>
-    <select id="onlyBad">
-      <option value="">Все</option>
-      <option value="1">Только ошибки</option>
-    </select>
+  <!-- ══ SIDEBAR ══ -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <h4>ПРОФЛИЦЕЙ №3</h4>
+      <span>Учебная часть</span>
+    </div>
+    <a class="nav-btn" href="/">🔍 Реестр и Справки</a>
+    <a class="nav-btn" href="/#groups-man">📂 Списки групп</a>
+    <a class="nav-btn" href="/#journal">📅 Журнал СКУД</a>
+    <a class="nav-btn" href="/#food">🍱 Ведомость питания</a>
+    <a class="nav-btn" href="/#import">📥 Импорт данных</a>
+    <a class="nav-btn active" href="/admin/events">📡 СКУД события</a>
   </div>
 
-  <div class="card">
-    <table>
-      <thead>
-      <tr>
-        <th>Время</th>
-        <th>Направление</th>
-        <th>Камера</th>
-        <th>rawName (из терминала)</th>
-        <th>ИНН</th>
-        <th>Студент</th>
-        <th>Статус</th>
-        <th>Детали</th>
-      </tr>
-      </thead>
-      <tbody id="tb"></tbody>
-    </table>
+  <!-- ══ MAIN ══ -->
+  <div class="main-content">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h2 class="fw-bold mb-0">СКУД — Живые события</h2>
+        <p class="text-muted mb-0" style="font-size:13px">Мониторинг проходов в реальном времени</p>
+      </div>
+      <div class="auto-badge" id="auto-badge">
+        <div class="dot"></div>
+        <span id="auto-label">Авто-обновление: ВКЛ</span>
+      </div>
+    </div>
+
+    <!-- Статистика -->
+    <div class="stats-row">
+      <div class="stat-pill">
+        <div class="ico">📋</div>
+        <div class="info">
+          <div class="val" id="stat-total">0</div>
+          <div class="lbl">Всего событий</div>
+        </div>
+      </div>
+      <div class="stat-pill">
+        <div class="ico">✅</div>
+        <div class="info">
+          <div class="val" id="stat-ok">0</div>
+          <div class="lbl">Успешных</div>
+        </div>
+      </div>
+      <div class="stat-pill">
+        <div class="ico">❌</div>
+        <div class="info">
+          <div class="val" id="stat-fail">0</div>
+          <div class="lbl">Ошибок</div>
+        </div>
+      </div>
+      <div class="stat-pill">
+        <div class="ico">🚪</div>
+        <div class="info">
+          <div class="val" id="stat-in">0</div>
+          <div class="lbl">Входов</div>
+        </div>
+      </div>
+      <div class="stat-pill">
+        <div class="ico">🚶</div>
+        <div class="info">
+          <div class="val" id="stat-out">0</div>
+          <div class="lbl">Выходов</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Фильтры -->
+    <div class="controls-bar">
+      <button class="btn-refresh" onclick="loadEvents()">🔄 Обновить</button>
+
+      <input id="q" placeholder="🔍  Поиск по ФИО, ИНН, IP, employeeNo..." oninput="renderTable()"/>
+
+      <select id="dir" onchange="renderTable()">
+        <option value="">Все направления</option>
+        <option value="in">🚪 Вход (IN)</option>
+        <option value="out">🚶 Выход (OUT)</option>
+      </select>
+
+      <select id="onlyBad" onchange="renderTable()">
+        <option value="">Все статусы</option>
+        <option value="1">❌ Только ошибки</option>
+      </select>
+
+      <select id="auto" onchange="toggleAuto()">
+        <option value="1" selected>⏱ Авто: ВКЛ (2с)</option>
+        <option value="0">⏸ Авто: ВЫКЛ</option>
+      </select>
+    </div>
+
+    <!-- Таблица -->
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Время</th>
+            <th>Направление</th>
+            <th>Камера / IP</th>
+            <th>Имя из терминала</th>
+            <th>ИНН</th>
+            <th>Студент</th>
+            <th>Статус</th>
+            <th>Детали</th>
+          </tr>
+        </thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+
   </div>
-</div>
 
-<script>
-let timer = null;
+  <script>
+    let timer      = null;
+    let allEvents  = [];
 
-function toggleAuto(){
-  const on = document.getElementById('auto').value === '1';
-  if(on){
-    if(timer) clearInterval(timer);
-    timer = setInterval(load, 2000);
-  } else {
-    if(timer) clearInterval(timer);
-    timer = null;
-  }
-}
+    const AVATAR_COLORS = [
+      "#4f46e5","#0891b2","#059669","#d97706","#dc2626",
+      "#7c3aed","#db2777","#2563eb","#16a34a","#ea580c"
+    ];
+    function avatarColor(str) {
+      let h = 0;
+      for (let i = 0; i < (str||"").length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+      return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+    }
+    function initials(name) {
+      return (name||"?").trim().split(" ").slice(0,2).map(w => w[0]?.toUpperCase()||"").join("");
+    }
 
-function passFilter(item){
-  const q = (document.getElementById('q').value || '').toLowerCase().trim();
-  const dir = document.getElementById('dir').value;
-  const onlyBad = document.getElementById('onlyBad').value === '1';
+    function formatTime(iso) {
+      if (!iso) return { time: "—", date: "" };
+      const d = new Date(iso);
+      const time = d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      const date = d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+      return { time, date };
+    }
 
-  if(dir && (item.direction||'') !== dir) return false;
-  if(onlyBad && item.ok !== false) return false;
+    function toggleAuto() {
+      const on    = document.getElementById("auto").value === "1";
+      const badge = document.getElementById("auto-badge");
+      const label = document.getElementById("auto-label");
 
-  if(!q) return true;
+      if (on) {
+        if (timer) clearInterval(timer);
+        timer = setInterval(loadEvents, 2000);
+        badge.classList.remove("off");
+        label.textContent = "Авто-обновление: ВКЛ";
+      } else {
+        if (timer) clearInterval(timer);
+        timer = null;
+        badge.classList.add("off");
+        label.textContent = "Авто-обновление: ВЫКЛ";
+      }
+    }
 
-  const s = [
-    item.deviceIp,
-    item.employeeNo,
-    item.innFromHik,
-    item.rawName,
-    item.studentFio,
-    item.reason
-  ].filter(Boolean).join(' ').toLowerCase();
+    async function loadEvents() {
+      try {
+        const r = await fetch("/api/admin/skud-events?limit=300");
+        const j = await r.json().catch(() => ({}));
+        allEvents = j.items || [];
+        updateStats(allEvents);
+        renderTable();
+      } catch(e) {
+        console.error("load error:", e);
+      }
+    }
 
-  return s.includes(q);
-}
+    function updateStats(events) {
+      document.getElementById("stat-total").textContent = events.length;
+      document.getElementById("stat-ok").textContent    = events.filter(e => e.ok).length;
+      document.getElementById("stat-fail").textContent  = events.filter(e => !e.ok).length;
+      document.getElementById("stat-in").textContent    = events.filter(e => e.direction === "in").length;
+      document.getElementById("stat-out").textContent   = events.filter(e => e.direction === "out").length;
+    }
 
-function pill(text, cls){
-  return '<span class="pill '+cls+'">'+text+'</span>';
-}
+    function passFilter(item) {
+      const q       = (document.getElementById("q").value || "").toLowerCase().trim();
+      const dir     = document.getElementById("dir").value;
+      const onlyBad = document.getElementById("onlyBad").value === "1";
 
-async function load(){
-  const r = await fetch('/api/admin/skud-events?limit=300');
-  const j = await r.json().catch(()=>({}));
+      if (dir && (item.direction || "") !== dir) return false;
+      if (onlyBad && item.ok !== false) return false;
+      if (!q) return true;
 
-  const items = (j.items||[]).filter(passFilter);
+      const s = [item.deviceIp, item.employeeNo, item.innFromHik,
+                 item.rawName, item.studentFio, item.reason]
+        .filter(Boolean).join(" ").toLowerCase();
+      return s.includes(q);
+    }
 
-  const rows = items.map(it => {
-    const t = it.eventIso || it.time || it.at || '';
-    const dir = it.direction || '';
-    const dirP = dir === 'in' ? pill('IN','in') : (dir === 'out' ? pill('OUT','out') : pill(dir||'-',''));
-    const st = it.ok ? pill('OK','ok') : pill('FAIL','bad');
-    const inn = it.innFromHik || '';
-    const student = it.studentFio
-      ? ('<b>'+it.studentFio+'</b><div class="muted mono">'+(it.studentInn||'')+'</div>')
-      : '<span class="muted">—</span>';
+    function renderTable() {
+      const items = allEvents.filter(passFilter);
 
-    const details = [
-      it.reason ? ('reason: '+it.reason) : '',
-      it.minor != null ? ('minor: '+it.minor) : '',
-      it.employeeNo ? ('employeeNo: '+it.employeeNo) : '',
-    ].filter(Boolean).join('<br/>');
+      if (!items.length) {
+        document.getElementById("tb").innerHTML = `
+          <tr class="empty-row">
+            <td colspan="8">
+              <span class="ico">📡</span>
+              Нет событий для отображения
+            </td>
+          </tr>`;
+        return;
+      }
 
-    return `
-      <tr>
-        <td class="mono">${t}</td>
-        <td>${dirP}</td>
-        <td class="mono">${it.deviceIp || '-'}</td>
-        <td>${it.rawName ? '<span class="mono">'+it.rawName+'</span>' : '<span class="muted">—</span>'}</td>
-        <td class="mono">${inn || '-'}</td>
-        <td>${student}</td>
-        <td>${st}</td>
-        <td class="mono muted">${details || '-'}</td>
-      </tr>
-    `;
-  }).join('');
+      document.getElementById("tb").innerHTML = items.map(it => {
+        const { time, date } = formatTime(it.eventIso || it.time || it.at);
+        const dir    = it.direction || "";
+        const dirPill = dir === "in"
+          ? `<span class="pill pill-in">🚪 IN</span>`
+          : dir === "out"
+          ? `<span class="pill pill-out">🚶 OUT</span>`
+          : `<span class="pill pill-none">—</span>`;
 
-  document.getElementById('tb').innerHTML =
-    rows || '<tr><td colspan="8" class="muted">Нет событий</td></tr>';
-}
+        const stPill = it.ok
+          ? `<span class="pill pill-ok">✓ OK</span>`
+          : `<span class="pill pill-fail">✕ FAIL</span>`;
 
-toggleAuto();
-load();
-</script>
+        const inn = it.innFromHik || "—";
+
+        const stuHtml = it.studentFio
+          ? `<div class="stu-cell">
+               <div class="stu-ava" style="background:${avatarColor(it.studentFio)}">${initials(it.studentFio)}</div>
+               <div>
+                 <div class="stu-name">${it.studentFio}</div>
+                 <div class="stu-inn">${it.studentInn || ""}</div>
+               </div>
+             </div>`
+          : `<span style="color:#94a3b8;font-size:12px">Не найден</span>`;
+
+        const details = [
+          it.reason     ? `<div>⚠️ ${it.reason}</div>`        : "",
+          it.employeeNo ? `<div>ID: ${it.employeeNo}</div>`   : "",
+        ].filter(Boolean).join("");
+
+        return `
+          <tr>
+            <td>
+              <div class="time-val">${time}</div>
+              <div class="time-date">${date}</div>
+            </td>
+            <td>${dirPill}</td>
+            <td><div class="device-ip">${it.deviceIp || "—"}</div></td>
+            <td><div class="raw-name">${it.rawName || "<span style='color:#94a3b8'>—</span>"}</div></td>
+            <td><div class="device-ip">${inn}</div></td>
+            <td>${stuHtml}</td>
+            <td>${stPill}</td>
+            <td><div class="detail-txt">${details || "—"}</div></td>
+          </tr>`;
+      }).join("");
+    }
+
+    toggleAuto();
+    loadEvents();
+  </script>
 </body>
 </html>
