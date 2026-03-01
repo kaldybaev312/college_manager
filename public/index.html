@@ -87,9 +87,23 @@
         background-color: #22c55e !important;
         color: white;
       }
+      .late {
+        background-color: #f59e0b !important;
+        color: white;
+      }
       .absent {
-        background-color: #f8fafc;
+        background-color: #ef4444 !important;
         color: #cbd5e1;
+      }
+
+      /* время внутри ячейки */
+      .cell-time {
+        display: block;
+        font-size: 9px;
+        line-height: 1;
+        margin-top: 2px;
+        opacity: 0.95;
+        font-weight: 700;
       }
       .fio-col {
         text-align: left !important;
@@ -394,21 +408,48 @@
         document.getElementById("j-group-select").innerHTML = opts;
         document.getElementById("f-group-select").innerHTML = opts;
       }
-
       async function loadJournal() {
         const gid = document.getElementById("j-group-select").value;
         const month = document.getElementById("j-month").value;
+
         const res = await fetch(`/api/admin/attendance-matrix/${gid}/${month}`);
         const data = await res.json();
+
         let h = `<tr><th class="fio-col">ФИО</th>`;
         for (let i = 1; i <= data.daysInMonth; i++) h += `<th>${i}</th>`;
         document.getElementById("journal-head").innerHTML = h + `</tr>`;
+
         document.getElementById("journal-body").innerHTML = data.matrix
-          .map(
-            (r) => `
-            <tr><td class="fio-col">${r.fio}</td>${r.days.map((d) => `<td class="${d.present ? "present" : "absent"}">${d.present ? "●" : ""}</td>`).join("")}</tr>
-        `,
-          )
+          .map((r) => {
+            const tds = r.days
+              .map((d) => {
+                // backward-compatible:
+                // если сервер пока не отдаёт late/time, то d.late будет undefined
+                const isPresent = !!d.present;
+                const isLate = !!d.late; // true/false
+                const time = d.time || ""; // "08:51"
+
+                let cls = "absent";
+                let content = "";
+
+                if (isPresent) {
+                  cls = isLate ? "late" : "present";
+                  content = `●${time ? `<span class="cell-time">${time}</span>` : ""}`;
+                }
+
+                // подсказка при наведении (удобно)
+                const title = isPresent
+                  ? isLate
+                    ? `Опоздал: ${time || "-"}`
+                    : `Пришел: ${time || "-"}`
+                  : "Нет отметки";
+
+                return `<td class="${cls}" title="${title}">${content}</td>`;
+              })
+              .join("");
+
+            return `<tr><td class="fio-col">${r.fio}</td>${tds}</tr>`;
+          })
           .join("");
       }
 
