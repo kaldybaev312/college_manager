@@ -23,7 +23,7 @@ app.use(express.static("public"));
 
 const MONGO_URI =
   process.env.MONGO_URI ||
-  "mongodb+srv://ilimkaldybaev5_db_user:liceyStudents@riestr.uki8ep8.mongodb.net/PL3_Database?retryWrites=true&w=majority&appName=riestr";
+  "mongodb+srv://ilimkaldybaev5_db_user:liceyStudents>@riestr.uki8ep8.mongodb.net/?appName=riestr";
 
 mongoose
   .connect(MONGO_URI)
@@ -49,7 +49,7 @@ const Group = mongoose.model(
     profRu: String,
     profKg: String,
     duration: String,
-  })
+  }),
 );
 
 const Student = mongoose.model(
@@ -75,10 +75,10 @@ const Student = mongoose.model(
           outCount: { type: Number, default: 0 },
           present: { type: Boolean, default: false },
         },
-        { _id: false }
+        { _id: false },
       ),
     ],
-  })
+  }),
 );
 
 /* ===========================
@@ -180,8 +180,7 @@ async function fetchPersonName(deviceIp, employeeNo) {
 app.post("/api/agent/sync", async (req, res) => {
   const { apiKey, data } = req.body;
 
-  if (apiKey !== AGENT_API_KEY)
-    return res.status(403).send("Forbidden");
+  if (apiKey !== AGENT_API_KEY) return res.status(403).send("Forbidden");
 
   if (!Array.isArray(data))
     return res.status(400).json({ error: "data must be array" });
@@ -225,9 +224,7 @@ app.post("/api/agent/sync", async (req, res) => {
         }).limit(50);
 
         student =
-          candidates.find(
-            (c) => normalizeFIO(c.fio) === fioNorm
-          ) || null;
+          candidates.find((c) => normalizeFIO(c.fio) === fioNorm) || null;
       }
 
       if (!student) {
@@ -245,16 +242,12 @@ app.post("/api/agent/sync", async (req, res) => {
       }
 
       // attendance
-      const exist = student.attendance.find(
-        (a) => a.date === dateKey
-      );
+      const exist = student.attendance.find((a) => a.date === dateKey);
       if (exist) exist.present = true;
       else student.attendance.push({ date: dateKey, present: true });
 
       // skudDaily
-      let rec = student.skudDaily.find(
-        (r) => r.date === dateKey
-      );
+      let rec = student.skudDaily.find((r) => r.date === dateKey);
       if (!rec) {
         rec = {
           date: dateKey,
@@ -306,5 +299,5 @@ app.post("/api/agent/sync", async (req, res) => {
 =========================== */
 
 app.listen(3000, () =>
-  console.log("🚀 Server running on http://localhost:3000")
+  console.log("🚀 Server running on http://localhost:3000"),
 );
