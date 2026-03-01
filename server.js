@@ -209,7 +209,7 @@ function extractFIO(s) {
 }
 
 /* ===========================
-   PERSON RESOLVE (HIKVISION)
+   PERSON RESOLVE (HIKVISION) - Оставлено для совместимости
 =========================== */
 
 async function fetchPersonName(deviceIp, employeeNo) {
@@ -239,7 +239,7 @@ async function fetchPersonName(deviceIp, employeeNo) {
 }
 
 /* ===========================
-   AGENT SYNC
+   AGENT SYNC (ИСПРАВЛЕННЫЙ БЛОК)
 =========================== */
 
 app.post("/api/agent/sync", async (req, res) => {
@@ -261,11 +261,13 @@ app.post("/api/agent/sync", async (req, res) => {
       const eventIso = new Date(entry.time).toISOString();
       const dateKey = isoToDateKey(eventIso);
 
-      const rawName = await fetchPersonName(deviceIp, employeeNo);
+      // БЕРЕМ ИМЯ ИЗ ДАННЫХ АГЕНТА (ФИКС БАГА С RENDER)
+      const rawName = String(entry.rawName || "").trim();
+
       if (!rawName) {
         pushSkudEvent({
           ok: false,
-          reason: "person_not_found_in_terminal",
+          reason: "person_not_found_in_payload",
           employeeNo,
           deviceIp,
           at: eventIso,
