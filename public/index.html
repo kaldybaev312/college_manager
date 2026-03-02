@@ -2,63 +2,91 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+    />
     <title>ПЛ №3 | Система Управления</title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
     <style>
       :root {
         --sidebar-bg: #0f172a;
         --accent: #4f46e5;
+        --accent-light: #eef2ff;
+        --danger: #ef4444;
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --bg: #f1f5f9;
+        --card: #ffffff;
+        --border: #e2e8f0;
+        --text: #0f172a;
+        --muted: #64748b;
+        --sidebar-w: 260px;
       }
       * {
         box-sizing: border-box;
-      }
-      body {
-        background: #f1f5f9;
-        font-family: "Inter", "Segoe UI", sans-serif;
-        display: flex;
-        min-height: 100vh;
         margin: 0;
+        padding: 0;
       }
 
-      /* ── Sidebar ── */
+      body {
+        background: var(--bg);
+        font-family: "Golos Text", "Segoe UI", sans-serif;
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      /* ══════════════════════════════
+         SIDEBAR
+      ══════════════════════════════ */
       .sidebar {
-        width: 260px;
+        width: var(--sidebar-w);
         background: var(--sidebar-bg);
         color: white;
         position: fixed;
+        top: 0;
+        left: 0;
         height: 100vh;
-        padding: 28px 20px;
+        padding: 24px 16px 24px;
         z-index: 1000;
         display: flex;
         flex-direction: column;
         overflow-y: auto;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .sidebar-logo {
         text-align: center;
-        margin-bottom: 32px;
+        padding: 0 8px 24px;
+        border-bottom: 1px solid #1e293b;
+        margin-bottom: 16px;
       }
       .sidebar-logo h4 {
-        font-weight: 800;
-        font-size: 17px;
-        margin: 0;
+        font-weight: 900;
+        font-size: 16px;
         letter-spacing: 0.5px;
+        color: white;
       }
       .sidebar-logo span {
         color: #38bdf8;
         font-size: 12px;
+        font-weight: 500;
       }
+
       .nav-lbl {
         font-size: 10px;
         font-weight: 700;
         color: #475569;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        padding: 0 14px;
-        margin: 14px 0 5px;
+        letter-spacing: 1.2px;
+        padding: 0 10px;
+        margin: 12px 0 4px;
       }
       .nav-btn {
         width: 100%;
@@ -66,17 +94,18 @@
         background: none;
         border: none;
         color: #94a3b8;
-        padding: 10px 14px;
+        padding: 10px 12px;
         border-radius: 10px;
-        margin-bottom: 3px;
+        margin-bottom: 2px;
         font-weight: 600;
         font-size: 13.5px;
         transition:
-          background 0.2s,
-          color 0.2s;
+          background 0.15s,
+          color 0.15s;
         cursor: pointer;
         text-decoration: none;
         display: block;
+        line-height: 1.4;
       }
       .nav-btn:hover {
         background: #1e293b;
@@ -92,11 +121,115 @@
         margin: 10px 0;
       }
 
-      /* ── Main ── */
+      /* Кнопка выхода внизу сайдбара */
+      .sidebar-footer {
+        margin-top: auto;
+        padding-top: 16px;
+        border-top: 1px solid #1e293b;
+      }
+      .logout-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        padding: 8px 12px;
+        border-radius: 8px;
+        transition:
+          background 0.15s,
+          color 0.15s;
+      }
+      .logout-btn:hover {
+        background: #1e293b;
+        color: #ef4444;
+      }
+
+      /* ══════════════════════════════
+         MOBILE HEADER + OVERLAY
+      ══════════════════════════════ */
+      .mobile-header {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        background: var(--sidebar-bg);
+        z-index: 999;
+        align-items: center;
+        padding: 0 16px;
+        gap: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+      }
+      .mobile-header h4 {
+        color: white;
+        font-size: 15px;
+        font-weight: 800;
+        flex: 1;
+        margin: 0;
+      }
+      .mobile-header span {
+        color: #38bdf8;
+        font-size: 11px;
+        display: block;
+        font-weight: 500;
+      }
+      .burger-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 8px;
+        transition: background 0.15s;
+      }
+      .burger-btn:hover {
+        background: #1e293b;
+      }
+      .burger-icon {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        width: 22px;
+      }
+      .burger-icon span {
+        display: block;
+        height: 2px;
+        background: white;
+        border-radius: 2px;
+        transition: all 0.3s;
+      }
+      .burger-btn.open .burger-icon span:nth-child(1) {
+        transform: translateY(7px) rotate(45deg);
+      }
+      .burger-btn.open .burger-icon span:nth-child(2) {
+        opacity: 0;
+      }
+      .burger-btn.open .burger-icon span:nth-child(3) {
+        transform: translateY(-7px) rotate(-45deg);
+      }
+
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 998;
+        backdrop-filter: blur(2px);
+      }
+      .sidebar-overlay.show {
+        display: block;
+      }
+
+      /* ══════════════════════════════
+         MAIN CONTENT
+      ══════════════════════════════ */
       .main-content {
-        margin-left: 260px;
-        width: calc(100% - 260px);
+        margin-left: var(--sidebar-w);
         padding: 32px 36px;
+        min-height: 100vh;
+        transition: margin 0.3s;
       }
       .section {
         display: none;
@@ -104,304 +237,146 @@
       .section.active {
         display: block;
       }
+
       .page-title {
-        font-weight: 800;
+        font-weight: 900;
         font-size: 22px;
-        color: #0f172a;
-        margin: 0 0 4px;
+        color: var(--text);
+        margin-bottom: 4px;
       }
       .page-sub {
-        color: #64748b;
+        color: var(--muted);
         font-size: 13px;
-        margin: 0 0 24px;
-      }
-      .card-st {
-        background: white;
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-        border: 1px solid #e2e8f0;
-      }
-
-      /* ── Toast ── */
-      #toast-wrap {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-      .toast-item {
-        background: white;
-        border-radius: 12px;
-        padding: 13px 18px;
-        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
-        border-left: 4px solid #22c55e;
-        min-width: 270px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 14px;
-        font-weight: 500;
-        animation: toastIn 0.25s ease;
-      }
-      .toast-item.error {
-        border-color: #ef4444;
-      }
-      .toast-item.info {
-        border-color: #3b82f6;
-      }
-      @keyframes toastIn {
-        from {
-          transform: translateX(110%);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
-
-      /* ── Modals ── */
-      .m-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.55);
-        z-index: 5000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        backdrop-filter: blur(2px);
-      }
-      .m-box {
-        background: white;
-        border-radius: 20px;
-        padding: 30px;
-        width: 100%;
-        max-width: 460px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-      }
-      .m-box h5 {
-        font-weight: 800;
-        margin: 0 0 22px;
-        font-size: 17px;
-      }
-      .m-label {
-        font-size: 12px;
-        font-weight: 700;
-        color: #374151;
-        margin-bottom: 4px;
-        display: block;
-      }
-      .m-input {
-        border-radius: 10px;
-        border: 1.5px solid #e2e8f0;
-        padding: 9px 13px;
-        font-size: 14px;
-        width: 100%;
-        outline: none;
-        transition: border 0.2s;
-        margin-bottom: 12px;
-      }
-      .m-input:focus {
-        border-color: var(--accent);
-      }
-      .m-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 20px;
-      }
-      .m-actions .btn {
-        flex: 1;
-        border-radius: 10px;
-        font-weight: 700;
-        padding: 10px;
-      }
-      .c-box {
-        background: white;
-        border-radius: 20px;
-        padding: 28px;
-        width: 100%;
-        max-width: 380px;
-        text-align: center;
-      }
-      .c-box .c-icon {
-        font-size: 42px;
-        margin-bottom: 10px;
-      }
-      .c-box h5 {
-        font-weight: 800;
-        margin: 0 0 8px;
-      }
-      .c-box p {
-        color: #64748b;
-        font-size: 13px;
-        margin: 0 0 22px;
-      }
-      .c-actions {
-        display: flex;
-        gap: 10px;
-      }
-      .c-actions .btn {
-        flex: 1;
-        border-radius: 10px;
-        font-weight: 700;
-        padding: 10px;
-      }
-
-      /* ── Loader ── */
-      #loader {
-        position: fixed;
-        inset: 0;
-        background: rgba(255, 255, 255, 0.65);
-        z-index: 4000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        backdrop-filter: blur(1px);
-      }
-      .spinner {
-        width: 42px;
-        height: 42px;
-        border: 4px solid #e2e8f0;
-        border-top-color: var(--accent);
-        border-radius: 50%;
-        animation: spin 0.7s linear infinite;
-      }
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      /* ── Stats ── */
-      .stats-bar {
-        display: flex;
-        gap: 14px;
         margin-bottom: 24px;
       }
+
+      /* ══════════════════════════════
+         CARDS
+      ══════════════════════════════ */
+      .card-st {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--border);
+      }
+
+      /* ══════════════════════════════
+         STATS BAR
+      ══════════════════════════════ */
+      .stats-bar {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+      }
       .stat-card {
-        flex: 1;
-        background: white;
+        background: var(--card);
         border-radius: 14px;
-        padding: 16px 20px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
       }
       .stat-card .val {
-        font-size: 26px;
-        font-weight: 800;
-        color: #1e293b;
+        font-size: 24px;
+        font-weight: 900;
+        color: var(--text);
       }
       .stat-card .lbl {
         font-size: 11px;
-        color: #94a3b8;
+        color: var(--muted);
         font-weight: 600;
         margin-top: 2px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
       }
       .stat-card .ico {
-        font-size: 20px;
+        font-size: 18px;
         float: right;
       }
 
-      /* ── Search ── */
+      /* ══════════════════════════════
+         SEARCH
+      ══════════════════════════════ */
       .search-wrap {
         position: relative;
-        margin-bottom: 22px;
+        margin-bottom: 20px;
       }
       .search-wrap .s-icon {
         position: absolute;
-        left: 16px;
+        left: 14px;
         top: 50%;
         transform: translateY(-50%);
-        font-size: 17px;
+        font-size: 16px;
         pointer-events: none;
       }
       .search-wrap input {
-        padding-left: 46px;
-        border-radius: 14px;
-        border: 2px solid #e2e8f0;
+        padding-left: 44px;
+        border-radius: 12px;
+        border: 2px solid var(--border);
         font-size: 15px;
-        height: 50px;
+        height: 48px;
         width: 100%;
         outline: none;
         transition: border 0.2s;
-        background: white;
+        background: var(--card);
+        font-family: inherit;
       }
       .search-wrap input:focus {
         border-color: var(--accent);
       }
 
-      /* ── Results header ── */
-      .results-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-      }
-      .results-header h5 {
-        margin: 0;
-        font-weight: 700;
-        color: #1e293b;
-      }
-      .results-count {
-        font-size: 13px;
-        color: #94a3b8;
-        font-weight: 600;
-      }
-
-      /* ── Student cards ── */
+      /* ══════════════════════════════
+         STUDENT CARDS GRID
+      ══════════════════════════════ */
       .students-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(295px, 1fr));
-        gap: 14px;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 12px;
       }
       .stu-card {
-        background: white;
-        border-radius: 16px;
-        border: 1px solid #e8edf5;
-        padding: 18px;
+        background: var(--card);
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        padding: 16px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         transition:
           transform 0.15s,
           box-shadow 0.15s;
       }
       .stu-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 24px rgba(79, 70, 229, 0.12);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(79, 70, 229, 0.1);
         border-color: #c7d2fe;
       }
       .stu-card-top {
         display: flex;
         align-items: center;
         gap: 12px;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
       }
       .stu-avatar {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
+        width: 42px;
+        height: 42px;
+        border-radius: 11px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 800;
         color: white;
         flex-shrink: 0;
       }
       .stu-card-info h6 {
-        margin: 0;
-        font-size: 13.5px;
+        font-size: 13px;
         font-weight: 700;
-        color: #1e293b;
+        color: var(--text);
         line-height: 1.3;
+        margin: 0;
       }
       .group-badge {
         display: inline-block;
-        margin-top: 4px;
+        margin-top: 3px;
         background: #ede9fe;
         color: #6d28d9;
         font-size: 11px;
@@ -412,16 +387,16 @@
       .stu-meta {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
-        margin-bottom: 12px;
+        gap: 5px;
+        margin-bottom: 10px;
       }
       .stu-meta-item {
-        font-size: 11.5px;
-        color: #64748b;
+        font-size: 11px;
+        color: var(--muted);
         background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 7px;
-        padding: 3px 9px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 2px 8px;
       }
       .stu-meta-item span {
         font-weight: 700;
@@ -440,9 +415,10 @@
         font-weight: 700;
         cursor: pointer;
         transition: opacity 0.15s;
+        font-family: inherit;
       }
       .stu-actions button:hover {
-        opacity: 0.82;
+        opacity: 0.8;
       }
       .btn-common {
         background: #1e293b;
@@ -457,18 +433,20 @@
         color: white;
       }
 
-      /* ── Pagination ── */
+      /* ══════════════════════════════
+         PAGINATION
+      ══════════════════════════════ */
       .pag-wrap {
         display: flex;
-        gap: 6px;
+        gap: 5px;
         flex-wrap: wrap;
         align-items: center;
-        margin-top: 22px;
-        padding-top: 20px;
-        border-top: 1px solid #e2e8f0;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
       }
       .pag-btn {
-        border: 1.5px solid #e2e8f0;
+        border: 1.5px solid var(--border);
         border-radius: 8px;
         padding: 6px 12px;
         font-size: 13px;
@@ -478,6 +456,7 @@
         color: #374151;
         min-width: 36px;
         transition: background 0.15s;
+        font-family: inherit;
       }
       .pag-btn:hover:not(:disabled) {
         background: #f1f5f9;
@@ -486,36 +465,25 @@
         background: var(--accent);
         color: white;
         border-color: var(--accent);
-        font-weight: 800;
       }
       .pag-btn:disabled {
         opacity: 0.4;
         cursor: default;
       }
       .pag-info {
-        font-size: 13px;
-        color: #94a3b8;
-        margin-left: 6px;
+        font-size: 12px;
+        color: var(--muted);
+        margin-left: 4px;
       }
 
-      /* ── Empty ── */
-      .empty-state {
-        text-align: center;
-        padding: 56px 20px;
-        color: #94a3b8;
-        grid-column: 1/-1;
-      }
-      .empty-state .ico {
-        font-size: 44px;
-        margin-bottom: 10px;
-      }
-
-      /* ── Groups list ── */
+      /* ══════════════════════════════
+         GROUPS
+      ══════════════════════════════ */
       .g-item {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 9px 13px;
+        padding: 9px 12px;
         border-radius: 10px;
         cursor: pointer;
         transition: background 0.15s;
@@ -524,7 +492,7 @@
       }
       .g-item:hover {
         background: #f1f5f9;
-        border-color: #e2e8f0;
+        border-color: var(--border);
       }
       .g-item.active {
         background: #ede9fe;
@@ -536,11 +504,82 @@
         font-size: 13px;
       }
 
-      /* ── Dropzone ── */
+      /* ══════════════════════════════
+         JOURNAL TABLE
+      ══════════════════════════════ */
+      .stats-dashboard {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .table-journal th,
+      .table-journal td {
+        padding: 4px;
+        font-size: 11px;
+        border: 1px solid #e2e8f0;
+        width: 28px;
+        height: 28px;
+        text-align: center;
+        vertical-align: middle;
+      }
+      .fio-col {
+        text-align: left !important;
+        min-width: 180px !important;
+        font-size: 12px !important;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .present {
+        background-color: #22c55e !important;
+        color: white;
+      }
+      .late {
+        background-color: #f59e0b !important;
+        color: white;
+      }
+      .cell-time {
+        display: block;
+        font-size: 9px;
+        line-height: 1;
+        margin-top: 2px;
+        font-weight: 700;
+        opacity: 0.9;
+      }
+      .weekend-cell {
+        background-color: #fef2f2 !important;
+      }
+      .weekend-header {
+        background-color: #fee2e2 !important;
+        color: #991b1b !important;
+      }
+      .student-stats {
+        font-size: 10px;
+        color: var(--muted);
+        margin-top: 3px;
+        display: flex;
+        gap: 6px;
+      }
+      .s-present {
+        color: #16a34a;
+        font-weight: 700;
+      }
+      .s-late {
+        color: #dc2626;
+        font-weight: 700;
+      }
+      .s-absent {
+        color: #ef4444;
+        font-weight: 700;
+      }
+
+      /* ══════════════════════════════
+         DROPZONE
+      ══════════════════════════════ */
       .dropzone {
         border: 2px dashed #c7d2fe;
-        border-radius: 14px;
-        padding: 36px 20px;
+        border-radius: 12px;
+        padding: 32px 20px;
         text-align: center;
         cursor: pointer;
         transition:
@@ -554,59 +593,23 @@
         background: #eef2ff;
       }
       .dropzone .dz-icon {
-        font-size: 34px;
-        margin-bottom: 8px;
+        font-size: 30px;
+        margin-bottom: 6px;
       }
       .dropzone .dz-text {
         font-size: 13px;
-        color: #64748b;
+        color: var(--muted);
       }
       .dropzone .dz-name {
         font-size: 13px;
         font-weight: 700;
         color: var(--accent);
-        margin-top: 6px;
+        margin-top: 4px;
       }
 
-      /* ── Journal ── */
-      .table-journal th,
-      .table-journal td {
-        padding: 4px;
-        font-size: 11px;
-        border: 1px solid #dee2e6;
-        width: 26px;
-        height: 26px;
-        text-align: center;
-      }
-      .present {
-        background-color: #22c55e !important;
-        color: white;
-      }
-      .late {
-        background-color: #f59e0b !important;
-        color: white;
-      }
-      .absent {
-        background-color: #ef4444 !important;
-        color: #cbd5e1;
-      }
-      .cell-time {
-        display: block;
-        font-size: 9px;
-        line-height: 1;
-        margin-top: 2px;
-        opacity: 0.95;
-        font-weight: 700;
-      }
-      .fio-col {
-        text-align: left !important;
-        width: 200px !important;
-        font-size: 12px !important;
-        font-weight: 600;
-        white-space: nowrap;
-      }
-
-      /* ── Prof badge ── */
+      /* ══════════════════════════════
+         PROF BADGE
+      ══════════════════════════════ */
       .bp {
         display: inline-block;
         background: #dcfce7;
@@ -620,16 +623,408 @@
         background: #fee2e2;
         color: #b91c1c;
       }
+
+      /* ══════════════════════════════
+         MODALS
+      ══════════════════════════════ */
+      .m-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        z-index: 5000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        backdrop-filter: blur(2px);
+      }
+      .m-box {
+        background: white;
+        border-radius: 18px;
+        padding: 24px;
+        width: 100%;
+        max-width: 460px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      .m-box h5 {
+        font-weight: 800;
+        margin-bottom: 18px;
+        font-size: 16px;
+      }
+      .m-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #374151;
+        margin-bottom: 4px;
+        display: block;
+      }
+      .m-input {
+        border-radius: 10px;
+        border: 1.5px solid var(--border);
+        padding: 9px 12px;
+        font-size: 14px;
+        width: 100%;
+        outline: none;
+        transition: border 0.2s;
+        margin-bottom: 10px;
+        font-family: inherit;
+      }
+      .m-input:focus {
+        border-color: var(--accent);
+      }
+      .m-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .m-actions .btn {
+        flex: 1;
+        border-radius: 10px;
+        font-weight: 700;
+        padding: 10px;
+      }
+      .c-box {
+        background: white;
+        border-radius: 18px;
+        padding: 24px;
+        width: 100%;
+        max-width: 360px;
+        text-align: center;
+      }
+      .c-box .c-icon {
+        font-size: 40px;
+        margin-bottom: 8px;
+      }
+      .c-box h5 {
+        font-weight: 800;
+        margin-bottom: 6px;
+      }
+      .c-box p {
+        color: var(--muted);
+        font-size: 13px;
+        margin-bottom: 18px;
+      }
+      .c-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .c-actions .btn {
+        flex: 1;
+        border-radius: 10px;
+        font-weight: 700;
+        padding: 10px;
+      }
+
+      /* ══════════════════════════════
+         TOAST
+      ══════════════════════════════ */
+      #toast-wrap {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast-item {
+        background: white;
+        border-radius: 12px;
+        padding: 12px 16px;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
+        border-left: 4px solid var(--success);
+        min-width: 240px;
+        max-width: 320px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        animation: toastIn 0.25s ease;
+      }
+      .toast-item.error {
+        border-color: var(--danger);
+      }
+      .toast-item.info {
+        border-color: #3b82f6;
+      }
+      @keyframes toastIn {
+        from {
+          transform: translateX(110%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      /* ══════════════════════════════
+         LOADER
+      ══════════════════════════════ */
+      #loader {
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.65);
+        z-index: 4000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(1px);
+      }
+      .spinner {
+        width: 42px;
+        height: 42px;
+        border: 4px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ══════════════════════════════
+         EMPTY STATE
+      ══════════════════════════════ */
+      .empty-state {
+        text-align: center;
+        padding: 48px 20px;
+        color: var(--muted);
+        grid-column: 1/-1;
+      }
+      .empty-state .ico {
+        font-size: 40px;
+        margin-bottom: 10px;
+      }
+
+      /* ══════════════════════════════
+         RESULTS HEADER
+      ══════════════════════════════ */
+      .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+      .results-header h5 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 15px;
+      }
+      .results-count {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      /* ══════════════════════════════
+         RESPONSIVE — TABLET (≤992px)
+      ══════════════════════════════ */
+      @media (max-width: 992px) {
+        .sidebar {
+          transform: translateX(-100%);
+          box-shadow: none;
+        }
+        .sidebar.open {
+          transform: translateX(0);
+          box-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
+        }
+        .mobile-header {
+          display: flex;
+        }
+        .main-content {
+          margin-left: 0;
+          padding: 80px 16px 24px;
+        }
+
+        .stats-bar {
+          grid-template-columns: repeat(3, 1fr);
+          gap: 8px;
+        }
+        .stat-card .val {
+          font-size: 20px;
+        }
+        .stat-card {
+          padding: 12px 14px;
+        }
+
+        .stats-dashboard {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 8px;
+        }
+      }
+
+      /* ══════════════════════════════
+         RESPONSIVE — MOBILE (≤576px)
+      ══════════════════════════════ */
+      @media (max-width: 576px) {
+        .main-content {
+          padding: 68px 12px 24px;
+        }
+
+        /* Stats — 2 колонки на телефоне */
+        .stats-bar {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .stats-bar .stat-card:last-child {
+          grid-column: 1 / -1;
+        }
+        .stat-card .val {
+          font-size: 22px;
+        }
+
+        /* Журнал — 4 статкарточки в 2 ряда */
+        .stats-dashboard {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        /* Карточки студентов — 1 колонка */
+        .students-grid {
+          grid-template-columns: 1fr;
+        }
+
+        /* Кнопки справок — крупнее для пальца */
+        .stu-actions button {
+          padding: 9px 4px;
+          font-size: 12px;
+        }
+
+        /* Группы — скрываем таблицу, показываем панель полностью */
+        .col-md-3 {
+          margin-bottom: 12px;
+        }
+        #group-details-card .table-responsive {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        /* Журнал таблица — горизонтальный скролл */
+        .table-responsive {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .table-journal {
+          min-width: 700px;
+        }
+
+        /* Модальное окно — на весь экран снизу */
+        .m-overlay {
+          align-items: flex-end;
+          padding: 0;
+        }
+        .m-box {
+          border-radius: 20px 20px 0 0;
+          max-width: 100%;
+          max-height: 85vh;
+          padding: 20px 16px 32px;
+        }
+
+        /* Форма настроек — вертикальная */
+        .row.g-3 > [class*="col-"] {
+          padding: 0;
+        }
+
+        /* Пагинация компактнее */
+        .pag-wrap {
+          gap: 4px;
+        }
+        .pag-btn {
+          padding: 5px 9px;
+          font-size: 12px;
+          min-width: 32px;
+        }
+        .pag-info {
+          display: none;
+        }
+
+        /* Тост — во всю ширину */
+        #toast-wrap {
+          left: 12px;
+          right: 12px;
+          top: 70px;
+        }
+        .toast-item {
+          min-width: unset;
+          max-width: 100%;
+        }
+
+        /* Заголовок страницы */
+        .page-title {
+          font-size: 19px;
+        }
+        .page-sub {
+          font-size: 12px;
+          margin-bottom: 16px;
+        }
+
+        /* Кнопка в journal section */
+        #section-journal .d-flex.justify-content-between {
+          flex-direction: column;
+          gap: 8px;
+        }
+        #section-journal .d-flex.justify-content-between a {
+          width: 100%;
+          text-align: center;
+        }
+
+        /* Journal controls */
+        #section-journal .card-st .row .col-md-4.d-flex {
+          flex-direction: row;
+        }
+      }
+
+      /* ══════════════════════════════
+         TOUCH-FRIENDLY INPUTS
+      ══════════════════════════════ */
+      @media (max-width: 768px) {
+        .form-select,
+        .form-control {
+          font-size: 16px !important; /* Предотвращает zoom на iOS */
+          border-radius: 10px;
+        }
+        .btn {
+          font-size: 14px;
+        }
+        input[type="text"],
+        input[type="password"],
+        input[type="month"],
+        input[type="time"] {
+          font-size: 16px !important;
+        }
+      }
     </style>
   </head>
   <body>
-    <!-- TOAST -->
+    <!-- ══ TOAST ══ -->
     <div id="toast-wrap"></div>
 
-    <!-- LOADER -->
+    <!-- ══ LOADER ══ -->
     <div id="loader" style="display: none"><div class="spinner"></div></div>
 
-    <!-- EDIT MODAL -->
+    <!-- ══ MOBILE HEADER ══ -->
+    <div class="mobile-header">
+      <button class="burger-btn" id="burger-btn" onclick="toggleSidebar()">
+        <div class="burger-icon"><span></span><span></span><span></span></div>
+      </button>
+      <div>
+        <h4>ПРОФЛИЦЕЙ №3</h4>
+        <span id="mobile-section-label">Реестр и Справки</span>
+      </div>
+    </div>
+
+    <!-- ══ SIDEBAR OVERLAY ══ -->
+    <div
+      class="sidebar-overlay"
+      id="sidebar-overlay"
+      onclick="closeSidebar()"
+    ></div>
+
+    <!-- ══ EDIT MODAL ══ -->
     <div
       class="m-overlay"
       id="edit-modal"
@@ -649,7 +1044,7 @@
           placeholder="01.01.2007"
         />
         <label class="m-label">ИНН</label>
-        <input type="text" id="e-inn" class="m-input" />
+        <input type="text" id="e-inn" class="m-input" inputmode="numeric" />
         <label class="m-label">Поименный номер</label>
         <input type="text" id="e-lycid" class="m-input" />
         <div class="m-actions">
@@ -661,7 +1056,7 @@
       </div>
     </div>
 
-    <!-- CONFIRM MODAL -->
+    <!-- ══ CONFIRM MODAL ══ -->
     <div class="m-overlay" id="confirm-modal" style="display: none">
       <div class="c-box">
         <div class="c-icon" id="c-icon">⚠️</div>
@@ -674,38 +1069,59 @@
       </div>
     </div>
 
-    <!-- SIDEBAR -->
-    <div class="sidebar">
+    <!-- ══ SIDEBAR ══ -->
+    <div class="sidebar" id="sidebar">
       <div class="sidebar-logo">
         <h4>ПРОФЛИЦЕЙ №3</h4>
         <span>Учебная часть</span>
       </div>
       <div class="nav-lbl">Основное</div>
-      <button class="nav-btn active" onclick="showSection('search', this)">
+      <button
+        class="nav-btn active"
+        onclick="showSection('search', this, 'Реестр и Справки')"
+      >
         🔍 Реестр и Справки
       </button>
-      <button class="nav-btn" onclick="showSection('groups-man', this)">
+      <button
+        class="nav-btn"
+        onclick="showSection('groups-man', this, 'Списки групп')"
+      >
         📂 Списки групп
       </button>
-      <button class="nav-btn" onclick="showSection('journal', this)">
+      <button
+        class="nav-btn"
+        onclick="showSection('journal', this, 'Журнал СКУД')"
+      >
         📅 Журнал СКУД
       </button>
       <div class="nav-lbl">Документы</div>
-      <button class="nav-btn" onclick="showSection('food', this)">
+      <button
+        class="nav-btn"
+        onclick="showSection('food', this, 'Ведомость питания')"
+      >
         🍱 Ведомость питания
       </button>
-      <button class="nav-btn" onclick="showSection('import', this)">
+      <button
+        class="nav-btn"
+        onclick="showSection('import', this, 'Импорт данных')"
+      >
         📥 Импорт данных
       </button>
       <div class="nav-lbl">Настройки</div>
-      <button class="nav-btn" onclick="showSection('group-settings', this)">
+      <button
+        class="nav-btn"
+        onclick="showSection('group-settings', this, 'Настройка групп')"
+      >
         ⚙️ Настройка групп
       </button>
       <hr class="nav-divider" />
       <a href="/admin/events" class="nav-btn">📡 СКУД события</a>
+      <div class="sidebar-footer">
+        <a href="/logout" class="logout-btn">🚪 Выйти</a>
+      </div>
     </div>
 
-    <!-- MAIN -->
+    <!-- ══ MAIN ══ -->
     <div class="main-content">
       <!-- РЕЕСТР -->
       <div id="section-search" class="section active">
@@ -715,7 +1131,7 @@
           <div class="stat-card">
             <div class="ico">👥</div>
             <div class="val" id="stat-total">—</div>
-            <div class="lbl">Всего студентов</div>
+            <div class="lbl">Всего</div>
           </div>
           <div class="stat-card">
             <div class="ico">📂</div>
@@ -725,7 +1141,7 @@
           <div class="stat-card">
             <div class="ico">✅</div>
             <div class="val" id="stat-today">—</div>
-            <div class="lbl">Присутствуют сегодня</div>
+            <div class="lbl">Сегодня</div>
           </div>
         </div>
         <div class="search-wrap">
@@ -750,22 +1166,26 @@
         <p class="page-title">Управление группами</p>
         <p class="page-sub">Просмотр и редактирование списков студентов</p>
         <div class="row g-3">
-          <div class="col-md-3">
+          <div class="col-md-3 col-12">
             <div class="card-st">
-              <h6 class="fw-bold mb-3">Группы</h6>
+              <h6 class="fw-bold mb-3" style="font-size: 13px">Группы</h6>
               <div id="groups-list-container"></div>
             </div>
           </div>
-          <div class="col-md-9">
+          <div class="col-md-9 col-12">
             <div id="group-details-card" class="card-st d-none">
               <div
-                class="d-flex justify-content-between align-items-center mb-4"
+                class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2"
               >
                 <div>
-                  <h4 class="fw-bold m-0" id="current-group-title"></h4>
+                  <h4
+                    class="fw-bold m-0"
+                    id="current-group-title"
+                    style="font-size: 17px"
+                  ></h4>
                   <span class="text-muted small" id="current-group-prof"></span>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
                   <button
                     class="btn btn-sm btn-outline-secondary"
                     onclick="confirmClearStudents()"
@@ -776,19 +1196,22 @@
                     class="btn btn-sm btn-danger"
                     onclick="confirmDeleteGroup()"
                   >
-                    🗑️ Удалить группу
+                    🗑️ Удалить
                   </button>
                 </div>
               </div>
               <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table
+                  class="table table-hover align-middle mb-0"
+                  style="font-size: 13px"
+                >
                   <thead class="table-light">
                     <tr>
                       <th>#</th>
                       <th>ФИО</th>
-                      <th>Дата рождения</th>
+                      <th class="d-none d-md-table-cell">Дата рождения</th>
                       <th>ИНН</th>
-                      <th>Поименный №</th>
+                      <th class="d-none d-sm-table-cell">Поименный №</th>
                       <th class="text-end">Действия</th>
                     </tr>
                   </thead>
@@ -800,8 +1223,8 @@
               id="group-empty-hint"
               class="card-st text-center py-5 text-muted"
             >
-              <div style="font-size: 34px; margin-bottom: 8px">📂</div>
-              <p class="mb-0 small">Выберите группу из списка слева</p>
+              <div style="font-size: 32px; margin-bottom: 8px">📂</div>
+              <p class="mb-0 small">Выберите группу из списка</p>
             </div>
           </div>
         </div>
@@ -809,49 +1232,71 @@
 
       <!-- ЖУРНАЛ -->
       <div id="section-journal" class="section">
-        <p class="page-title">Журнал посещаемости</p>
-        <p class="page-sub">Данные СКУД по группе за выбранный месяц</p>
+        <div
+          class="d-flex justify-content-between align-items-start mb-1 flex-wrap gap-2"
+        >
+          <div>
+            <p class="page-title">Журнал посещаемости</p>
+            <p class="page-sub">Данные СКУД по группе за выбранный месяц</p>
+          </div>
+          <a
+            href="/journal.html"
+            target="_blank"
+            class="btn btn-outline-primary btn-sm fw-bold"
+            >🔗 Публичная ссылка</a
+          >
+        </div>
         <div class="card-st mb-3">
-          <div class="row g-3 align-items-end">
-            <div class="col-md-4">
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-4">
               <label class="form-label fw-bold small mb-1">Группа</label>
               <select id="j-group-select" class="form-select"></select>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
               <label class="form-label fw-bold small mb-1">Месяц</label>
               <input type="month" id="j-month" class="form-control" />
             </div>
-            <div class="col-md-2">
+            <div class="col-6 col-md-5 d-flex gap-2">
               <button
-                class="btn btn-primary w-100 fw-bold"
+                class="btn btn-primary flex-fill fw-bold"
                 onclick="loadJournal()"
               >
                 📊 Показать
               </button>
-            </div>
-            <div class="col-md-3">
-              <div
-                style="
-                  font-size: 12px;
-                  display: flex;
-                  gap: 6px;
-                  flex-wrap: wrap;
-                "
+              <button
+                class="btn btn-success flex-fill fw-bold"
+                onclick="downloadJournalExcel()"
               >
-                <span class="badge" style="background: #22c55e"
-                  >● Присутствует</span
-                >
-                <span class="badge" style="background: #f59e0b">● Опоздал</span>
-                <span class="badge" style="background: #ef4444"
-                  >● Отсутствует</span
-                >
-              </div>
+                📥 Excel
+              </button>
             </div>
+          </div>
+        </div>
+        <div class="stats-dashboard" id="matrix-stats" style="display: none">
+          <div class="stat-card">
+            <div class="ico">👥</div>
+            <div class="val" id="stat-j-total">0</div>
+            <div class="lbl">Всего</div>
+          </div>
+          <div class="stat-card">
+            <div class="ico" style="color: #16a34a">✅</div>
+            <div class="val" id="stat-j-today" style="color: #16a34a">0</div>
+            <div class="lbl">Присутствуют</div>
+          </div>
+          <div class="stat-card">
+            <div class="ico" style="color: #ef4444">❌</div>
+            <div class="val" id="stat-j-absent" style="color: #ef4444">0</div>
+            <div class="lbl">Отсутствуют</div>
+          </div>
+          <div class="stat-card">
+            <div class="ico" style="color: #f59e0b">⏰</div>
+            <div class="val" id="stat-j-lates" style="color: #f59e0b">0</div>
+            <div class="lbl">Опозданий</div>
           </div>
         </div>
         <div class="card-st p-0 table-responsive">
           <div id="journal-hint" class="text-center py-5 text-muted">
-            <div style="font-size: 30px; margin-bottom: 6px">📅</div>
+            <div style="font-size: 28px; margin-bottom: 6px">📅</div>
             <p class="mb-0 small">
               Выберите группу и месяц, затем нажмите «Показать»
             </p>
@@ -882,7 +1327,7 @@
           </div>
           <button
             class="btn btn-success w-100 py-3 fw-bold"
-            style="border-radius: 12px"
+            style="border-radius: 12px; font-size: 15px"
             onclick="downloadFoodReport()"
           >
             📥 СКАЧАТЬ DOCX
@@ -895,7 +1340,7 @@
         <p class="page-title">Импорт данных</p>
         <p class="page-sub">Загрузка списка группы из файла Excel</p>
         <div class="row g-3">
-          <div class="col-md-6">
+          <div class="col-12 col-md-6">
             <div class="card-st">
               <div class="mb-3">
                 <label class="form-label fw-bold small">Название группы</label>
@@ -942,7 +1387,7 @@
               </div>
               <button
                 class="btn btn-primary w-100 py-2 fw-bold"
-                style="border-radius: 12px"
+                style="border-radius: 12px; font-size: 15px"
                 id="import-btn"
                 onclick="processImport()"
               >
@@ -950,36 +1395,40 @@
               </button>
             </div>
           </div>
-          <div class="col-md-6">
+          <div class="col-12 col-md-6">
             <div class="card-st" style="background: #f8fafc">
-              <h6 class="fw-bold mb-3">📋 Формат файла Excel</h6>
-              <table
-                class="table table-sm table-bordered mb-3"
-                style="font-size: 13px"
-              >
-                <thead class="table-light">
-                  <tr>
-                    <th>A</th>
-                    <th>B</th>
-                    <th>C</th>
-                    <th>D</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>ФИО</td>
-                    <td>Дата рождения</td>
-                    <td>ИНН</td>
-                    <td>Поименный №</td>
-                  </tr>
-                  <tr class="text-muted">
-                    <td><em>Иванов Иван</em></td>
-                    <td><em>01.01.2007</em></td>
-                    <td><em>12345678901234</em></td>
-                    <td><em>265748</em></td>
-                  </tr>
-                </tbody>
-              </table>
+              <h6 class="fw-bold mb-3" style="font-size: 13px">
+                📋 Формат файла Excel
+              </h6>
+              <div class="table-responsive">
+                <table
+                  class="table table-sm table-bordered mb-3"
+                  style="font-size: 13px"
+                >
+                  <thead class="table-light">
+                    <tr>
+                      <th>A</th>
+                      <th>B</th>
+                      <th>C</th>
+                      <th>D</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>ФИО</td>
+                      <td>Дата рождения</td>
+                      <td>ИНН</td>
+                      <td>Поименный №</td>
+                    </tr>
+                    <tr class="text-muted">
+                      <td><em>Иванов Иван</em></td>
+                      <td><em>01.01.2007</em></td>
+                      <td><em>12345678901234</em></td>
+                      <td><em>265748</em></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
               <div
                 class="alert alert-warning py-2"
                 style="font-size: 12px; border-radius: 10px"
@@ -993,60 +1442,49 @@
 
       <!-- НАСТРОЙКА ГРУПП -->
       <div id="section-group-settings" class="section">
-        <p class="page-title">Настройка групп</p>
-        <p class="page-sub">
-          Привяжите профессию к группе — это нужно для корректной печати справок
-        </p>
+        <p class="page-title">Настройки групп</p>
+        <p class="page-sub">Профессия и время начала занятий для СКУД</p>
         <div class="row g-3">
-          <div class="col-md-5">
+          <div class="col-12 col-md-5">
             <div class="card-st">
-              <h6 class="fw-bold mb-4">Изменить профессию группы</h6>
               <div class="mb-3">
-                <label class="form-label fw-bold small">Группа</label>
+                <label class="form-label fw-bold small">Выберите группу</label>
                 <select
                   id="gs-group"
                   class="form-select"
                   onchange="onGsSelect()"
-                  style="border-radius: 10px"
                 ></select>
               </div>
-              <div id="gs-cur-block" class="mb-3" style="display: none">
-                <label class="form-label fw-bold small"
-                  >Текущая профессия</label
-                >
-                <div
-                  id="gs-cur"
-                  class="p-3 rounded-3"
-                  style="
-                    background: #f8fafc;
-                    border: 1px solid #e2e8f0;
-                    font-size: 13px;
-                  "
-                ></div>
+              <div class="mb-3">
+                <label class="form-label fw-bold small">Профессия</label>
+                <select id="gs-prof" class="form-select"></select>
               </div>
               <div class="mb-4">
                 <label class="form-label fw-bold small"
-                  >Назначить профессию</label
+                  >Время начала смены</label
                 >
-                <select
-                  id="gs-prof"
-                  class="form-select"
-                  style="border-radius: 10px"
-                ></select>
+                <input
+                  type="time"
+                  id="gs-shift"
+                  class="form-control"
+                  value="09:30"
+                />
+                <div class="small text-muted mt-1">
+                  Опоздания считаются от этого времени.
+                </div>
               </div>
               <button
-                class="btn btn-primary w-100 py-2 fw-bold"
+                class="btn btn-primary w-100 fw-bold py-2"
                 style="border-radius: 12px"
-                onclick="saveGsProf()"
+                onclick="saveGroupSettings()"
               >
-                💾 Сохранить
+                💾 Сохранить настройки
               </button>
-              <div id="gs-msg" class="mt-3"></div>
             </div>
           </div>
-          <div class="col-md-7">
+          <div class="col-12 col-md-7">
             <div class="card-st">
-              <h6 class="fw-bold mb-3">Все группы</h6>
+              <h6 class="fw-bold mb-3" style="font-size: 13px">Все группы</h6>
               <div class="table-responsive">
                 <table
                   class="table table-hover align-middle mb-0"
@@ -1056,7 +1494,7 @@
                     <tr>
                       <th>Группа</th>
                       <th>Профессия</th>
-                      <th>Срок</th>
+                      <th class="d-none d-sm-table-cell">Срок</th>
                       <th></th>
                     </tr>
                   </thead>
@@ -1068,6 +1506,7 @@
         </div>
       </div>
     </div>
+    <!-- /main-content -->
 
     <script>
       /* ── Globals ── */
@@ -1080,6 +1519,21 @@
         currentPage = 1,
         confirmCb = null;
       const PAGE_SIZE = 60;
+
+      /* ── Sidebar mobile ── */
+      function toggleSidebar() {
+        const sb = document.getElementById("sidebar");
+        const ov = document.getElementById("sidebar-overlay");
+        const btn = document.getElementById("burger-btn");
+        const open = sb.classList.toggle("open");
+        ov.classList.toggle("show", open);
+        btn.classList.toggle("open", open);
+      }
+      function closeSidebar() {
+        document.getElementById("sidebar").classList.remove("open");
+        document.getElementById("sidebar-overlay").classList.remove("show");
+        document.getElementById("burger-btn").classList.remove("open");
+      }
 
       /* ── Helpers ── */
       const AC = [
@@ -1201,7 +1655,7 @@
       }
 
       /* ── Navigation ── */
-      function showSection(id, btn) {
+      function showSection(id, btn, label) {
         document
           .querySelectorAll(".section")
           .forEach((s) => s.classList.remove("active"));
@@ -1210,36 +1664,59 @@
           .querySelectorAll(".nav-btn")
           .forEach((b) => b.classList.remove("active"));
         if (btn) btn.classList.add("active");
+        // Обновляем подпись в мобильном хедере
+        if (label)
+          document.getElementById("mobile-section-label").textContent = label;
         if (id === "groups-man") loadGroupsMan();
         if (id === "journal" || id === "food") loadGroupsList();
         if (id === "import") loadProfessions();
         if (id === "group-settings") loadGroupSettings();
+        closeSidebar();
       }
 
       /* ── Реестр ── */
       async function loadStats() {
         try {
           const [sRes, gRes] = await Promise.all([
-            fetch("/api/admin/search?q=&limit=2000"),
+            fetch("/api/admin/search?q=&limit=60"), // ← берём только первую страницу
             fetch("/api/admin/groups-list"),
           ]);
+
           const sData = await sRes.json();
           const groups = await gRes.json();
-          const students = Array.isArray(sData) ? sData : sData.students || [];
+
+          // Новый формат: { students, total }
+          const students = sData.students || [];
           const total = sData.total ?? students.length;
+
           allStudents = students;
           students.forEach((s) => {
             studentMap[s._id] = s;
           });
+
+          // Статистика
           document.getElementById("stat-total").textContent = total;
           document.getElementById("stat-groups").textContent = groups.length;
+
+          // Считаем присутствующих сегодня
           const today = new Date();
           const dk = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-          document.getElementById("stat-today").textContent = students.filter(
-            (s) =>
-              s.skudDaily?.some((r) => r.date === dk && r.present) ||
-              s.attendance?.some((a) => a.date === dk && a.present),
-          ).length;
+
+          // 🔥 Для подсчёта сегодня нужен отдельный запрос — в первой странице не все студенты
+          const countRes = await fetch(`/api/admin/global-stats`);
+          if (countRes.ok) {
+            const countData = await countRes.json();
+            document.getElementById("stat-today").textContent =
+              countData.presentToday;
+          } else {
+            // Фолбэк — считаем по загруженным
+            document.getElementById("stat-today").textContent = students.filter(
+              (s) =>
+                s.skudDaily?.some((r) => r.date === dk && r.present) ||
+                s.attendance?.some((a) => a.date === dk && a.present),
+            ).length;
+          }
+
           currentPage = 1;
           renderCards(students);
         } catch (e) {
@@ -1257,13 +1734,13 @@
         );
         const data = await res.json();
         const students = Array.isArray(data) ? data : data.students || [];
-        const total = data.total ?? students.length;
         allStudents = students;
         students.forEach((s) => {
           studentMap[s._id] = s;
         });
         currentPage = 1;
-        document.getElementById("stat-total").textContent = total;
+        document.getElementById("stat-total").textContent =
+          data.total ?? students.length;
         renderCards(students);
       }
 
@@ -1274,7 +1751,7 @@
         const items = students.slice(start, start + PAGE_SIZE);
         document.getElementById("results-count").textContent =
           count > 0
-            ? `Показано: ${start + 1}–${Math.min(start + PAGE_SIZE, count)} из ${count}`
+            ? `${start + 1}–${Math.min(start + PAGE_SIZE, count)} из ${count}`
             : "";
         if (!count) {
           document.getElementById("results").innerHTML =
@@ -1288,24 +1765,23 @@
               ini = initials(s.fio || "?");
             const group = s.group ? s.group.name : "Без группы";
             return `<div class="stu-card">
-        <div class="stu-card-top">
-          <div class="stu-avatar" style="background:${color}">${ini}</div>
-          <div class="stu-card-info"><h6>${s.fio}</h6><span class="group-badge">📂 ${group}</span></div>
-        </div>
-        <div class="stu-meta">
-          <div class="stu-meta-item">🎂 <span>${s.birthDate || "—"}</span></div>
-          <div class="stu-meta-item">🪪 <span>${s.inn || "—"}</span></div>
-          <div class="stu-meta-item">№ <span>${s.lyceumId || "—"}</span></div>
-        </div>
-        <div class="stu-actions">
-          <button class="btn-common" onclick="window.open('/api/admin/print/${s._id}/common')">📄 Обычная</button>
-          <button class="btn-army"   onclick="window.open('/api/admin/print/${s._id}/army')">🎖 Военкомат</button>
-          <button class="btn-social" onclick="window.open('/api/admin/print/${s._id}/social')">🏥 Соцфонд</button>
-        </div>
-      </div>`;
+            <div class="stu-card-top">
+              <div class="stu-avatar" style="background:${color}">${ini}</div>
+              <div class="stu-card-info"><h6>${s.fio}</h6><span class="group-badge">📂 ${group}</span></div>
+            </div>
+            <div class="stu-meta">
+              <div class="stu-meta-item">🎂 <span>${s.birthDate || "—"}</span></div>
+              <div class="stu-meta-item">🪪 <span>${s.inn || "—"}</span></div>
+              <div class="stu-meta-item">№ <span>${s.lyceumId || "—"}</span></div>
+            </div>
+            <div class="stu-actions">
+              <button class="btn-common" onclick="window.open('/api/admin/print/${s._id}/common')">📄 Обычная</button>
+              <button class="btn-army"   onclick="window.open('/api/admin/print/${s._id}/army')">🎖 Военкомат</button>
+              <button class="btn-social" onclick="window.open('/api/admin/print/${s._id}/social')">🏥 Соцфонд</button>
+            </div>
+          </div>`;
           })
           .join("");
-        // Пагинация
         const pag = document.getElementById("pagination");
         if (totalPages <= 1) {
           pag.innerHTML = "";
@@ -1321,11 +1797,11 @@
           btns += `<button class="pag-btn ${p === currentPage ? "active" : ""}" onclick="goPage(${p})">${p}</button>`;
         }
         pag.innerHTML = `<div class="pag-wrap">
-      <button class="pag-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? "disabled" : ""}>← Пред</button>
-      ${btns}
-      <button class="pag-btn" onclick="goPage(${currentPage + 1})" ${currentPage === totalPages ? "disabled" : ""}>След →</button>
-      <span class="pag-info">Страница ${currentPage} из ${totalPages} · ${count} студентов</span>
-    </div>`;
+          <button class="pag-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? "disabled" : ""}>←</button>
+          ${btns}
+          <button class="pag-btn" onclick="goPage(${currentPage + 1})" ${currentPage === totalPages ? "disabled" : ""}>→</button>
+          <span class="pag-info">Стр ${currentPage}/${totalPages} · ${count} студентов</span>
+        </div>`;
       }
 
       function goPage(p) {
@@ -1343,9 +1819,9 @@
         document.getElementById("groups-list-container").innerHTML = groups
           .map(
             (g) => `
-      <div class="g-item" id="gi-${g._id}" onclick="viewGroup('${g._id}','${g.name.replace(/'/g, "\\'")}','${(g.profRu || "").replace(/'/g, "\\'")}')">
-        <span class="gname">${g.name}</span>
-      </div>`,
+          <div class="g-item" id="gi-${g._id}" onclick="viewGroup('${g._id}','${g.name.replace(/'/g, "\\'")}','${(g.profRu || "").replace(/'/g, "\\'")}')">
+            <span class="gname">${g.name}</span>
+          </div>`,
           )
           .join("");
       }
@@ -1375,15 +1851,15 @@
               ? students
                   .map(
                     (s, i) => `<tr>
-          <td class="text-muted" style="font-size:12px">${i + 1}</td>
-          <td class="fw-bold">${s.fio}</td>
-          <td style="font-size:13px">${s.birthDate || "—"}</td>
-          <td><code style="font-size:12px">${s.inn || "—"}</code></td>
-          <td><span class="badge bg-secondary">${s.lyceumId || "—"}</span></td>
-          <td class="text-end">
-            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEdit('${s._id}')">✏️</button>
-            <button class="btn btn-sm btn-outline-danger"       onclick="confirmDeleteStudent('${s._id}','${s.fio.replace(/'/g, "\\'")}')">🗑️</button>
-          </td></tr>`,
+              <td class="text-muted" style="font-size:12px">${i + 1}</td>
+              <td class="fw-bold" style="font-size:13px">${s.fio}</td>
+              <td class="d-none d-md-table-cell" style="font-size:12px">${s.birthDate || "—"}</td>
+              <td><code style="font-size:11px">${s.inn || "—"}</code></td>
+              <td class="d-none d-sm-table-cell"><span class="badge bg-secondary">${s.lyceumId || "—"}</span></td>
+              <td class="text-end">
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="openEdit('${s._id}')">✏️</button>
+                <button class="btn btn-sm btn-outline-danger"       onclick="confirmDeleteStudent('${s._id}','${s.fio.replace(/'/g, "\\'")}')">🗑️</button>
+              </td></tr>`,
                   )
                   .join("")
               : `<tr><td colspan="6" class="text-center text-muted py-4">Студентов нет</td></tr>`;
@@ -1414,12 +1890,11 @@
           },
         );
       }
-
       function confirmClearStudents() {
         if (!activeGroupId) return;
         showConfirm(
           "Очистить список?",
-          `Все студенты группы «${document.getElementById("current-group-title").innerText}» будут удалены. Группа останется.`,
+          `Все студенты группы «${document.getElementById("current-group-title").innerText}» будут удалены.`,
           async () => {
             showLoader();
             await fetch(`/api/admin/group/${activeGroupId}/clear`, {
@@ -1438,7 +1913,6 @@
           "btn-warning",
         );
       }
-
       function confirmDeleteStudent(id, fio) {
         showConfirm(
           "Удалить студента?",
@@ -1468,7 +1942,6 @@
             .map((p) => `<option value="${p.id}">${p.ru}</option>`)
             .join("");
       }
-
       function updateDurationHint() {
         const prof = professions.find(
           (p) => p.id == document.getElementById("import-prof-select").value,
@@ -1479,12 +1952,10 @@
           info.classList.remove("d-none");
         }
       }
-
       function onFileSelect(input) {
         document.getElementById("dz-name").textContent =
           input.files[0]?.name || "Файл не выбран";
       }
-
       const dz = document.getElementById("dropzone");
       dz.addEventListener("dragover", (e) => {
         e.preventDefault();
@@ -1534,9 +2005,7 @@
           });
           const data = await res.json();
           if (res.ok) {
-            toast(
-              `Импортировано ${data.created} студентов в группу «${gname}»`,
-            );
+            toast(`Импортировано ${data.created} студентов в «${gname}»`);
             document.getElementById("import-gname").value = "";
             document.getElementById("import-prof-select").value = "";
             document.getElementById("import-file").value = "";
@@ -1570,48 +2039,54 @@
       async function loadJournal() {
         const gid = document.getElementById("j-group-select").value;
         const month = document.getElementById("j-month").value;
-        if (!gid || !month) {
-          toast("Выберите группу и месяц", "info");
-          return;
-        }
+        if (!gid || !month) return toast("Выберите группу и месяц", "error");
         showLoader();
-        try {
-          const res = await fetch(
-            `/api/admin/attendance-matrix/${gid}/${month}`,
-          );
-          const data = await res.json();
-          let h = `<tr><th class="fio-col">ФИО</th>`;
-          for (let i = 1; i <= data.daysInMonth; i++) h += `<th>${i}</th>`;
-          document.getElementById("journal-head").innerHTML = h + `</tr>`;
-          document.getElementById("journal-body").innerHTML = data.matrix
-            .map((r) => {
-              const tds = r.days
-                .map((d) => {
-                  const isP = !!d.present,
-                    isL = !!d.late,
-                    t = d.time || "";
-                  let cls = "absent",
-                    cnt = "";
-                  if (isP) {
-                    cls = isL ? "late" : "present";
-                    cnt = `●${t ? `<span class="cell-time">${t}</span>` : ""}`;
-                  }
-                  const title = isP
-                    ? isL
-                      ? `Опоздал: ${t || "-"}`
-                      : `Пришел: ${t || "-"}`
-                    : "Нет отметки";
-                  return `<td class="${cls}" title="${title}">${cnt}</td>`;
-                })
-                .join("");
-              return `<tr><td class="fio-col">${r.fio}</td>${tds}</tr>`;
-            })
-            .join("");
-          document.getElementById("journal-hint").style.display = "none";
-          document.getElementById("journal-table").style.display = "";
-        } finally {
-          hideLoader();
+        const res = await fetch(`/api/admin/attendance-matrix/${gid}/${month}`);
+        hideLoader();
+        if (!res.ok) return toast("Ошибка загрузки журнала", "error");
+        const data = await res.json();
+        document.getElementById("journal-hint").style.display = "none";
+        document.getElementById("journal-table").style.display = "table";
+        document.getElementById("matrix-stats").style.display = "grid";
+        document.getElementById("stat-j-total").innerText =
+          data.stats.totalStudents;
+        document.getElementById("stat-j-today").innerText =
+          data.stats.presentToday;
+        document.getElementById("stat-j-absent").innerText =
+          data.stats.absentToday;
+        document.getElementById("stat-j-lates").innerText =
+          data.stats.totalLates;
+        let headHtml = `<tr><th class="fio-col">ФИО Студента</th>`;
+        const [y, m] = month.split("-");
+        for (let d = 1; d <= data.daysInMonth; d++) {
+          const dateObj = new Date(Date.UTC(y, m - 1, d));
+          const isWknd = dateObj.getUTCDay() === 0 || dateObj.getUTCDay() === 6;
+          headHtml += `<th class="${isWknd ? "weekend-header" : ""}">${d}</th>`;
         }
+        headHtml += `</tr>`;
+        document.getElementById("journal-head").innerHTML = headHtml;
+        let bodyHtml = "";
+        data.matrix.forEach((row) => {
+          let tr = `<tr><td class="fio-col">
+            <div>${row.fio}</div>
+            <div class="student-stats">
+              <span class="s-present">П:${row.stats.presences}</span>
+              <span class="s-late">О:${row.stats.lates}</span>
+              <span class="s-absent">Н:${row.stats.absences}</span>
+            </div></td>`;
+          row.days.forEach((day) => {
+            const wClass = day.isWeekend ? "weekend-cell" : "";
+            if (!day.present)
+              tr += `<td class="${wClass}" style="color:#cbd5e1">-</td>`;
+            else if (day.late)
+              tr += `<td class="late ${wClass}" title="${day.time}">О<span class="cell-time">${day.time}</span></td>`;
+            else
+              tr += `<td class="present ${wClass}" title="${day.time}">П<span class="cell-time">${day.time}</span></td>`;
+          });
+          tr += `</tr>`;
+          bodyHtml += tr;
+        });
+        document.getElementById("journal-body").innerHTML = bodyHtml;
       }
 
       function downloadFoodReport() {
@@ -1622,6 +2097,14 @@
           return;
         }
         window.open(`/api/admin/report-food/${gid}/${month}`);
+      }
+
+      function downloadJournalExcel() {
+        const gid = document.getElementById("j-group-select").value;
+        const month = document.getElementById("j-month").value;
+        if (!gid || !month)
+          return toast("Сначала выберите группу и месяц", "error");
+        window.open(`/api/admin/export-journal/${gid}/${month}`, "_blank");
       }
 
       /* ── Настройка групп ── */
@@ -1644,21 +2127,18 @@
             .join("");
         renderGsTable();
       }
-
       function renderGsTable() {
         document.getElementById("gs-body").innerHTML = gsGroups
           .map(
-            (g) => `
-      <tr>
-        <td class="fw-bold">${g.name}</td>
-        <td>${g.profRu ? `<span class="bp">${g.profRu}</span>` : `<span class="bp no">Не задана</span>`}</td>
-        <td style="font-size:12px;color:#64748b">${g.duration || "—"}</td>
-        <td><button class="btn btn-outline-primary" style="font-size:11px;padding:2px 8px;border-radius:6px" onclick="gsQuickSelect('${g._id}')">Изменить</button></td>
-      </tr>`,
+            (g) => `<tr>
+          <td class="fw-bold">${g.name}</td>
+          <td>${g.profRu ? `<span class="bp">${g.profRu}</span>` : `<span class="bp no">Не задана</span>`}</td>
+          <td class="d-none d-sm-table-cell" style="font-size:12px;color:var(--muted)">${g.duration || "—"}</td>
+          <td><button class="btn btn-outline-primary" style="font-size:11px;padding:2px 8px;border-radius:6px" onclick="gsQuickSelect('${g._id}')">Изменить</button></td>
+        </tr>`,
           )
           .join("");
       }
-
       function gsQuickSelect(id) {
         document.getElementById("gs-group").value = id;
         onGsSelect();
@@ -1666,49 +2146,30 @@
           .getElementById("gs-group")
           .scrollIntoView({ behavior: "smooth" });
       }
-
       function onGsSelect() {
         const gid = document.getElementById("gs-group").value;
         const g = gsGroups.find((x) => x._id === gid);
-        document.getElementById("gs-cur-block").style.display = "";
-        document.getElementById("gs-cur").innerHTML = g?.profRu
-          ? `<b>${g.profRu}</b><br><span style="color:#64748b">${g.profKg || ""}</span><br><span style="color:#94a3b8;font-size:12px">Срок: ${g.duration || "—"}</span>`
-          : `<span style="color:#b91c1c">Профессия не задана</span>`;
-        document.getElementById("gs-msg").innerHTML = "";
+        if (g) {
+          const p = gsProfessions.find((p) => p.ru === g.profRu);
+          document.getElementById("gs-prof").value = p ? p.id : "";
+          document.getElementById("gs-shift").value = g.shiftStart || "09:30";
+        }
       }
-
-      async function saveGsProf() {
+      async function saveGroupSettings() {
         const gid = document.getElementById("gs-group").value;
         const profId = document.getElementById("gs-prof").value;
-        if (!gid) {
-          toast("Выберите группу", "error");
-          return;
-        }
-        if (!profId) {
-          toast("Выберите профессию", "error");
-          return;
-        }
+        const shiftStart = document.getElementById("gs-shift").value;
+        if (!gid) return toast("Выберите группу", "error");
         showLoader();
-        const res = await fetch(`/api/admin/group/${gid}/set-prof`, {
+        const res = await fetch(`/api/admin/group/${gid}/settings`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ profId }),
+          body: JSON.stringify({ profId, shiftStart }),
         });
         hideLoader();
-        if (res.ok) {
-          const data = await res.json();
-          const g = gsGroups.find((x) => x._id === gid);
-          if (g) {
-            g.profRu = data.profRu;
-            g.profKg = data.profKg;
-            g.duration = data.duration;
-          }
-          onGsSelect();
-          renderGsTable();
-          toast("Профессия сохранена: " + data.profRu);
-        } else {
-          toast("Ошибка сохранения", "error");
-        }
+        res.ok
+          ? toast("Настройки сохранены!")
+          : toast("Ошибка сохранения", "error");
       }
 
       /* ── Init ── */

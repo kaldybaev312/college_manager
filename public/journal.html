@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+    />
+    <title>Журнал посещаемости | ПЛ №3</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --accent: #4f46e5;
+        --bg: #f8fafc;
+        --card: #ffffff;
+        --border: #e2e8f0;
+        --muted: #64748b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        font-family: "Golos Text", "Segoe UI", sans-serif;
+        color: #0f172a;
+        padding-bottom: 40px;
+      }
+
+      .header-area {
+        background: #0f172a;
+        padding: 16px 0;
+        margin-bottom: 24px;
+        text-align: center;
+      }
+      .header-area h2 {
+        margin: 0;
+        font-weight: 900;
+        font-size: 20px;
+        color: white;
+      }
+      .header-area p {
+        margin: 4px 0 0;
+        color: #38bdf8;
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      .container-main {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 12px;
+      }
+
+      .card-st {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+        border: 1px solid var(--border);
+        margin-bottom: 16px;
+      }
+
+      /* Stats */
+      .stats-dashboard {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .stat-card {
+        background: var(--card);
+        border-radius: 14px;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        text-align: center;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      }
+      .stat-card .val {
+        font-size: 22px;
+        font-weight: 900;
+        color: #1e293b;
+      }
+      .stat-card .lbl {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-top: 3px;
+      }
+
+      /* Table */
+      .table-journal th,
+      .table-journal td {
+        padding: 4px;
+        font-size: 11px;
+        border: 1px solid var(--border);
+        width: 28px;
+        height: 28px;
+        text-align: center;
+        vertical-align: middle;
+      }
+      .fio-col {
+        text-align: left !important;
+        min-width: 160px !important;
+        font-size: 12px !important;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .present {
+        background-color: #22c55e !important;
+        color: white;
+      }
+      .late {
+        background-color: #f59e0b !important;
+        color: white;
+      }
+      .cell-time {
+        display: block;
+        font-size: 9px;
+        line-height: 1;
+        margin-top: 2px;
+        font-weight: 700;
+        opacity: 0.9;
+      }
+      .weekend-cell {
+        background-color: #fef2f2 !important;
+      }
+      .weekend-header {
+        background-color: #fee2e2 !important;
+        color: #991b1b !important;
+      }
+      .student-stats {
+        font-size: 10px;
+        color: var(--muted);
+        margin-top: 3px;
+        display: flex;
+        gap: 6px;
+      }
+      .s-present {
+        color: #16a34a;
+        font-weight: 700;
+      }
+      .s-late {
+        color: #dc2626;
+        font-weight: 700;
+      }
+      .s-absent {
+        color: #ef4444;
+        font-weight: 700;
+      }
+
+      /* Loader */
+      #loader {
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.8);
+        z-index: 4000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ── MOBILE ── */
+      @media (max-width: 576px) {
+        .header-area {
+          padding: 14px 0;
+        }
+        .header-area h2 {
+          font-size: 17px;
+        }
+        .stats-dashboard {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .card-st {
+          padding: 14px;
+          border-radius: 12px;
+        }
+        .card-st .row .col-md-3,
+        .card-st .row .col-md-4,
+        .card-st .row .col-md-5 {
+          margin-bottom: 8px;
+        }
+
+        /* Inputs крупнее для пальца */
+        .form-select,
+        .form-control {
+          font-size: 16px !important;
+        }
+
+        /* Кнопка во всю ширину на мобиле */
+        #show-btn {
+          width: 100%;
+        }
+
+        /* Таблица горизонтальный скролл */
+        .table-responsive {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .table-journal {
+          min-width: 650px;
+        }
+      }
+      @media (max-width: 768px) {
+        .form-select,
+        .form-control,
+        input {
+          font-size: 16px !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loader"><div class="spinner"></div></div>
+
+    <div class="header-area">
+      <h2>ПРОФЛИЦЕЙ №3</h2>
+      <p>Электронный Журнал Посещаемости (СКУД)</p>
+    </div>
+
+    <div class="container-main">
+      <div class="card-st">
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-5">
+            <label class="form-label fw-bold small mb-1">Группа</label>
+            <select id="j-group-select" class="form-select"></select>
+          </div>
+          <div class="col-6 col-md-4">
+            <label class="form-label fw-bold small mb-1">Месяц</label>
+            <input type="month" id="j-month" class="form-control" />
+          </div>
+          <div class="col-6 col-md-3">
+            <button
+              id="show-btn"
+              class="btn btn-primary w-100 fw-bold"
+              onclick="loadJournal()"
+            >
+              Показать
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-dashboard" id="matrix-stats" style="display: none">
+        <div class="stat-card">
+          <div class="val" id="stat-j-total">0</div>
+          <div class="lbl">Студентов</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" id="stat-j-today" style="color: #16a34a">0</div>
+          <div class="lbl">Присутствуют</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" id="stat-j-absent" style="color: #ef4444">0</div>
+          <div class="lbl">Отсутствуют</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" id="stat-j-lates" style="color: #f59e0b">0</div>
+          <div class="lbl">Опозданий</div>
+        </div>
+      </div>
+
+      <div class="card-st p-0 table-responsive">
+        <div id="journal-hint" class="text-center py-5 text-muted">
+          <div style="font-size: 28px; margin-bottom: 6px">👆</div>
+          <p class="mb-0 small">
+            Выберите группу и месяц, чтобы увидеть посещаемость
+          </p>
+        </div>
+        <table
+          class="table table-journal mb-0"
+          id="journal-table"
+          style="display: none; min-width: 700px"
+        >
+          <thead class="table-dark" id="journal-head"></thead>
+          <tbody id="journal-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      function showLoader() {
+        document.getElementById("loader").style.display = "flex";
+      }
+      function hideLoader() {
+        document.getElementById("loader").style.display = "none";
+      }
+
+      window.onload = async () => {
+        document.getElementById("j-month").value = new Date()
+          .toISOString()
+          .slice(0, 7);
+        try {
+          const res = await fetch("/api/admin/groups-list");
+          if (res.ok) {
+            const groups = await res.json();
+            document.getElementById("j-group-select").innerHTML =
+              '<option value="">-- Выберите группу --</option>' +
+              groups
+                .map((g) => `<option value="${g._id}">${g.name}</option>`)
+                .join("");
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      };
+
+      async function loadJournal() {
+        const gid = document.getElementById("j-group-select").value;
+        const month = document.getElementById("j-month").value;
+        if (!gid || !month) return alert("Пожалуйста, выберите группу и месяц");
+        showLoader();
+        try {
+          const res = await fetch(
+            `/api/admin/attendance-matrix/${gid}/${month}`,
+          );
+          if (!res.ok) throw new Error("Ошибка сервера");
+          const data = await res.json();
+          document.getElementById("journal-hint").style.display = "none";
+          document.getElementById("journal-table").style.display = "table";
+          document.getElementById("matrix-stats").style.display = "grid";
+          document.getElementById("stat-j-total").innerText =
+            data.stats.totalStudents;
+          document.getElementById("stat-j-today").innerText =
+            data.stats.presentToday;
+          document.getElementById("stat-j-absent").innerText =
+            data.stats.absentToday;
+          document.getElementById("stat-j-lates").innerText =
+            data.stats.totalLates;
+          const [y, m] = month.split("-");
+          let headHtml = `<tr><th class="fio-col">ФИО Студента</th>`;
+          for (let d = 1; d <= data.daysInMonth; d++) {
+            const dateObj = new Date(Date.UTC(y, m - 1, d));
+            const isWknd =
+              dateObj.getUTCDay() === 0 || dateObj.getUTCDay() === 6;
+            headHtml += `<th class="${isWknd ? "weekend-header" : ""}">${d}</th>`;
+          }
+          headHtml += `</tr>`;
+          document.getElementById("journal-head").innerHTML = headHtml;
+          let bodyHtml = "";
+          data.matrix.forEach((row) => {
+            let tr = `<tr><td class="fio-col">
+              <div>${row.fio}</div>
+              <div class="student-stats">
+                <span class="s-present">П:${row.stats.presences}</span>
+                <span class="s-late">О:${row.stats.lates}</span>
+                <span class="s-absent">Н:${row.stats.absences}</span>
+              </div></td>`;
+            row.days.forEach((day) => {
+              const wClass = day.isWeekend ? "weekend-cell" : "";
+              if (!day.present)
+                tr += `<td class="${wClass}" style="color:#cbd5e1">-</td>`;
+              else if (day.late)
+                tr += `<td class="late ${wClass}" title="${day.time}">О<span class="cell-time">${day.time}</span></td>`;
+              else
+                tr += `<td class="present ${wClass}" title="${day.time}">П<span class="cell-time">${day.time}</span></td>`;
+            });
+            tr += `</tr>`;
+            bodyHtml += tr;
+          });
+          document.getElementById("journal-body").innerHTML = bodyHtml;
+        } catch (error) {
+          alert("Не удалось загрузить данные.");
+          console.error(error);
+        } finally {
+          hideLoader();
+        }
+      }
+    </script>
+  </body>
+</html>
