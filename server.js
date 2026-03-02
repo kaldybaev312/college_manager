@@ -444,6 +444,15 @@ app.put("/api/admin/group/:id/set-prof", async (req, res) => {
   }
 });
 
+app.delete("/api/admin/student/:id", async (req, res) => {
+  try {
+    await Student.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Редактировать студента
 app.put("/api/admin/student/:id", async (req, res) => {
   try {
