@@ -17,12 +17,34 @@ const upload = multer({ dest: "uploads/" });
 if (!fs.existsSync("uploads")) fs.mkdirSync("uploads");
 
 app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true }));
 
 /* ===========================
    ЗАЩИТА АДМИНКИ (ПАРОЛЬ)
 =========================== */
 const ADMIN_LOGIN = process.env.ADMIN_LOGIN || "admin";
 const ADMIN_PASS = process.env.ADMIN_PASS || "pl3-2026";
+
+// --- 1. ПУБЛИЧНЫЕ API (ДЛЯ АГЕНТА И ЖУРНАЛА) ---
+// Эти маршруты должны быть ПЕРЕД requireAuth
+
+// СИНХРОНИЗАЦИЯ АГЕНТА (защищена только API ключом)
+app.post("/api/agent/sync", async (req, res) => {
+  const { apiKey, data } = req.body;
+  if (apiKey !== AGENT_API_KEY) {
+    console.log("⚠️ Попытка доступа агента с неверным ключом!");
+    return res.status(403).send("Forbidden: Invalid API Key");
+  }
+  // ... ваш код обработки data ...
+  res.json({ success: true });
+});
+
+// ПУБЛИЧНЫЕ ДАННЫЕ ДЛЯ РОДИТЕЛЕЙ (journal.html)
+app.get("/api/admin/groups-list", async (req, res, next) => next());
+app.get("/api/admin/global-stats", async (req, res, next) => next());
+app.get("/api/admin/attendance-matrix/:gid/:month", async (req, res, next) =>
+  next(),
+);
 
 // Вспомогательная функция для чтения Cookie (чтобы запоминать вход)
 function getCookie(req, name) {
@@ -34,10 +56,7 @@ function getCookie(req, name) {
 
 // Проверка: вошел ли пользователь?
 function requireAuth(req, res, next) {
-  if (getCookie(req, "admin_auth") === "true") {
-    return next(); // Если куки есть, пускаем дальше
-  }
-  // Если нет - отправляем на красивую страницу логина
+  if (getCookie(req, "admin_auth") === "true") return next();
   res.redirect("/login");
 }
 
@@ -100,14 +119,12 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
   if (username === ADMIN_LOGIN && password === ADMIN_PASS) {
-    // Если всё верно — ставим отметку (cookie) на 30 дней и пускаем в админку
     res.cookie("admin_auth", "true", {
       maxAge: 30 * 24 * 60 * 60 * 1000,
       httpOnly: true,
     });
     res.redirect("/");
   } else {
-    // Ошибка — возвращаем обратно с пометкой error
     res.redirect("/login?error=1");
   }
 });
@@ -119,20 +136,17 @@ app.get("/logout", (req, res) => {
 });
 
 // 4. ЗАЩИЩАЕМ СТРАНИЦЫ
+// Разрешаем journal.html открываться без пароля
+app.get("/journal.html", (req, res, next) => next());
+
+// Все остальные страницы (index.html и т.д.) требуют пароль
 app.get(
   ["/", "/index.html", "/skud-events.html", "/admin/events"],
   requireAuth,
 );
 
-// 5. ЗАЩИЩАЕМ API (Оставляем открытыми только просмотр журнала для родителей)
-app.use("/api/admin", (req, res, next) => {
-  if (req.path === "/groups-list" && req.method === "GET") return next();
-  if (req.path.startsWith("/attendance-matrix") && req.method === "GET")
-    return next();
-  if (req.path === "/global-stats" && req.method === "GET") return next();
-
-  requireAuth(req, res, next);
-});
+// Все остальные API методы (удаление, редактирование) требуют пароль
+app.use("/api/admin", requireAuth);
 
 app.use(express.static("public"));
 
@@ -438,41 +452,43 @@ app.post("/api/agent/sync", async (req, res) => {
         rec = student.skudDaily[student.skudDaily.length - 1];
       }
 
+      let isFirstEntryToday = false;
+      let timeStr = "—";
+      let localH = 0,
+        localM = 0;
       if (direction === "in") {
-        const isFirstEntryToday = rec.inCount === 0;
+        isFirstEntryToday = rec.inCount === 0;
         rec.inCount++;
         rec.present = true;
         rec.firstIn = rec.firstIn || eventIso;
         rec.lastIn = eventIso;
 
         const dt = new Date(eventIso);
-        let timeStr = "—";
-        let localH = 0,
-          localM = 0;
         if (!isNaN(dt.getTime())) {
           const totalMin = dt.getUTCHours() * 60 + dt.getUTCMinutes() + 360;
           localH = Math.floor(totalMin / 60) % 24;
           localM = totalMin % 60;
           timeStr = `${pad2(localH)}:${pad2(localM)}`;
         }
-      }
-      if (isFirstEntryToday) {
-        await student.populate("group"); // Подтягиваем данные группы
-        const shiftTime = student.group?.shiftStart || "09:30";
-        const [shiftH, shiftM] = shiftTime.split(":").map(Number);
 
-        let lateInfo = "";
-        // 1. Проверка на опоздание (Уведомление для завуча)
-        if (localH * 60 + localM > shiftH * 60 + shiftM) {
-          lateInfo = ` (Опоздание! Начало смены: ${shiftTime})`;
-          notifyTg(
-            `⚠️ *Опоздание!*\n🧑‍🎓 ${student.fio}\n📂 Группа: ${student.group?.name || "Без группы"}\n⏰ Прибыл в: *${timeStr}*`,
-          );
-        }
+        // 2. Если это первый вход за день — запускаем проверки
+        if (isFirstEntryToday) {
+          await student.populate("group");
+          const shiftTime = student.group?.shiftStart || "09:30";
+          const [shiftH, shiftM] = shiftTime.split(":").map(Number);
 
-        // 2. УВЕДОМЛЕНИЕ ДЛЯ РОДИТЕЛЕЙ (если ИНН привязан)
-        if (student.inn) {
-          TgSub.find({ linkedInns: student.inn }).then((parents) => {
+          let lateInfo = "";
+          // Проверка на опоздание
+          if (localH * 60 + localM > shiftH * 60 + shiftM) {
+            lateInfo = ` (Опоздание! Смена: ${shiftTime})`;
+            notifyTg(
+              `⚠️ *Опоздание!*\n🧑‍🎓 ${student.fio}\n📂 Группа: ${student.group?.name || "—"}\n⏰ Прибыл в: *${timeStr}*`,
+            );
+          }
+
+          // Уведомление привязанным родителям
+          if (student.inn) {
+            const parents = await TgSub.find({ linkedInns: student.inn });
             parents.forEach((p) => {
               bot
                 .sendMessage(
@@ -482,13 +498,15 @@ app.post("/api/agent/sync", async (req, res) => {
                 )
                 .catch(() => null);
             });
-          });
+          }
         }
       } else {
+        // --- ЛОГИКА ВЫХОДА ---
         rec.outCount++;
         rec.firstOut = rec.firstOut || eventIso;
         rec.lastOut = eventIso;
 
+        // Здесь можно добавить аналогичное уведомление о выходе для родителей
         const dt = new Date(eventIso);
         if (!isNaN(dt.getTime())) {
           const totalMin = dt.getUTCHours() * 60 + dt.getUTCMinutes() + 360;
@@ -604,10 +622,10 @@ app.get("/api/admin/group-students/:id", async (req, res) => {
 
 app.get("/api/admin/search", async (req, res) => {
   try {
-    const q     = (req.query.q || "").trim();
-    const page  = Math.max(1, parseInt(req.query.page) || 1);
+    const q = (req.query.q || "").trim();
+    const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, parseInt(req.query.limit) || 60);
-    const skip  = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
     const filter = q.length >= 2 ? { fio: new RegExp(q, "i") } : {};
 
