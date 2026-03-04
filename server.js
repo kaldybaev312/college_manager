@@ -27,8 +27,6 @@ const ADMIN_PASS = process.env.ADMIN_PASS || "pl3-2026";
 
 // --- 1. ПУБЛИЧНЫЕ API (ДЛЯ АГЕНТА И ЖУРНАЛА) ---
 // Эти маршруты должны быть ПЕРЕД requireAuth
-);
-
 // Вспомогательная функция для чтения Cookie (чтобы запоминать вход)
 function getCookie(req, name) {
   const cookieHeader = req.headers.cookie;
