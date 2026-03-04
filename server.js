@@ -1921,6 +1921,13 @@ cron.schedule("0 4 * * 1-5", async () => {
     "🔔 *Доброе утро!*\n\nНажмите кнопку *📊 Сводка сегодня* для актуальных данных на 10:00.",
   );
 });
+
+const SELF_URL = process.env.RENDER_EXTERNAL_URL || "https://pl3service.onrender.com";
+setInterval(() => {
+  fetch(`${SELF_URL}/api/health`).catch(() => {});
+}, 10 * 60 * 1000);
+
+app.get("/api/health", (req, res) => res.json({ ok: true }));
 /* ===========================
    START
 =========================== */
