@@ -27,23 +27,6 @@ const ADMIN_PASS = process.env.ADMIN_PASS || "pl3-2026";
 
 // --- 1. ПУБЛИЧНЫЕ API (ДЛЯ АГЕНТА И ЖУРНАЛА) ---
 // Эти маршруты должны быть ПЕРЕД requireAuth
-
-// СИНХРОНИЗАЦИЯ АГЕНТА (защищена только API ключом)
-app.post("/api/agent/sync", async (req, res) => {
-  const { apiKey, data } = req.body;
-  if (apiKey !== AGENT_API_KEY) {
-    console.log("⚠️ Попытка доступа агента с неверным ключом!");
-    return res.status(403).send("Forbidden: Invalid API Key");
-  }
-  // ... ваш код обработки data ...
-  res.json({ success: true });
-});
-
-// ПУБЛИЧНЫЕ ДАННЫЕ ДЛЯ РОДИТЕЛЕЙ (journal.html)
-app.get("/api/admin/groups-list", async (req, res, next) => next());
-app.get("/api/admin/global-stats", async (req, res, next) => next());
-app.get("/api/admin/attendance-matrix/:gid/:month", async (req, res, next) =>
-  next(),
 );
 
 // Вспомогательная функция для чтения Cookie (чтобы запоминать вход)
