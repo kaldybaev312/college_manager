@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>ПЛ №3</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+:root{
+  --tg-bg: var(--tg-theme-bg-color, #ffffff);
+  --tg-text: var(--tg-theme-text-color, #0f172a);
+  --tg-hint: var(--tg-theme-hint-color, #64748b);
+  --tg-link: var(--tg-theme-link-color, #4f46e5);
+  --tg-btn: var(--tg-theme-button-color, #4f46e5);
+  --tg-btn-text: var(--tg-theme-button-text-color, #ffffff);
+  --tg-secondary: var(--tg-theme-secondary-bg-color, #f1f5f9);
+  --accent: #4f46e5;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:'Nunito',sans-serif;
+  background:var(--tg-secondary);
+  color:var(--tg-text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── SCREENS ── */
+.screen{display:none;flex-direction:column;min-height:100vh;animation:fadeIn .2s ease}
+.screen.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── HEADER ── */
+.header{
+  background:var(--tg-bg);
+  padding:16px 20px 12px;
+  display:flex;align-items:center;gap:12px;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+}
+.header-back{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--tg-secondary);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.header-title{font-weight:800;font-size:17px;flex:1}
+.header-sub{font-size:12px;color:var(--tg-hint);font-weight:600;margin-top:1px}
+
+/* ── CONTENT ── */
+.content{padding:16px;flex:1;display:flex;flex-direction:column;gap:12px}
+
+/* ── CARDS ── */
+.card{
+  background:var(--card);border-radius:var(--radius);
+  border:1px solid var(--border);overflow:hidden;
+}
+.card-header{
+  padding:14px 16px 10px;
+  font-weight:800;font-size:14px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+}
+.card-body{padding:14px 16px}
+
+/* ── HOME SCREEN ── */
+.role-badge{
+  background:var(--tg-secondary);
+  border-radius:12px;padding:16px;
+  display:flex;align-items:center;gap:14px;
+}
+.role-avatar{
+  width:52px;height:52px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;flex-shrink:0;
+}
+.role-name{font-weight:800;font-size:16px}
+.role-desc{font-size:12px;color:var(--tg-hint);margin-top:2px;font-weight:600}
+
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.menu-btn{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 14px;
+  display:flex;flex-direction:column;gap:8px;
+  cursor:pointer;transition:all .15s;text-align:left;
+  active:scale(.97);
+}
+.menu-btn:active{transform:scale(.97);background:var(--tg-secondary)}
+.menu-btn-icon{font-size:26px;line-height:1}
+.menu-btn-label{font-weight:700;font-size:13px;line-height:1.3;color:var(--tg-text)}
+.menu-btn.accent{background:var(--accent);border-color:var(--accent)}
+.menu-btn.accent .menu-btn-label{color:white}
+.menu-btn.green{background:#16a34a;border-color:#16a34a}
+.menu-btn.green .menu-btn-label{color:white}
+
+/* ── STATS BAR ── */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat-box{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px 10px;text-align:center;
+}
+.stat-val{font-size:22px;font-weight:900;line-height:1}
+.stat-lbl{font-size:10px;color:var(--tg-hint);font-weight:700;margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
+
+/* ── PROGRESS BAR ── */
+.progress-wrap{background:var(--tg-secondary);border-radius:99px;height:8px;overflow:hidden}
+.progress-fill{height:100%;border-radius:99px;transition:width .4s ease;background:var(--accent)}
+.progress-fill.green{background:var(--success)}
+.progress-fill.orange{background:var(--warning)}
+
+/* ── STUDENT LIST ── */
+.stu-row{
+  display:flex;align-items:center;padding:11px 0;gap:12px;
+  border-bottom:1px solid var(--border);cursor:pointer;
+}
+.stu-row:last-child{border-bottom:none}
+.stu-avatar{
+  width:38px;height:38px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:white;flex-shrink:0;
+}
+.stu-name{font-weight:700;font-size:13px;flex:1;line-height:1.3}
+.stu-meta{font-size:11px;color:var(--tg-hint);font-weight:600;margin-top:2px}
+.stu-status{font-size:18px;flex-shrink:0}
+
+/* ── ATTENDANCE CALENDAR ── */
+.att-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.att-day{
+  aspect-ratio:1;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;
+}
+.att-day.present{background:#dcfce7;color:#15803d}
+.att-day.absent{background:#fee2e2;color:#dc2626}
+.att-day.late{background:#fef3c7;color:#d97706}
+.att-day.weekend{background:var(--tg-secondary);color:var(--tg-hint)}
+.att-day.future{background:transparent;color:var(--border)}
+.att-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.att-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--tg-hint)}
+.att-legend-dot{width:10px;height:10px;border-radius:3px}
+
+/* ── GRADES TABLE ── */
+.grades-subject{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;border-bottom:1px solid var(--border);
+}
+.grades-subject:last-child{border-bottom:none}
+.grades-subject-name{font-size:13px;font-weight:700;flex:1}
+.grade-badge{
+  width:32px;height:32px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:900;flex-shrink:0;
+}
+.grade-5{background:#dcfce7;color:#15803d}
+.grade-4{background:#dbeafe;color:#1d4ed8}
+.grade-3{background:#fef3c7;color:#d97706}
+.grade-2{background:#fee2e2;color:#dc2626}
+.grade-empty{background:var(--tg-secondary);color:var(--tg-hint)}
+
+/* ── FILL TABLE ── */
+.fill-subject{
+  padding:12px 0;border-bottom:1px solid var(--border);
+}
+.fill-subject:last-child{border-bottom:none}
+.fill-subject-name{font-weight:800;font-size:13px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.fill-student-row{
+  display:flex;align-items:center;gap:8px;padding:5px 0;
+}
+.fill-student-name{font-size:12px;flex:1;color:var(--tg-text);font-weight:600}
+.grade-btns{display:flex;gap:4px}
+.grade-btn{
+  width:30px;height:30px;border-radius:8px;border:1.5px solid var(--border);
+  background:var(--tg-secondary);font-size:13px;font-weight:800;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .1s;
+}
+.grade-btn.active-5{background:#dcfce7;border-color:#86efac;color:#15803d}
+.grade-btn.active-4{background:#dbeafe;border-color:#93c5fd;color:#1d4ed8}
+.grade-btn.active-3{background:#fef3c7;border-color:#fcd34d;color:#d97706}
+.grade-btn.active-2{background:#fee2e2;border-color:#fca5a5;color:#dc2626}
+.grade-btn:active{transform:scale(.9)}
+
+/* ── TABS ── */
+.tabs{display:flex;background:var(--tg-secondary);border-radius:12px;padding:3px;gap:2px}
+.tab{
+  flex:1;padding:8px;border-radius:9px;border:none;background:none;
+  font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;
+  color:var(--tg-hint);cursor:pointer;transition:all .15s;text-align:center;
+}
+.tab.active{background:var(--card);color:var(--tg-text);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+
+/* ── MONTH SELECTOR ── */
+.month-sel{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:10px 14px;
+}
+.month-btn{
+  width:32px;height:32px;border-radius:8px;border:none;
+  background:var(--tg-secondary);cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+}
+.month-label{font-weight:800;font-size:14px}
+
+/* ── SECTION TITLE ── */
+.section-title{
+  font-weight:900;font-size:13px;color:var(--tg-hint);
+  text-transform:uppercase;letter-spacing:.8px;margin:4px 0 -4px;
+}
+
+/* ── BOTTOM SAVE BAR ── */
+.save-bar{
+  position:sticky;bottom:0;padding:12px 16px;
+  background:var(--tg-bg);border-top:1px solid var(--border);
+  display:flex;gap:8px;
+}
+.btn-main{
+  flex:1;height:48px;border-radius:var(--radius-sm);border:none;
+  background:var(--accent);color:white;font-family:'Nunito',sans-serif;
+  font-size:15px;font-weight:800;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn-sec{
+  height:48px;padding:0 16px;border-radius:var(--radius-sm);
+  border:1.5px solid var(--border);background:var(--card);
+  font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;
+}
+.btn-main:active,.btn-sec:active{opacity:.8}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:40px 20px;color:var(--tg-hint)}
+.empty-icon{font-size:40px;margin-bottom:8px}
+.empty-text{font-size:14px;font-weight:700}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);
+  background:#0f172a;color:white;border-radius:12px;
+  padding:10px 20px;font-size:13px;font-weight:700;
+  z-index:9999;transition:transform .3s ease;white-space:nowrap;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ── LOADING ── */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--tg-hint);gap:8px}
+.spinner{width:20px;height:20px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── INN INPUT ── */
+.inn-wrap{padding:20px}
+.inn-label{font-weight:800;font-size:15px;margin-bottom:6px}
+.inn-sub{font-size:13px;color:var(--tg-hint);font-weight:600;margin-bottom:16px}
+.inn-input{
+  width:100%;height:52px;border-radius:12px;
+  border:2px solid var(--border);padding:0 16px;
+  font-family:'Nunito',sans-serif;font-size:18px;font-weight:700;
+  outline:none;letter-spacing:2px;
+}
+.inn-input:focus{border-color:var(--accent)}
+
+/* ── NOTIFICATION ITEM ── */
+.notif-row{
+  display:flex;gap:12px;align-items:flex-start;
+  padding:12px 0;border-bottom:1px solid var(--border);
+}
+.notif-row:last-child{border-bottom:none}
+.notif-icon{font-size:22px;flex-shrink:0;margin-top:2px}
+.notif-title{font-weight:700;font-size:13px}
+.notif-time{font-size:11px;color:var(--tg-hint);font-weight:600;margin-top:2px}
+</style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: LOADING
+══════════════════════════════════════════ -->
+<div id="screen-loading" class="screen active">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+    <div style="font-size:48px">🎓</div>
+    <div style="font-weight:900;font-size:18px">ПРОФЛИЦЕЙ №3</div>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: INN INPUT (родитель - первый вход)
+══════════════════════════════════════════ -->
+<div id="screen-inn" class="screen">
+  <div class="header">
+    <div>
+      <div class="header-title">🎓 ПРОФЛИЦЕЙ №3</div>
+      <div class="header-sub">Портал для родителей</div>
+    </div>
+  </div>
+  <div class="inn-wrap">
+    <div class="inn-label">Введите ИНН ребёнка</div>
+    <div class="inn-sub">12–14 цифр — уникальный номер из документов</div>
+    <input id="inn-input" class="inn-input" type="number" placeholder="20030112345678" inputmode="numeric"/>
+    <div id="inn-error" style="color:var(--danger);font-size:13px;font-weight:700;margin-top:8px;display:none"></div>
+  </div>
+  <div class="save-bar">
+    <button class="btn-main" onclick="submitInn()">Привязать аккаунт →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: HOME (куратор)
+══════════════════════════════════════════ -->
+<div id="screen-curator-home" class="screen">
+  <div class="header">
+    <div style="flex:1">
+      <div class="header-title">Кабинет куратора</div>
+      <div class="header-sub" id="curator-group-name">Загрузка...</div>
+    </div>
+  </div>
+  <div class="content">
+    <!-- Статистика сегодня -->
+    <div class="stats-row" id="curator-stats">
+      <div class="stat-box"><div class="stat-val" id="s-present">—</div><div class="stat-lbl">✅ Пришли</div></div>
+      <div class="stat-box"><div class="stat-val" id="s-absent">—</div><div class="stat-lbl">❌ Отсутств.</div></div>
+      <div class="stat-box"><div class="stat-val" id="s-late">—</div><div class="stat-lbl">⏰ Опоздали</div></div>
+    </div>
+
+    <div class="section-title">Действия</div>
+    <div class="menu-grid">
+      <button class="menu-btn accent" onclick="goScreen('screen-fill')">
+        <div class="menu-btn-icon">📝</div>
+        <div class="menu-btn-label">Заполнить ведомость</div>
+      </button>
+      <button class="menu-btn" onclick="goScreen('screen-attendance')">
+        <div class="menu-btn-icon">📅</div>
+        <div class="menu-btn-label">Посещаемость группы</div>
+      </button>
+      <button class="menu-btn" onclick="goScreen('screen-grades-view')">
+        <div class="menu-btn-icon">📋</div>
+        <div class="menu-btn-label">Оценки группы</div>
+      </button>
+      <button class="menu-btn" onclick="goScreen('screen-students')">
+        <div class="menu-btn-icon">👥</div>
+        <div class="menu-btn-label">Список студентов</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: HOME (родитель)
+══════════════════════════════════════════ -->
+<div id="screen-parent-home" class="screen">
+  <div class="header">
+    <div style="flex:1">
+      <div class="header-title">Родительский кабинет</div>
+      <div class="header-sub" id="parent-child-name">Загрузка...</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="role-badge">
+      <div class="role-avatar" style="background:#ede9fe">👶</div>
+      <div>
+        <div class="role-name" id="parent-child-full">—</div>
+        <div class="role-desc" id="parent-group-name">—</div>
+      </div>
+    </div>
+
+    <div class="section-title">Информация</div>
+    <div class="menu-grid">
+      <button class="menu-btn accent" onclick="loadParentGrades()">
+        <div class="menu-btn-icon">📊</div>
+        <div class="menu-btn-label">Оценки за месяц</div>
+      </button>
+      <button class="menu-btn green" onclick="goScreen('screen-parent-att')">
+        <div class="menu-btn-icon">🗓</div>
+        <div class="menu-btn-label">Посещаемость</div>
+      </button>
+    </div>
+
+    <!-- Последние уведомления -->
+    <div class="card">
+      <div class="card-header">🔔 Последние события</div>
+      <div class="card-body" id="parent-notifs">
+        <div class="empty"><div class="empty-icon">🔕</div><div class="empty-text">Нет уведомлений</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: FILL VEDOMOST (куратор)
+══════════════════════════════════════════ -->
+<div id="screen-fill" class="screen">
+  <div class="header">
+    <button class="header-back" onclick="goBack()">←</button>
+    <div style="flex:1">
+      <div class="header-title">📝 Заполнение ведомости</div>
+      <div class="header-sub" id="fill-month-label">Месяц</div>
+    </div>
+  </div>
+
+  <!-- Month selector -->
+  <div style="padding:12px 16px 0">
+    <div class="month-sel">
+      <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+      <div class="month-label" id="fill-month-display">—</div>
+      <button class="month-btn" onclick="changeMonth(1)">›</button>
+    </div>
+  </div>
+
+  <!-- Subject tabs -->
+  <div style="padding:10px 16px 0">
+    <div id="fill-subj-tabs" class="tabs" style="overflow-x:auto;gap:4px"></div>
+  </div>
+
+  <!-- Progress -->
+  <div style="padding:8px 16px 0">
+    <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+      <span style="font-size:12px;font-weight:700;color:var(--tg-hint)">Заполнено</span>
+      <span style="font-size:12px;font-weight:800" id="fill-progress-text">0/0</span>
+    </div>
+    <div class="progress-wrap"><div class="progress-fill" id="fill-progress-bar" style="width:0%"></div></div>
+  </div>
+
+  <!-- Students grades -->
+  <div class="content" id="fill-students-wrap" style="padding-top:10px"></div>
+
+  <div class="save-bar">
+    <button class="btn-sec" onclick="downloadWord()">📄 Word</button>
+    <button class="btn-main" onclick="saveAll()">💾 Сохранить всё</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: ATTENDANCE (куратор)
+══════════════════════════════════════════ -->
+<div id="screen-attendance" class="screen">
+  <div class="header">
+    <button class="header-back" onclick="goBack()">←</button>
+    <div style="flex:1">
+      <div class="header-title">📅 Посещаемость</div>
+      <div class="header-sub" id="att-group-label">Группа</div>
+    </div>
+  </div>
+  <div style="padding:12px 16px 0">
+    <div class="tabs" id="att-tabs">
+      <button class="tab active" onclick="attTab('today',this)">Сегодня</button>
+      <button class="tab" onclick="attTab('month',this)">Месяц</button>
+    </div>
+  </div>
+  <div class="content" id="att-content"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: GRADES VIEW (куратор)
+══════════════════════════════════════════ -->
+<div id="screen-grades-view" class="screen">
+  <div class="header">
+    <button class="header-back" onclick="goBack()">←</button>
+    <div style="flex:1">
+      <div class="header-title">📋 Оценки группы</div>
+      <div class="header-sub" id="gv-month-label">Месяц</div>
+    </div>
+  </div>
+  <div style="padding:12px 16px 0">
+    <div class="month-sel">
+      <button class="month-btn" onclick="changeGvMonth(-1)">‹</button>
+      <div class="month-label" id="gv-month-display">—</div>
+      <button class="month-btn" onclick="changeGvMonth(1)">›</button>
+    </div>
+  </div>
+  <div class="content" id="gv-content"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: STUDENTS LIST (куратор)
+══════════════════════════════════════════ -->
+<div id="screen-students" class="screen">
+  <div class="header">
+    <button class="header-back" onclick="goBack()">←</button>
+    <div class="header-title">👥 Список студентов</div>
+  </div>
+  <div class="content" id="students-content"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: PARENT GRADES
+══════════════════════════════════════════ -->
+<div id="screen-parent-grades" class="screen">
+  <div class="header">
+    <button class="header-back" onclick="goBack()">←</button>
+    <div style="flex:1">
+      <div class="header-title">📊 Оценки ребёнка</div>
+      <div class="header-sub" id="pg-month-label">—</div>
+    </div>
+  </div>
+  <div class="content" id="pg-content"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN: PARENT ATTENDANCE
+══════════════════════════════════════════ -->
+<div id="screen-parent-att" class="screen">
+  <div class="header">
+    <button class="header-back" onclick="goBack()">←</button>
+    <div style="flex:1">
+      <div class="header-title">🗓 Посещаемость</div>
+      <div class="header-sub" id="pa-month-label">—</div>
+    </div>
+  </div>
+  <div class="content" id="pa-content"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  TELEGRAM WEBAPP INIT
+// ══════════════════════════════════════════
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+  tg.setHeaderColor('#ffffff');
+}
+
+// User data from Telegram
+const TG_USER = tg?.initDataUnsafe?.user || {};
+const TG_CHAT_ID = String(TG_USER.id || 'demo');
+
+// API base — same server
+const API = '';  // same origin, routes through /api/webapp/
+
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let STATE = {
+  role: null,           // 'curator' | 'parent'
+  chatId: TG_CHAT_ID,
+  // curator
+  groupId: null,
+  groupName: null,
+  subjects: [],
+  students: [],
+  // fill
+  fillMonth: curMonthKey(),
+  fillGrades: {},       // {studentId: {subjectKey: grade}}
+  fillSubjIdx: 0,
+  // grades view
+  gvMonth: curMonthKey(),
+  // parent
+  inn: null,
+  childFio: null,
+  childGroup: null,
+  childGroupId: null,
+  childGroupName: null,
+  // nav
+  screenStack: [],
+};
+
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+function curMonthKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function fmtMonth(key) {
+  if (!key) return '—';
+  const [y,m] = key.split('-').map(Number);
+  const MN = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  return `${MN[m-1]} ${y}`;
+}
+
+function shiftMonth(key, delta) {
+  const [y,m] = key.split('-').map(Number);
+  const d = new Date(y, m-1+delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function avatarColor(str) {
+  const colors = ['#4f46e5','#0891b2','#059669','#d97706','#dc2626','#7c3aed','#db2777'];
+  let h = 0;
+  for (let i=0;i<str.length;i++) h = str.charCodeAt(i)+((h<<5)-h);
+  return colors[Math.abs(h)%colors.length];
+}
+
+function initials(fio) {
+  return fio.trim().split(' ').slice(0,2).map(w=>w[0]?.toUpperCase()||'').join('');
+}
+
+function toast(msg, dur=2000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), dur);
+}
+
+async function api(path, opts={}) {
+  try {
+    const res = await fetch(`/api/webapp${path}`, {
+      ...opts,
+      headers: { 'Content-Type':'application/json', 'x-tg-chat-id': STATE.chatId, ...(opts.headers||{}) },
+    });
+    return await res.json();
+  } catch(e) {
+    return { error: e.message };
+  }
+}
+
+// ══════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════
+function goScreen(id) {
+  const cur = document.querySelector('.screen.active');
+  if (cur) { STATE.screenStack.push(cur.id); cur.classList.remove('active'); }
+  const next = document.getElementById(id);
+  if (next) next.classList.add('active');
+  // Telegram back button
+  if (STATE.screenStack.length > 0 && tg?.BackButton) {
+    tg.BackButton.show();
+    tg.BackButton.onClick(goBack);
+  }
+}
+
+function goBack() {
+  const prev = STATE.screenStack.pop();
+  const cur = document.querySelector('.screen.active');
+  if (cur) cur.classList.remove('active');
+  const back = document.getElementById(prev || (STATE.role==='curator'?'screen-curator-home':'screen-parent-home'));
+  if (back) back.classList.add('active');
+  if (STATE.screenStack.length===0 && tg?.BackButton) tg.BackButton.hide();
+}
+
+// ══════════════════════════════════════════
+//  INIT — check role from server
+// ══════════════════════════════════════════
+async function init() {
+  // In demo mode (no real Telegram), show demo data
+  if (!tg || TG_CHAT_ID === 'demo') {
+    loadDemo();
+    return;
+  }
+
+  const data = await api('/me');
+  if (data.error || !data.role) {
+    // Not registered — show INN input for parent
+    goScreen('screen-inn');
+    return;
+  }
+
+  STATE.role = data.role;
+
+  if (data.role === 'curator') {
+    STATE.groupId   = data.groupId;
+    STATE.groupName = data.groupName;
+    document.getElementById('curator-group-name').textContent = data.groupName || '';
+    await loadCuratorStats();
+    goScreen('screen-curator-home');
+  } else if (data.role === 'parent') {
+    STATE.inn           = data.inn;
+    STATE.childFio      = data.childFio;
+    STATE.childGroupName= data.groupName;
+    STATE.childGroupId  = data.groupId;
+    document.getElementById('parent-child-name').textContent  = data.childFio || '';
+    document.getElementById('parent-child-full').textContent  = data.childFio || '—';
+    document.getElementById('parent-group-name').textContent  = data.groupName || '—';
+    goScreen('screen-parent-home');
+  }
+}
+
+// ══════════════════════════════════════════
+//  DEMO MODE (для тестирования без TG)
+// ══════════════════════════════════════════
+function loadDemo() {
+  // Demo as curator
+  STATE.role       = 'curator';
+  STATE.groupId    = 'demo_group';
+  STATE.groupName  = 'ВЕБ-1-24';
+  STATE.subjects   = [
+    {key:'kg_lang',label:'Кыргыз тили',section:'theory'},
+    {key:'ru_lang',label:'Русский язык',section:'theory'},
+    {key:'algebra',label:'Алгебра',section:'theory'},
+    {key:'physics',label:'Физика',section:'theory'},
+    {key:'history',label:'История',section:'theory'},
+    {key:'programming',label:'Программирование',section:'practice'},
+    {key:'special_1',label:'Спецтехнология',section:'practice'},
+  ];
+  STATE.students = [
+    {id:'s1',fio:'Азамат кызы Айзирек'},
+    {id:'s2',fio:'Акопян Артур Вагенович'},
+    {id:'s3',fio:'Алымбеков Арстан'},
+    {id:'s4',fio:'Арапов Рамазан'},
+    {id:'s5',fio:'Байтемир Нурбек'},
+    {id:'s6',fio:'Джакыпов Тимур'},
+    {id:'s7',fio:'Исаков Бакыт'},
+    {id:'s8',fio:'Карыбекова Айгуль'},
+    {id:'s9',fio:'Кожошев Эрлан'},
+    {id:'s10',fio:'Мамытов Адилет'},
+    {id:'s11',fio:'Мусаева Зарина'},
+    {id:'s12',fio:'Орозов Байыш'},
+    {id:'s13',fio:'Петров Иван Сергеевич'},
+    {id:'s14',fio:'Рыскелдиев Нурдоолот'},
+    {id:'s15',fio:'Сатыбалдиев Жаныбек'},
+    {id:'s16',fio:'Токтогулов Уланбек'},
+    {id:'s17',fio:'Усупов Калыс'},
+    {id:'s18',fio:'Шамшиев Мирбек'},
+  ];
+  // Demo grades
+  STATE.fillGrades = {
+    's1':{'kg_lang':'5','ru_lang':'4','algebra':'5'},
+    's2':{'kg_lang':'4','algebra':'3','programming':'5'},
+    's3':{'ru_lang':'5','physics':'4'},
+    's4':{'kg_lang':'3'},
+    's5':{'algebra':'4','programming':'4'},
+  };
+
+  document.getElementById('curator-group-name').textContent = 'ВЕБ-1-24 • Разработчик Web';
+  document.getElementById('s-present').textContent = '14';
+  document.getElementById('s-absent').textContent  = '3';
+  document.getElementById('s-late').textContent    = '1';
+  goScreen('screen-curator-home');
+}
+
+// ══════════════════════════════════════════
+//  CURATOR: STATS
+// ══════════════════════════════════════════
+async function loadCuratorStats() {
+  const data = await api(`/attendance/today?gid=${STATE.groupId}`);
+  if (data.error) return;
+  document.getElementById('s-present').textContent = data.present || 0;
+  document.getElementById('s-absent').textContent  = data.absent  || 0;
+  document.getElementById('s-late').textContent    = data.late    || 0;
+}
+
+// ══════════════════════════════════════════
+//  FILL VEDOMOST
+// ══════════════════════════════════════════
+async function goScreen_fill() {
+  goScreen('screen-fill');
+  await loadFillData();
+}
+
+async function loadFillData() {
+  document.getElementById('fill-month-display').textContent = fmtMonth(STATE.fillMonth);
+  document.getElementById('fill-month-label').textContent   = fmtMonth(STATE.fillMonth);
+
+  if (!STATE.subjects.length || !STATE.students.length) {
+    // Load from API
+    const [subjData, stuData, gradesData] = await Promise.all([
+      api(`/subjects?gid=${STATE.groupId}`),
+      api(`/students?gid=${STATE.groupId}`),
+      api(`/grades?gid=${STATE.groupId}&month=${STATE.fillMonth}`),
+    ]);
+    if (!subjData.error) STATE.subjects = subjData.subjects || [];
+    if (!stuData.error)  STATE.students = stuData.students  || [];
+    if (!gradesData.error) STATE.fillGrades = gradesData.grades || {};
+  } else {
+    // Reload grades for new month
+    const gradesData = await api(`/grades?gid=${STATE.groupId}&month=${STATE.fillMonth}`);
+    if (!gradesData.error) STATE.fillGrades = gradesData.grades || {};
+  }
+
+  renderFillSubjTabs();
+  renderFillStudents();
+}
+
+function renderFillSubjTabs() {
+  const tabs = document.getElementById('fill-subj-tabs');
+  tabs.innerHTML = STATE.subjects.map((s,i) => {
+    const filled = STATE.students.filter(stu => STATE.fillGrades[stu.id]?.[s.key]).length;
+    const all    = STATE.students.length;
+    const done   = filled === all && all > 0;
+    return `<button class="tab ${i===STATE.fillSubjIdx?'active':''}" 
+      onclick="selectSubj(${i})" style="white-space:nowrap;flex:none;padding:8px 12px">
+      ${done?'✅ ':''}${s.label}
+    </button>`;
+  }).join('');
+}
+
+function selectSubj(idx) {
+  STATE.fillSubjIdx = idx;
+  renderFillSubjTabs();
+  renderFillStudents();
+}
+
+function renderFillStudents() {
+  const wrap = document.getElementById('fill-students-wrap');
+  const subj = STATE.subjects[STATE.fillSubjIdx];
+  if (!subj) { wrap.innerHTML = '<div class="empty"><div class="empty-icon">📚</div><div class="empty-text">Нет предметов</div></div>'; return; }
+
+  // Count progress for current subject
+  const filled = STATE.students.filter(stu => STATE.fillGrades[stu.id]?.[subj.key]).length;
+  const total  = STATE.students.length;
+  const pct    = total ? Math.round(filled/total*100) : 0;
+  document.getElementById('fill-progress-text').textContent = `${filled}/${total}`;
+  document.getElementById('fill-progress-bar').style.width  = pct+'%';
+  document.getElementById('fill-progress-bar').className = `progress-fill ${pct===100?'green':pct>50?'':''}`;
+
+  const gradeColors = {'5':'active-5','4':'active-4','3':'active-3','2':'active-2'};
+
+  wrap.innerHTML = `<div class="card">
+    <div class="card-header">📚 ${subj.label}<span style="margin-left:auto;font-size:11px;color:var(--tg-hint)">${filled}/${total}</span></div>
+    <div class="card-body" style="padding:0 16px">
+      ${STATE.students.map((stu,i) => {
+        const cur = STATE.fillGrades[stu.id]?.[subj.key] || '';
+        const color = avatarColor(stu.fio);
+        return `<div class="fill-student-row">
+          <div class="stu-avatar" style="background:${color};width:32px;height:32px;border-radius:8px;font-size:11px">${initials(stu.fio)}</div>
+          <div class="fill-student-name">${stu.fio}</div>
+          <div class="grade-btns">
+            ${['2','3','4','5'].map(v => `<button class="grade-btn ${cur===v?gradeColors[v]:''}" 
+              onclick="setGrade('${stu.id}','${subj.key}','${v}')">${v}</button>`).join('')}
+            <button class="grade-btn" onclick="setGrade('${stu.id}','${subj.key}','')" 
+              style="font-size:10px;color:var(--tg-hint)">✕</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function setGrade(stuId, key, val) {
+  if (!STATE.fillGrades[stuId]) STATE.fillGrades[stuId] = {};
+  if (val) STATE.fillGrades[stuId][key] = val;
+  else delete STATE.fillGrades[stuId][key];
+  
+  // Auto-save to server
+  const grades = STATE.fillGrades[stuId] || {};
+  api(`/grades/set`, {
+    method:'POST',
+    body: JSON.stringify({gid:STATE.groupId, studentId:stuId, month:STATE.fillMonth, grades})
+  }).catch(()=>{});
+
+  // Update UI efficiently
+  renderFillStudents();
+  
+  // Haptic feedback
+  tg?.HapticFeedback?.impactOccurred?.('light');
+}
+
+async function saveAll() {
+  toast('💾 Сохраняю...');
+  const saves = Object.entries(STATE.fillGrades).map(([stuId, grades]) =>
+    api('/grades/set', { method:'POST', body:JSON.stringify({gid:STATE.groupId,studentId:stuId,month:STATE.fillMonth,grades}) })
+  );
+  await Promise.all(saves);
+  toast('✅ Ведомость сохранена!');
+  tg?.HapticFeedback?.notificationOccurred?.('success');
+}
+
+async function downloadWord() {
+  await saveAll();
+  window.open(`/api/admin/summary-word/${STATE.groupId}/${STATE.fillMonth}`, '_blank');
+}
+
+function changeMonth(delta) {
+  STATE.fillMonth = shiftMonth(STATE.fillMonth, delta);
+  loadFillData();
+}
+
+function changeGvMonth(delta) {
+  STATE.gvMonth = shiftMonth(STATE.gvMonth, delta);
+  loadGradesView();
+}
+
+// ══════════════════════════════════════════
+//  ATTENDANCE
+// ══════════════════════════════════════════
+async function attTab(type, btn) {
+  document.querySelectorAll('#att-tabs .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  if (type==='today') loadAttToday();
+  else loadAttMonth();
+}
+
+async function loadAttToday() {
+  document.getElementById('att-content').innerHTML = '<div class="loading"><div class="spinner"></div> Загрузка...</div>';
+  document.getElementById('att-group-label').textContent = STATE.groupName || '';
+  
+  const data = await api(`/attendance/today?gid=${STATE.groupId}`);
+  if (data.error || !STATE.students.length) {
+    // Demo
+    renderAttTodayDemo();
+    return;
+  }
+  renderAttToday(data);
+}
+
+function renderAttTodayDemo() {
+  const demo = STATE.students.map((stu,i) => ({
+    fio: stu.fio,
+    status: i < 14 ? (i < 2 ? 'late' : 'present') : 'absent',
+    time: i < 14 ? (i < 2 ? '09:45' : '09:12') : '',
+  }));
+  renderAttToday({students: demo});
+}
+
+function renderAttToday(data) {
+  const stus = data.students || [];
+  const present = stus.filter(s=>s.status==='present').length;
+  const late    = stus.filter(s=>s.status==='late').length;
+  const absent  = stus.filter(s=>s.status==='absent').length;
+  const total   = stus.length;
+  const pct = total ? Math.round((present+late)/total*100) : 0;
+
+  const icons = {present:'✅', late:'⏰', absent:'❌'};
+  
+  document.getElementById('att-content').innerHTML = `
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:700;color:var(--tg-hint)">Явка сегодня</span>
+          <span style="font-weight:800">${pct}%</span>
+        </div>
+        <div class="progress-wrap"><div class="progress-fill ${pct>80?'green':''}" style="width:${pct}%"></div></div>
+        <div style="display:flex;gap:12px;margin-top:8px">
+          <span style="font-size:12px;font-weight:700;color:#16a34a">✅ ${present}</span>
+          <span style="font-size:12px;font-weight:700;color:#d97706">⏰ ${late}</span>
+          <span style="font-size:12px;font-weight:700;color:#dc2626">❌ ${absent}</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body" style="padding:0 16px">
+        ${stus.map(stu => `<div class="stu-row">
+          <div class="stu-avatar" style="background:${avatarColor(stu.fio)}">${initials(stu.fio)}</div>
+          <div style="flex:1">
+            <div class="stu-name">${stu.fio}</div>
+            ${stu.time?`<div class="stu-meta">🕐 ${stu.time}</div>`:''}
+          </div>
+          <div class="stu-status">${icons[stu.status]||'❓'}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+async function loadAttMonth() {
+  document.getElementById('att-content').innerHTML = '<div class="loading"><div class="spinner"></div> Загрузка...</div>';
+  // Demo calendar
+  const now  = new Date();
+  const yr   = now.getFullYear(), mn = now.getMonth()+1;
+  const dim  = new Date(yr, mn, 0).getDate();
+  const days = [];
+  for (let d=1; d<=dim; d++) {
+    const date  = new Date(Date.UTC(yr,mn-1,d));
+    const isWknd= date.getUTCDay()===0||date.getUTCDay()===6;
+    const today = d === now.getDate();
+    const past  = d < now.getDate();
+    const status = isWknd ? 'weekend' : !past&&!today ? 'future'
+                 : Math.random()>.15 ? (Math.random()>.9?'late':'present') : 'absent';
+    days.push({d, status});
+  }
+  const present = days.filter(d=>d.status==='present').length;
+  const late    = days.filter(d=>d.status==='late').length;
+  const absent  = days.filter(d=>d.status==='absent').length;
+
+  document.getElementById('att-content').innerHTML = `
+    <div class="card">
+      <div class="card-header">📅 ${fmtMonth(curMonthKey())}</div>
+      <div class="card-body">
+        <div class="att-grid">
+          <div class="att-day" style="font-size:9px;color:var(--tg-hint)">Пн</div>
+          <div class="att-day" style="font-size:9px;color:var(--tg-hint)">Вт</div>
+          <div class="att-day" style="font-size:9px;color:var(--tg-hint)">Ср</div>
+          <div class="att-day" style="font-size:9px;color:var(--tg-hint)">Чт</div>
+          <div class="att-day" style="font-size:9px;color:var(--tg-hint)">Пт</div>
+          <div class="att-day weekend" style="font-size:9px">Сб</div>
+          <div class="att-day weekend" style="font-size:9px">Вс</div>
+          ${Array(new Date(Date.UTC(yr,mn-1,1)).getUTCDay()||7-1).fill(0).map(()=>'<div></div>').join('')}
+          ${days.map(({d,status})=>`<div class="att-day ${status}">${d}</div>`).join('')}
+        </div>
+        <div class="att-legend">
+          <div class="att-legend-item"><div class="att-legend-dot" style="background:#dcfce7"></div>Присутствовал</div>
+          <div class="att-legend-item"><div class="att-legend-dot" style="background:#fef3c7"></div>Опоздал</div>
+          <div class="att-legend-item"><div class="att-legend-dot" style="background:#fee2e2"></div>Отсутствовал</div>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+          <div><div style="font-size:20px;font-weight:900;color:#16a34a">${present}</div><div style="font-size:11px;color:var(--tg-hint);font-weight:700">Присутствий</div></div>
+          <div><div style="font-size:20px;font-weight:900;color:#d97706">${late}</div><div style="font-size:11px;color:var(--tg-hint);font-weight:700">Опозданий</div></div>
+          <div><div style="font-size:20px;font-weight:900;color:#dc2626">${absent}</div><div style="font-size:11px;color:var(--tg-hint);font-weight:700">Отсутствий</div></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════
+//  GRADES VIEW
+// ══════════════════════════════════════════
+async function loadGradesView() {
+  document.getElementById('gv-month-display').textContent = fmtMonth(STATE.gvMonth);
+  document.getElementById('gv-month-label').textContent   = fmtMonth(STATE.gvMonth);
+  document.getElementById('gv-content').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+  const data = await api(`/grades?gid=${STATE.groupId}&month=${STATE.gvMonth}`);
+  const grades = data.grades || STATE.fillGrades;
+
+  const gradeClass = {'5':'grade-5','4':'grade-4','3':'grade-3','2':'grade-2'};
+
+  document.getElementById('gv-content').innerHTML = (STATE.students.length ? STATE.students : []).map(stu => `
+    <div class="card">
+      <div class="card-header">
+        <div class="stu-avatar" style="background:${avatarColor(stu.fio)};width:28px;height:28px;border-radius:8px;font-size:11px;flex-shrink:0">${initials(stu.fio)}</div>
+        ${stu.fio}
+      </div>
+      <div class="card-body" style="padding:0 16px">
+        ${STATE.subjects.map(subj => {
+          const g = grades[stu.id]?.[subj.key] || '';
+          return `<div class="grades-subject">
+            <div class="grades-subject-name">${subj.label}</div>
+            <div class="grade-badge ${g ? gradeClass[g]||'' : 'grade-empty'}">${g || '—'}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════
+//  STUDENTS LIST
+// ══════════════════════════════════════════
+async function loadStudentsList() {
+  const stus = STATE.students;
+  document.getElementById('students-content').innerHTML = `
+    <div class="card">
+      <div class="card-header">👥 ${STATE.groupName} <span style="margin-left:auto;font-size:12px;color:var(--tg-hint)">${stus.length} студентов</span></div>
+      <div class="card-body" style="padding:0 16px">
+        ${stus.map((stu,i) => `<div class="stu-row">
+          <div class="stu-avatar" style="background:${avatarColor(stu.fio)}">${initials(stu.fio)}</div>
+          <div style="flex:1">
+            <div class="stu-name">${stu.fio}</div>
+            <div class="stu-meta">ИНН: ${stu.inn||'—'}</div>
+          </div>
+          <div style="font-size:12px;color:var(--tg-hint);font-weight:700">${i+1}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════
+//  PARENT: GRADES
+// ══════════════════════════════════════════
+async function loadParentGrades() {
+  goScreen('screen-parent-grades');
+  const month = curMonthKey();
+  document.getElementById('pg-month-label').textContent = fmtMonth(month);
+  document.getElementById('pg-content').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+  const data = await api(`/parent/grades?inn=${STATE.inn||'demo'}&month=${month}`);
+  const grades   = data.grades   || {};
+  const subjects = data.subjects || [];
+
+  const gradeClass = {'5':'grade-5','4':'grade-4','3':'grade-3','2':'grade-2'};
+
+  if (!subjects.length) {
+    document.getElementById('pg-content').innerHTML = `
+      <div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Оценок за ${fmtMonth(month)} нет</div></div>`;
+    return;
+  }
+
+  document.getElementById('pg-content').innerHTML = `
+    <div class="card">
+      <div class="card-header">📚 Предметы теории</div>
+      <div class="card-body" style="padding:0 16px">
+        ${subjects.filter(s=>s.section!=='practice').map(subj => {
+          const g = grades[subj.key] || '';
+          return `<div class="grades-subject">
+            <div class="grades-subject-name">${subj.label}</div>
+            <div class="grade-badge ${g ? gradeClass[g]||'' : 'grade-empty'}">${g||'—'}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">🔧 Практика</div>
+      <div class="card-body" style="padding:0 16px">
+        ${subjects.filter(s=>s.section==='practice').map(subj => {
+          const g = grades[subj.key] || '';
+          return `<div class="grades-subject">
+            <div class="grades-subject-name">${subj.label}</div>
+            <div class="grade-badge ${g ? gradeClass[g]||'' : 'grade-empty'}">${g||'—'}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════
+//  PARENT: INN INPUT
+// ══════════════════════════════════════════
+async function submitInn() {
+  const inn = document.getElementById('inn-input').value.replace(/\D/g,'');
+  const errEl = document.getElementById('inn-error');
+  if (inn.length < 12) { errEl.textContent='ИНН должен содержать минимум 12 цифр'; errEl.style.display='block'; return; }
+  errEl.style.display='none';
+
+  const data = await api('/parent/link', {method:'POST', body:JSON.stringify({inn, chatId:STATE.chatId})});
+  if (data.error) { errEl.textContent=data.error; errEl.style.display='block'; return; }
+
+  STATE.role           = 'parent';
+  STATE.inn            = inn;
+  STATE.childFio       = data.fio;
+  STATE.childGroupName = data.groupName;
+  document.getElementById('parent-child-name').textContent = data.fio || '';
+  document.getElementById('parent-child-full').textContent = data.fio || '—';
+  document.getElementById('parent-group-name').textContent = data.groupName || '—';
+  goScreen('screen-parent-home');
+  toast('✅ Аккаунт привязан!');
+}
+
+// ══════════════════════════════════════════
+//  SCREEN ENTER HOOKS
+// ══════════════════════════════════════════
+const screenHooks = {
+  'screen-fill':        () => loadFillData(),
+  'screen-attendance':  () => loadAttToday(),
+  'screen-grades-view': () => loadGradesView(),
+  'screen-students':    () => loadStudentsList(),
+  'screen-parent-att':  () => loadParentAttendance(),
+};
+
+const origGoScreen = goScreen;
+window.goScreen = function(id) {
+  origGoScreen(id);
+  if (screenHooks[id]) screenHooks[id]();
+};
+
+async function loadParentAttendance() {
+  const month = curMonthKey();
+  document.getElementById('pa-month-label').textContent = fmtMonth(month);
+  // Reuse att month calendar for parent
+  document.getElementById('att-content').innerHTML = '';
+  // Load and render demo calendar in pa-content
+  loadAttMonth(); // simplified demo
+  document.getElementById('pa-content').innerHTML = document.getElementById('att-content').innerHTML;
+}
+
+// ══════════════════════════════════════════
+//  START
+// ══════════════════════════════════════════
+window.addEventListener('load', () => {
+  setTimeout(init, 600); // Small delay for TG to init
+});
+</script>
+</body>
+</html>

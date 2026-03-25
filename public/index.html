@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
@@ -35,17 +35,12 @@
         margin: 0;
         padding: 0;
       }
-
       body {
         background: var(--bg);
         font-family: "Golos Text", "Segoe UI", sans-serif;
         color: var(--text);
         min-height: 100vh;
       }
-
-      /* ══════════════════════════════
-         SIDEBAR
-      ══════════════════════════════ */
       .sidebar {
         width: var(--sidebar-w);
         background: var(--sidebar-bg);
@@ -54,7 +49,7 @@
         top: 0;
         left: 0;
         height: 100vh;
-        padding: 24px 16px 24px;
+        padding: 24px 16px;
         z-index: 1000;
         display: flex;
         flex-direction: column;
@@ -78,7 +73,6 @@
         font-size: 12px;
         font-weight: 500;
       }
-
       .nav-lbl {
         font-size: 10px;
         font-weight: 700;
@@ -120,8 +114,6 @@
         border-top: 1px solid #1e293b;
         margin: 10px 0;
       }
-
-      /* Кнопка выхода внизу сайдбара */
       .sidebar-footer {
         margin-top: auto;
         padding-top: 16px;
@@ -145,10 +137,6 @@
         background: #1e293b;
         color: #ef4444;
       }
-
-      /* ══════════════════════════════
-         MOBILE HEADER + OVERLAY
-      ══════════════════════════════ */
       .mobile-header {
         display: none;
         position: fixed;
@@ -209,7 +197,6 @@
       .burger-btn.open .burger-icon span:nth-child(3) {
         transform: translateY(-7px) rotate(-45deg);
       }
-
       .sidebar-overlay {
         display: none;
         position: fixed;
@@ -221,10 +208,6 @@
       .sidebar-overlay.show {
         display: block;
       }
-
-      /* ══════════════════════════════
-         MAIN CONTENT
-      ══════════════════════════════ */
       .main-content {
         margin-left: var(--sidebar-w);
         padding: 32px 36px;
@@ -237,7 +220,6 @@
       .section.active {
         display: block;
       }
-
       .page-title {
         font-weight: 900;
         font-size: 22px;
@@ -249,10 +231,6 @@
         font-size: 13px;
         margin-bottom: 24px;
       }
-
-      /* ══════════════════════════════
-         CARDS
-      ══════════════════════════════ */
       .card-st {
         background: var(--card);
         border-radius: 16px;
@@ -260,10 +238,6 @@
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
         border: 1px solid var(--border);
       }
-
-      /* ══════════════════════════════
-         STATS BAR
-      ══════════════════════════════ */
       .stats-bar {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -294,10 +268,6 @@
         font-size: 18px;
         float: right;
       }
-
-      /* ══════════════════════════════
-         SEARCH
-      ══════════════════════════════ */
       .search-wrap {
         position: relative;
         margin-bottom: 20px;
@@ -325,10 +295,6 @@
       .search-wrap input:focus {
         border-color: var(--accent);
       }
-
-      /* ══════════════════════════════
-         STUDENT CARDS GRID
-      ══════════════════════════════ */
       .students-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -432,10 +398,6 @@
         background: #059669;
         color: white;
       }
-
-      /* ══════════════════════════════
-         PAGINATION
-      ══════════════════════════════ */
       .pag-wrap {
         display: flex;
         gap: 5px;
@@ -475,10 +437,6 @@
         color: var(--muted);
         margin-left: 4px;
       }
-
-      /* ══════════════════════════════
-         GROUPS
-      ══════════════════════════════ */
       .g-item {
         display: flex;
         align-items: center;
@@ -503,10 +461,6 @@
         font-weight: 700;
         font-size: 13px;
       }
-
-      /* ══════════════════════════════
-         JOURNAL TABLE
-      ══════════════════════════════ */
       .stats-dashboard {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -572,10 +526,6 @@
         color: #ef4444;
         font-weight: 700;
       }
-
-      /* ══════════════════════════════
-         DROPZONE
-      ══════════════════════════════ */
       .dropzone {
         border: 2px dashed #c7d2fe;
         border-radius: 12px;
@@ -606,10 +556,6 @@
         color: var(--accent);
         margin-top: 4px;
       }
-
-      /* ══════════════════════════════
-         PROF BADGE
-      ══════════════════════════════ */
       .bp {
         display: inline-block;
         background: #dcfce7;
@@ -623,10 +569,6 @@
         background: #fee2e2;
         color: #b91c1c;
       }
-
-      /* ══════════════════════════════
-         MODALS
-      ══════════════════════════════ */
       .m-overlay {
         position: fixed;
         inset: 0;
@@ -716,10 +658,6 @@
         font-weight: 700;
         padding: 10px;
       }
-
-      /* ══════════════════════════════
-         TOAST
-      ══════════════════════════════ */
       #toast-wrap {
         position: fixed;
         top: 16px;
@@ -760,10 +698,6 @@
           opacity: 1;
         }
       }
-
-      /* ══════════════════════════════
-         LOADER
-      ══════════════════════════════ */
       #loader {
         position: fixed;
         inset: 0;
@@ -787,10 +721,6 @@
           transform: rotate(360deg);
         }
       }
-
-      /* ══════════════════════════════
-         EMPTY STATE
-      ══════════════════════════════ */
       .empty-state {
         text-align: center;
         padding: 48px 20px;
@@ -801,10 +731,6 @@
         font-size: 40px;
         margin-bottom: 10px;
       }
-
-      /* ══════════════════════════════
-         RESULTS HEADER
-      ══════════════════════════════ */
       .results-header {
         display: flex;
         justify-content: space-between;
@@ -821,10 +747,17 @@
         color: var(--muted);
         font-weight: 600;
       }
-
-      /* ══════════════════════════════
-         RESPONSIVE — TABLET (≤992px)
-      ══════════════════════════════ */
+      /* Vedmosti month badge */
+      .month-badge {
+        display: inline-block;
+        background: #ede9fe;
+        color: #6d28d9;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 20px;
+        margin-bottom: 12px;
+      }
       @media (max-width: 992px) {
         .sidebar {
           transform: translateX(-100%);
@@ -841,7 +774,6 @@
           margin-left: 0;
           padding: 80px 16px 24px;
         }
-
         .stats-bar {
           grid-template-columns: repeat(3, 1fr);
           gap: 8px;
@@ -852,58 +784,34 @@
         .stat-card {
           padding: 12px 14px;
         }
-
         .stats-dashboard {
           grid-template-columns: repeat(2, 1fr);
           gap: 8px;
         }
       }
-
-      /* ══════════════════════════════
-         RESPONSIVE — MOBILE (≤576px)
-      ══════════════════════════════ */
       @media (max-width: 576px) {
         .main-content {
           padding: 68px 12px 24px;
         }
-
-        /* Stats — 2 колонки на телефоне */
         .stats-bar {
           grid-template-columns: repeat(2, 1fr);
         }
         .stats-bar .stat-card:last-child {
-          grid-column: 1 / -1;
+          grid-column: 1/-1;
         }
         .stat-card .val {
           font-size: 22px;
         }
-
-        /* Журнал — 4 статкарточки в 2 ряда */
         .stats-dashboard {
           grid-template-columns: repeat(2, 1fr);
         }
-
-        /* Карточки студентов — 1 колонка */
         .students-grid {
           grid-template-columns: 1fr;
         }
-
-        /* Кнопки справок — крупнее для пальца */
         .stu-actions button {
           padding: 9px 4px;
           font-size: 12px;
         }
-
-        /* Группы — скрываем таблицу, показываем панель полностью */
-        .col-md-3 {
-          margin-bottom: 12px;
-        }
-        #group-details-card .table-responsive {
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-        }
-
-        /* Журнал таблица — горизонтальный скролл */
         .table-responsive {
           overflow-x: auto;
           -webkit-overflow-scrolling: touch;
@@ -911,8 +819,6 @@
         .table-journal {
           min-width: 700px;
         }
-
-        /* Модальное окно — на весь экран снизу */
         .m-overlay {
           align-items: flex-end;
           padding: 0;
@@ -923,13 +829,6 @@
           max-height: 85vh;
           padding: 20px 16px 32px;
         }
-
-        /* Форма настроек — вертикальная */
-        .row.g-3 > [class*="col-"] {
-          padding: 0;
-        }
-
-        /* Пагинация компактнее */
         .pag-wrap {
           gap: 4px;
         }
@@ -941,8 +840,6 @@
         .pag-info {
           display: none;
         }
-
-        /* Тост — во всю ширину */
         #toast-wrap {
           left: 12px;
           right: 12px;
@@ -952,8 +849,6 @@
           min-width: unset;
           max-width: 100%;
         }
-
-        /* Заголовок страницы */
         .page-title {
           font-size: 19px;
         }
@@ -961,30 +856,11 @@
           font-size: 12px;
           margin-bottom: 16px;
         }
-
-        /* Кнопка в journal section */
-        #section-journal .d-flex.justify-content-between {
-          flex-direction: column;
-          gap: 8px;
-        }
-        #section-journal .d-flex.justify-content-between a {
-          width: 100%;
-          text-align: center;
-        }
-
-        /* Journal controls */
-        #section-journal .card-st .row .col-md-4.d-flex {
-          flex-direction: row;
-        }
       }
-
-      /* ══════════════════════════════
-         TOUCH-FRIENDLY INPUTS
-      ══════════════════════════════ */
       @media (max-width: 768px) {
         .form-select,
         .form-control {
-          font-size: 16px !important; /* Предотвращает zoom на iOS */
+          font-size: 16px !important;
           border-radius: 10px;
         }
         .btn {
@@ -1000,13 +876,8 @@
     </style>
   </head>
   <body>
-    <!-- ══ TOAST ══ -->
     <div id="toast-wrap"></div>
-
-    <!-- ══ LOADER ══ -->
     <div id="loader" style="display: none"><div class="spinner"></div></div>
-
-    <!-- ══ MOBILE HEADER ══ -->
     <div class="mobile-header">
       <button class="burger-btn" id="burger-btn" onclick="toggleSidebar()">
         <div class="burger-icon"><span></span><span></span><span></span></div>
@@ -1016,15 +887,13 @@
         <span id="mobile-section-label">Реестр и Справки</span>
       </div>
     </div>
-
-    <!-- ══ SIDEBAR OVERLAY ══ -->
     <div
       class="sidebar-overlay"
       id="sidebar-overlay"
       onclick="closeSidebar()"
     ></div>
 
-    <!-- ══ EDIT MODAL ══ -->
+    <!-- EDIT MODAL -->
     <div
       class="m-overlay"
       id="edit-modal"
@@ -1034,19 +903,19 @@
       <div class="m-box">
         <h5>✏️ Редактировать студента</h5>
         <input type="hidden" id="e-id" />
-        <label class="m-label">ФИО</label>
-        <input type="text" id="e-fio" class="m-input" />
-        <label class="m-label">Дата рождения</label>
-        <input
+        <label class="m-label">ФИО</label
+        ><input type="text" id="e-fio" class="m-input" />
+        <label class="m-label">Дата рождения</label
+        ><input
           type="text"
           id="e-birth"
           class="m-input"
           placeholder="01.01.2007"
         />
-        <label class="m-label">ИНН</label>
-        <input type="text" id="e-inn" class="m-input" inputmode="numeric" />
-        <label class="m-label">Поименный номер</label>
-        <input type="text" id="e-lycid" class="m-input" />
+        <label class="m-label">ИНН</label
+        ><input type="text" id="e-inn" class="m-input" inputmode="numeric" />
+        <label class="m-label">Поименный номер</label
+        ><input type="text" id="e-lycid" class="m-input" />
         <div class="m-actions">
           <button class="btn btn-light" onclick="closeEdit()">Отмена</button>
           <button class="btn btn-primary" onclick="saveEdit()">
@@ -1056,7 +925,51 @@
       </div>
     </div>
 
-    <!-- ══ CONFIRM MODAL ══ -->
+    <!-- ADD STUDENT MODAL -->
+    <div
+      class="m-overlay"
+      id="add-student-modal"
+      style="display: none"
+      onclick="if (event.target === this) closeAddStudent();"
+    >
+      <div class="m-box">
+        <h5>➕ Добавить студента в группу</h5>
+        <label class="m-label">ФИО *</label
+        ><input
+          type="text"
+          id="as-fio"
+          class="m-input"
+          placeholder="Иванов Иван Иванович"
+        />
+        <label class="m-label">Дата рождения</label
+        ><input
+          type="text"
+          id="as-birth"
+          class="m-input"
+          placeholder="01.01.2007"
+        />
+        <label class="m-label">ИНН</label
+        ><input
+          type="text"
+          id="as-inn"
+          class="m-input"
+          inputmode="numeric"
+          placeholder="12345678901234"
+        />
+        <label class="m-label">Поименный номер</label
+        ><input type="text" id="as-lycid" class="m-input" />
+        <div class="m-actions">
+          <button class="btn btn-light" onclick="closeAddStudent()">
+            Отмена
+          </button>
+          <button class="btn btn-success" onclick="saveAddStudent()">
+            ➕ Добавить
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFIRM MODAL -->
     <div class="m-overlay" id="confirm-modal" style="display: none">
       <div class="c-box">
         <div class="c-icon" id="c-icon">⚠️</div>
@@ -1069,7 +982,7 @@
       </div>
     </div>
 
-    <!-- ══ SIDEBAR ══ -->
+    <!-- SIDEBAR -->
     <div class="sidebar" id="sidebar">
       <div class="sidebar-logo">
         <h4>ПРОФЛИЦЕЙ №3</h4>
@@ -1114,14 +1027,27 @@
       >
         ⚙️ Настройка групп
       </button>
+      <button
+        class="nav-btn"
+        onclick="showSection('curators', this, 'Доступ кураторов')"
+      >
+        🔐 Доступ кураторов
+      </button>
       <hr class="nav-divider" />
+      <button
+        class="nav-btn"
+        onclick="showSection('vedmosti', this, 'Сводные ведомости')"
+      >
+        📋 Сводные ведомости
+      </button>
+      <a href="/summary.html" class="nav-btn">📝 Кабинет куратора</a>
       <a href="/admin/events" class="nav-btn">📡 СКУД события</a>
       <div class="sidebar-footer">
         <a href="/logout" class="logout-btn">🚪 Выйти</a>
       </div>
     </div>
 
-    <!-- ══ MAIN ══ -->
+    <!-- MAIN CONTENT -->
     <div class="main-content">
       <!-- РЕЕСТР -->
       <div id="section-search" class="section active">
@@ -1145,8 +1071,8 @@
           </div>
         </div>
         <div class="search-wrap">
-          <span class="s-icon">🔍</span>
-          <input
+          <span class="s-icon">🔍</span
+          ><input
             type="text"
             id="searchInput"
             placeholder="Поиск по фамилии или имени..."
@@ -1186,6 +1112,12 @@
                   <span class="text-muted small" id="current-group-prof"></span>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
+                  <button
+                    class="btn btn-sm btn-success"
+                    onclick="openAddStudent()"
+                  >
+                    ➕ Добавить
+                  </button>
                   <button
                     class="btn btn-sm btn-outline-secondary"
                     onclick="confirmClearStudents()"
@@ -1249,12 +1181,12 @@
         <div class="card-st mb-3">
           <div class="row g-2 align-items-end">
             <div class="col-12 col-md-4">
-              <label class="form-label fw-bold small mb-1">Группа</label>
-              <select id="j-group-select" class="form-select"></select>
+              <label class="form-label fw-bold small mb-1">Группа</label
+              ><select id="j-group-select" class="form-select"></select>
             </div>
             <div class="col-6 col-md-3">
-              <label class="form-label fw-bold small mb-1">Месяц</label>
-              <input type="month" id="j-month" class="form-control" />
+              <label class="form-label fw-bold small mb-1">Месяц</label
+              ><input type="month" id="j-month" class="form-control" />
             </div>
             <div class="col-6 col-md-5 d-flex gap-2">
               <button
@@ -1318,12 +1250,12 @@
         <p class="page-sub">Формирование ведомости (60 сом/день)</p>
         <div class="card-st" style="max-width: 460px">
           <div class="mb-3">
-            <label class="form-label fw-bold small">Группа</label>
-            <select id="f-group-select" class="form-select"></select>
+            <label class="form-label fw-bold small">Группа</label
+            ><select id="f-group-select" class="form-select"></select>
           </div>
           <div class="mb-4">
-            <label class="form-label fw-bold small">Месяц</label>
-            <input type="month" id="f-month" class="form-control" />
+            <label class="form-label fw-bold small">Месяц</label
+            ><input type="month" id="f-month" class="form-control" />
           </div>
           <button
             class="btn btn-success w-100 py-3 fw-bold"
@@ -1343,8 +1275,8 @@
           <div class="col-12 col-md-6">
             <div class="card-st">
               <div class="mb-3">
-                <label class="form-label fw-bold small">Название группы</label>
-                <input
+                <label class="form-label fw-bold small">Название группы</label
+                ><input
                   type="text"
                   id="import-gname"
                   class="form-control"
@@ -1353,8 +1285,8 @@
                 />
               </div>
               <div class="mb-3">
-                <label class="form-label fw-bold small">Профессия</label>
-                <select
+                <label class="form-label fw-bold small">Профессия</label
+                ><select
                   id="import-prof-select"
                   class="form-select"
                   onchange="updateDurationHint()"
@@ -1448,22 +1380,21 @@
           <div class="col-12 col-md-5">
             <div class="card-st">
               <div class="mb-3">
-                <label class="form-label fw-bold small">Выберите группу</label>
-                <select
+                <label class="form-label fw-bold small">Выберите группу</label
+                ><select
                   id="gs-group"
                   class="form-select"
                   onchange="onGsSelect()"
                 ></select>
               </div>
               <div class="mb-3">
-                <label class="form-label fw-bold small">Профессия</label>
-                <select id="gs-prof" class="form-select"></select>
+                <label class="form-label fw-bold small">Профессия</label
+                ><select id="gs-prof" class="form-select"></select>
               </div>
               <div class="mb-4">
                 <label class="form-label fw-bold small"
                   >Время начала смены</label
-                >
-                <input
+                ><input
                   type="time"
                   id="gs-shift"
                   class="form-control"
@@ -1505,26 +1436,240 @@
           </div>
         </div>
       </div>
+
+      <!-- КУРАТОРЫ -->
+      <div id="section-curators" class="section">
+        <p class="page-title">Доступ кураторов</p>
+        <p class="page-sub">
+          Назначайте куратору одну или несколько групп и выдавайте отдельный
+          вход в систему
+        </p>
+        <div class="row g-3">
+          <div class="col-12 col-md-5">
+            <div class="card-st">
+              <div class="mb-3">
+                <div
+                  class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2"
+                >
+                  <label class="form-label fw-bold small m-0"
+                    >Группы куратора</label
+                  >
+                  <div class="d-flex gap-2">
+                    <button
+                      class="btn btn-sm btn-outline-primary"
+                      type="button"
+                      onclick="toggleCuratorGroups(true)"
+                    >
+                      Выбрать все
+                    </button>
+                    <button
+                      class="btn btn-sm btn-outline-secondary"
+                      type="button"
+                      onclick="toggleCuratorGroups(false)"
+                    >
+                      Очистить
+                    </button>
+                  </div>
+                </div>
+                <div id="cur-group-meta" class="small text-muted mb-2">
+                  Выбрано 0 групп
+                </div>
+                <div
+                  id="cur-group-list"
+                  class="border rounded-4 p-2"
+                  style="
+                    max-height: 320px;
+                    overflow: auto;
+                    background: linear-gradient(
+                      180deg,
+                      #ffffff 0%,
+                      #f8fbff 100%
+                    );
+                    display: grid;
+                    gap: 8px;
+                  "
+                ></div>
+                <div class="small text-muted mt-2">
+                  Можно выбрать несколько групп.
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold small">ФИО куратора</label
+                ><input
+                  id="cur-fullname"
+                  class="form-control"
+                  placeholder="Например: Иванова А.А."
+                />
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold small">Логин</label
+                ><input
+                  id="cur-username"
+                  class="form-control"
+                  placeholder="Например: web10_curator"
+                />
+              </div>
+              <div class="mb-4">
+                <label class="form-label fw-bold small">Пароль</label
+                ><input
+                  id="cur-password"
+                  class="form-control"
+                  type="password"
+                  placeholder="Введите пароль"
+                />
+              </div>
+              <button
+                class="btn btn-primary w-100 fw-bold py-2"
+                style="border-radius: 12px"
+                onclick="saveCuratorAccess()"
+              >
+                🔐 Сохранить доступ
+              </button>
+              <div class="small text-muted mt-2">
+                Куратор после входа попадёт на страницу «Сводная ведомость».
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-md-7">
+            <div class="card-st">
+              <div
+                class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2"
+              >
+                <h6 class="fw-bold m-0" style="font-size: 13px">
+                  Выданные доступы
+                </h6>
+                <div class="d-flex gap-2 flex-wrap">
+                  <button
+                    class="btn btn-outline-warning btn-sm fw-bold"
+                    onclick="cleanupCurators()"
+                    title="Удалить дублирующихся кураторов"
+                  >
+                    🧹 Очистить дубли
+                  </button>
+                  <a href="/summary.html" class="btn btn-outline-primary btn-sm"
+                    >Открыть ведомость</a
+                  >
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table
+                  class="table table-hover align-middle mb-0"
+                  style="font-size: 13px"
+                >
+                  <thead class="table-light">
+                    <tr>
+                      <th>Куратор</th>
+                      <th>Логин</th>
+                      <th>Группа</th>
+                      <th class="text-end">Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody id="curators-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════
+         ВЕДОМОСТИ — поиск по месяцу
+    ════════════════════════════════════════════════════ -->
+      <div id="section-vedmosti" class="section">
+        <p class="page-title">📋 Сводные ведомости</p>
+        <p class="page-sub">
+          Выберите месяц — система покажет все группы заполнившие ведомость за
+          этот период
+        </p>
+
+        <div class="card-st mb-3">
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-5">
+              <label class="form-label fw-bold small"
+                >Выберите месяц из списка</label
+              >
+              <select
+                id="vd-month-sel"
+                class="form-select"
+                onchange="loadVedmostiByMonth()"
+              >
+                <option value="">— месяцы с данными —</option>
+              </select>
+            </div>
+            <div class="col-7 col-md-4">
+              <label class="form-label fw-bold small"
+                >Или введите вручную</label
+              >
+              <input
+                type="month"
+                id="vd-month-manual"
+                class="form-control"
+                onchange="loadVedmostiByMonth(this.value)"
+              />
+            </div>
+            <div class="col-5 col-md-3">
+              <button
+                class="btn btn-primary w-100 fw-bold"
+                onclick="loadVedmostiByMonth()"
+              >
+                🔄 Загрузить
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="vd-hint" class="card-st text-center py-5 text-muted">
+          <div style="font-size: 40px; margin-bottom: 10px">📋</div>
+          <p class="mb-1 fw-bold">Выберите месяц</p>
+          <p class="mb-0 small">
+            В выпадающем списке отображаются только месяцы с сохранёнными
+            ведомостями
+          </p>
+        </div>
+
+        <div id="vd-list" style="display: none">
+          <div class="month-badge" id="vd-month-label"></div>
+          <div class="card-st p-0">
+            <div class="table-responsive">
+              <table
+                class="table table-hover align-middle mb-0"
+                style="font-size: 13px"
+              >
+                <thead class="table-light">
+                  <tr>
+                    <th>Группа</th>
+                    <th class="d-none d-md-table-cell">Профессия</th>
+                    <th class="text-center">Студентов</th>
+                    <th class="text-center">Заполнено</th>
+                    <th class="text-end">Действия</th>
+                  </tr>
+                </thead>
+                <tbody id="vd-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <!-- /main-content -->
 
     <script>
-      /* ── Globals ── */
       let activeGroupId = null,
         professions = [],
         allStudents = [],
         studentMap = {};
       let gsGroups = [],
+        curatorGroups = [],
         gsProfessions = [],
         currentPage = 1,
         confirmCb = null;
       const PAGE_SIZE = 60;
 
-      /* ── Sidebar mobile ── */
+      /* ── Helpers ── */
       function toggleSidebar() {
-        const sb = document.getElementById("sidebar");
-        const ov = document.getElementById("sidebar-overlay");
-        const btn = document.getElementById("burger-btn");
+        const sb = document.getElementById("sidebar"),
+          ov = document.getElementById("sidebar-overlay"),
+          btn = document.getElementById("burger-btn");
         const open = sb.classList.toggle("open");
         ov.classList.toggle("show", open);
         btn.classList.toggle("open", open);
@@ -1534,8 +1679,6 @@
         document.getElementById("sidebar-overlay").classList.remove("show");
         document.getElementById("burger-btn").classList.remove("open");
       }
-
-      /* ── Helpers ── */
       const AC = [
         "#4f46e5",
         "#0891b2",
@@ -1565,8 +1708,6 @@
         const d = new Date();
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       }
-
-      /* ── Toast ── */
       function toast(msg, type = "success") {
         const icons = { success: "✅", error: "❌", info: "ℹ️" };
         const el = document.createElement("div");
@@ -1575,16 +1716,12 @@
         document.getElementById("toast-wrap").appendChild(el);
         setTimeout(() => el.remove(), 3600);
       }
-
-      /* ── Loader ── */
       function showLoader() {
         document.getElementById("loader").style.display = "flex";
       }
       function hideLoader() {
         document.getElementById("loader").style.display = "none";
       }
-
-      /* ── Confirm ── */
       function showConfirm(
         title,
         text,
@@ -1607,11 +1744,33 @@
         confirmCb = null;
       }
       document.getElementById("c-ok").onclick = () => {
+        const cb = confirmCb;
         closeConfirm();
-        confirmCb && confirmCb();
+        cb && cb();
       };
 
-      /* ── Edit modal ── */
+      /* ── Month format ── */
+      function fmtMonthRu(v) {
+        if (!v) return "—";
+        const [y, m] = v.split("-").map(Number);
+        const MN = [
+          "Январь",
+          "Февраль",
+          "Март",
+          "Апрель",
+          "Май",
+          "Июнь",
+          "Июль",
+          "Август",
+          "Сентябрь",
+          "Октябрь",
+          "Ноябрь",
+          "Декабрь",
+        ];
+        return m ? `${MN[m - 1]} ${y}` : v;
+      }
+
+      /* ── Edit student ── */
       function openEdit(id) {
         const s = studentMap[id];
         if (!s) return;
@@ -1627,8 +1786,8 @@
         document.getElementById("edit-modal").style.display = "none";
       }
       async function saveEdit() {
-        const id = document.getElementById("e-id").value;
-        const fio = document.getElementById("e-fio").value.trim();
+        const id = document.getElementById("e-id").value,
+          fio = document.getElementById("e-fio").value.trim();
         if (!fio) {
           toast("ФИО не может быть пустым", "error");
           return;
@@ -1650,11 +1809,59 @@
         viewGroup(
           activeGroupId,
           document.getElementById("current-group-title").innerText,
-          "",
+          document.getElementById("current-group-prof").innerText,
         );
       }
 
-      /* ── Navigation ── */
+      /* ── Add student ── */
+      function openAddStudent() {
+        if (!activeGroupId) return;
+        ["as-fio", "as-birth", "as-inn", "as-lycid"].forEach(
+          (id) => (document.getElementById(id).value = ""),
+        );
+        document.getElementById("add-student-modal").style.display = "flex";
+        setTimeout(() => document.getElementById("as-fio").focus(), 50);
+      }
+      function closeAddStudent() {
+        document.getElementById("add-student-modal").style.display = "none";
+      }
+      async function saveAddStudent() {
+        const fio = document.getElementById("as-fio").value.trim();
+        if (!fio) {
+          toast("Введите ФИО студента", "error");
+          return;
+        }
+        showLoader();
+        try {
+          const res = await fetch("/api/admin/student", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fio,
+              birthDate: document.getElementById("as-birth").value.trim(),
+              inn: document.getElementById("as-inn").value.trim(),
+              lyceumId: document.getElementById("as-lycid").value.trim(),
+              groupId: activeGroupId,
+            }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            toast(`Студент «${fio}» добавлен`);
+            closeAddStudent();
+            viewGroup(
+              activeGroupId,
+              document.getElementById("current-group-title").innerText,
+              document.getElementById("current-group-prof").innerText,
+            );
+          } else toast("Ошибка: " + (data.error || "неизвестная"), "error");
+        } catch (e) {
+          toast("Ошибка соединения", "error");
+        } finally {
+          hideLoader();
+        }
+      }
+
+      /* ── Section navigation ── */
       function showSection(id, btn, label) {
         document
           .querySelectorAll(".section")
@@ -1664,59 +1871,39 @@
           .querySelectorAll(".nav-btn")
           .forEach((b) => b.classList.remove("active"));
         if (btn) btn.classList.add("active");
-        // Обновляем подпись в мобильном хедере
         if (label)
           document.getElementById("mobile-section-label").textContent = label;
         if (id === "groups-man") loadGroupsMan();
         if (id === "journal" || id === "food") loadGroupsList();
         if (id === "import") loadProfessions();
         if (id === "group-settings") loadGroupSettings();
+        if (id === "curators") loadCuratorsSection();
+        if (id === "vedmosti") loadVedmostiAllMonths();
         closeSidebar();
       }
 
-      /* ── Реестр ── */
+      /* ── Stats ── */
       async function loadStats() {
         try {
           const [sRes, gRes] = await Promise.all([
-            fetch("/api/admin/search?q=&limit=60"), // ← берём только первую страницу
+            fetch("/api/admin/search?q=&limit=60"),
             fetch("/api/admin/groups-list"),
           ]);
-
-          const sData = await sRes.json();
-          const groups = await gRes.json();
-
-          // Новый формат: { students, total }
-          const students = sData.students || [];
-          const total = sData.total ?? students.length;
-
+          const sData = await sRes.json(),
+            groups = await gRes.json();
+          const students = sData.students || [],
+            total = sData.total ?? students.length;
           allStudents = students;
           students.forEach((s) => {
             studentMap[s._id] = s;
           });
-
-          // Статистика
           document.getElementById("stat-total").textContent = total;
           document.getElementById("stat-groups").textContent = groups.length;
-
-          // Считаем присутствующих сегодня
-          const today = new Date();
-          const dk = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-
-          // 🔥 Для подсчёта сегодня нужен отдельный запрос — в первой странице не все студенты
-          const countRes = await fetch(`/api/admin/global-stats`);
+          const countRes = await fetch("/api/admin/global-stats");
           if (countRes.ok) {
-            const countData = await countRes.json();
-            document.getElementById("stat-today").textContent =
-              countData.presentToday;
-          } else {
-            // Фолбэк — считаем по загруженным
-            document.getElementById("stat-today").textContent = students.filter(
-              (s) =>
-                s.skudDaily?.some((r) => r.date === dk && r.present) ||
-                s.attendance?.some((a) => a.date === dk && a.present),
-            ).length;
+            const d = await countRes.json();
+            document.getElementById("stat-today").textContent = d.presentToday;
           }
-
           currentPage = 1;
           renderCards(students);
         } catch (e) {
@@ -1745,10 +1932,10 @@
       }
 
       function renderCards(students) {
-        const count = students.length;
-        const totalPages = Math.ceil(count / PAGE_SIZE);
-        const start = (currentPage - 1) * PAGE_SIZE;
-        const items = students.slice(start, start + PAGE_SIZE);
+        const count = students.length,
+          totalPages = Math.ceil(count / PAGE_SIZE);
+        const start = (currentPage - 1) * PAGE_SIZE,
+          items = students.slice(start, start + PAGE_SIZE);
         document.getElementById("results-count").textContent =
           count > 0
             ? `${start + 1}–${Math.min(start + PAGE_SIZE, count)} из ${count}`
@@ -1762,24 +1949,9 @@
         document.getElementById("results").innerHTML = items
           .map((s) => {
             const color = avatarColor(s.fio || "?"),
-              ini = initials(s.fio || "?");
-            const group = s.group ? s.group.name : "Без группы";
-            return `<div class="stu-card">
-            <div class="stu-card-top">
-              <div class="stu-avatar" style="background:${color}">${ini}</div>
-              <div class="stu-card-info"><h6>${s.fio}</h6><span class="group-badge">📂 ${group}</span></div>
-            </div>
-            <div class="stu-meta">
-              <div class="stu-meta-item">🎂 <span>${s.birthDate || "—"}</span></div>
-              <div class="stu-meta-item">🪪 <span>${s.inn || "—"}</span></div>
-              <div class="stu-meta-item">№ <span>${s.lyceumId || "—"}</span></div>
-            </div>
-            <div class="stu-actions">
-              <button class="btn-common" onclick="window.open('/api/admin/print/${s._id}/common')">📄 Обычная</button>
-              <button class="btn-army"   onclick="window.open('/api/admin/print/${s._id}/army')">🎖 Военкомат</button>
-              <button class="btn-social" onclick="window.open('/api/admin/print/${s._id}/social')">🏥 Соцфонд</button>
-            </div>
-          </div>`;
+              ini = initials(s.fio || "?"),
+              group = s.group ? s.group.name : "Без группы";
+            return `<div class="stu-card"><div class="stu-card-top"><div class="stu-avatar" style="background:${color}">${ini}</div><div class="stu-card-info"><h6>${s.fio}</h6><span class="group-badge">📂 ${group}</span></div></div><div class="stu-meta"><div class="stu-meta-item">🎂 <span>${s.birthDate || "—"}</span></div><div class="stu-meta-item">🪪 <span>${s.inn || "—"}</span></div><div class="stu-meta-item">№ <span>${s.lyceumId || "—"}</span></div></div><div class="stu-actions"><button class="btn-common" onclick="window.open('/api/admin/print/${s._id}/common')">📄 Обычная</button><button class="btn-army" onclick="window.open('/api/admin/print/${s._id}/army')">🎖 Военкомат</button><button class="btn-social" onclick="window.open('/api/admin/print/${s._id}/social')">🏥 Соцфонд</button></div></div>`;
           })
           .join("");
         const pag = document.getElementById("pagination");
@@ -1796,14 +1968,8 @@
           }
           btns += `<button class="pag-btn ${p === currentPage ? "active" : ""}" onclick="goPage(${p})">${p}</button>`;
         }
-        pag.innerHTML = `<div class="pag-wrap">
-          <button class="pag-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? "disabled" : ""}>←</button>
-          ${btns}
-          <button class="pag-btn" onclick="goPage(${currentPage + 1})" ${currentPage === totalPages ? "disabled" : ""}>→</button>
-          <span class="pag-info">Стр ${currentPage}/${totalPages} · ${count} студентов</span>
-        </div>`;
+        pag.innerHTML = `<div class="pag-wrap"><button class="pag-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? "disabled" : ""}>←</button>${btns}<button class="pag-btn" onclick="goPage(${currentPage + 1})" ${currentPage === totalPages ? "disabled" : ""}>→</button><span class="pag-info">Стр ${currentPage}/${totalPages} · ${count} студентов</span></div>`;
       }
-
       function goPage(p) {
         const max = Math.ceil(allStudents.length / PAGE_SIZE);
         if (p < 1 || p > max) return;
@@ -1812,20 +1978,17 @@
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
 
-      /* ── Группы ── */
+      /* ── Groups ── */
       async function loadGroupsMan() {
-        const res = await fetch("/api/admin/groups-list");
-        const groups = await res.json();
+        const res = await fetch("/api/admin/groups-list"),
+          groups = await res.json();
         document.getElementById("groups-list-container").innerHTML = groups
           .map(
-            (g) => `
-          <div class="g-item" id="gi-${g._id}" onclick="viewGroup('${g._id}','${g.name.replace(/'/g, "\\'")}','${(g.profRu || "").replace(/'/g, "\\'")}')">
-            <span class="gname">${g.name}</span>
-          </div>`,
+            (g) =>
+              `<div class="g-item" id="gi-${g._id}" onclick="viewGroup('${g._id}','${g.name.replace(/'/g, "\\'")}','${(g.profRu || "").replace(/'/g, "\\'")}')"><span class="gname">${g.name}</span></div>`,
           )
           .join("");
       }
-
       async function viewGroup(id, name, profRu) {
         activeGroupId = id;
         document
@@ -1841,8 +2004,8 @@
         document.getElementById("current-group-prof").innerText = profRu || "";
         showLoader();
         try {
-          const res = await fetch(`/api/admin/group-students/${id}`);
-          const students = await res.json();
+          const res = await fetch(`/api/admin/group-students/${id}`),
+            students = await res.json();
           students.forEach((s) => {
             studentMap[s._id] = s;
           });
@@ -1850,16 +2013,8 @@
             students.length
               ? students
                   .map(
-                    (s, i) => `<tr>
-              <td class="text-muted" style="font-size:12px">${i + 1}</td>
-              <td class="fw-bold" style="font-size:13px">${s.fio}</td>
-              <td class="d-none d-md-table-cell" style="font-size:12px">${s.birthDate || "—"}</td>
-              <td><code style="font-size:11px">${s.inn || "—"}</code></td>
-              <td class="d-none d-sm-table-cell"><span class="badge bg-secondary">${s.lyceumId || "—"}</span></td>
-              <td class="text-end">
-                <button class="btn btn-sm btn-outline-primary me-1" onclick="openEdit('${s._id}')">✏️</button>
-                <button class="btn btn-sm btn-outline-danger"       onclick="confirmDeleteStudent('${s._id}','${s.fio.replace(/'/g, "\\'")}')">🗑️</button>
-              </td></tr>`,
+                    (s, i) =>
+                      `<tr><td class="text-muted" style="font-size:12px">${i + 1}</td><td class="fw-bold" style="font-size:13px">${s.fio}</td><td class="d-none d-md-table-cell" style="font-size:12px">${s.birthDate || "—"}</td><td><code style="font-size:11px">${s.inn || "—"}</code></td><td class="d-none d-sm-table-cell"><span class="badge bg-secondary">${s.lyceumId || "—"}</span></td><td class="text-end"><button class="btn btn-sm btn-outline-primary me-1" onclick="openEdit('${s._id}')">✏️</button><button class="btn btn-sm btn-outline-danger" onclick="confirmDeleteStudent('${s._id}')">🗑️</button></td></tr>`,
                   )
                   .join("")
               : `<tr><td colspan="6" class="text-center text-muted py-4">Студентов нет</td></tr>`;
@@ -1867,7 +2022,6 @@
           hideLoader();
         }
       }
-
       function confirmDeleteGroup() {
         if (!activeGroupId) return;
         showConfirm(
@@ -1905,7 +2059,7 @@
             viewGroup(
               activeGroupId,
               document.getElementById("current-group-title").innerText,
-              "",
+              document.getElementById("current-group-prof").innerText,
             );
           },
           "🧹",
@@ -1913,25 +2067,30 @@
           "btn-warning",
         );
       }
-      function confirmDeleteStudent(id, fio) {
+      function confirmDeleteStudent(id) {
+        const fio = studentMap[id]?.fio || "студент";
         showConfirm(
           "Удалить студента?",
           `«${fio}» будет удалён безвозвратно.`,
           async () => {
             showLoader();
-            await fetch(`/api/admin/student/${id}`, { method: "DELETE" });
+            const res = await fetch(`/api/admin/student/${id}`, {
+              method: "DELETE",
+            });
             hideLoader();
-            toast("Студент удалён");
-            viewGroup(
-              activeGroupId,
-              document.getElementById("current-group-title").innerText,
-              "",
-            );
+            if (res.ok) {
+              toast("Студент удалён");
+              viewGroup(
+                activeGroupId,
+                document.getElementById("current-group-title").innerText,
+                document.getElementById("current-group-prof").innerText,
+              );
+            } else toast("Ошибка удаления", "error");
           },
         );
       }
 
-      /* ── Импорт ── */
+      /* ── Import ── */
       async function loadProfessions() {
         if (professions.length) return;
         const res = await fetch("/api/admin/professions");
@@ -1973,7 +2132,6 @@
           document.getElementById("dz-name").textContent = file.name;
         }
       });
-
       async function processImport() {
         const gname = document.getElementById("import-gname").value.trim();
         const profId = document.getElementById("import-prof-select").value;
@@ -2000,10 +2158,10 @@
         fd.append("profId", profId);
         try {
           const res = await fetch("/api/admin/import", {
-            method: "POST",
-            body: fd,
-          });
-          const data = await res.json();
+              method: "POST",
+              body: fd,
+            }),
+            data = await res.json();
           if (res.ok) {
             toast(`Импортировано ${data.created} студентов в «${gname}»`);
             document.getElementById("import-gname").value = "";
@@ -2011,9 +2169,7 @@
             document.getElementById("import-file").value = "";
             document.getElementById("dz-name").textContent = "Файл не выбран";
             document.getElementById("duration-info").classList.add("d-none");
-          } else {
-            toast("Ошибка: " + (data.error || "неизвестная"), "error");
-          }
+          } else toast("Ошибка: " + (data.error || "неизвестная"), "error");
         } catch (e) {
           toast("Ошибка соединения", "error");
         } finally {
@@ -2023,22 +2179,21 @@
         }
       }
 
-      /* ── Журнал и питание ── */
+      /* ── Journal ── */
       async function loadGroupsList() {
-        const res = await fetch("/api/admin/groups-list");
-        const groups = await res.json();
+        const res = await fetch("/api/admin/groups-list"),
+          groups = await res.json();
         const opts = groups
           .map((g) => `<option value="${g._id}">${g.name}</option>`)
           .join("");
-        const jS = document.getElementById("j-group-select");
-        const fS = document.getElementById("f-group-select");
+        const jS = document.getElementById("j-group-select"),
+          fS = document.getElementById("f-group-select");
         if (jS) jS.innerHTML = opts;
         if (fS) fS.innerHTML = opts;
       }
-
       async function loadJournal() {
-        const gid = document.getElementById("j-group-select").value;
-        const month = document.getElementById("j-month").value;
+        const gid = document.getElementById("j-group-select").value,
+          month = document.getElementById("j-month").value;
         if (!gid || !month) return toast("Выберите группу и месяц", "error");
         showLoader();
         const res = await fetch(`/api/admin/attendance-matrix/${gid}/${month}`);
@@ -2067,13 +2222,7 @@
         document.getElementById("journal-head").innerHTML = headHtml;
         let bodyHtml = "";
         data.matrix.forEach((row) => {
-          let tr = `<tr><td class="fio-col">
-            <div>${row.fio}</div>
-            <div class="student-stats">
-              <span class="s-present">П:${row.stats.presences}</span>
-              <span class="s-late">О:${row.stats.lates}</span>
-              <span class="s-absent">Н:${row.stats.absences}</span>
-            </div></td>`;
+          let tr = `<tr><td class="fio-col"><div>${row.fio}</div><div class="student-stats"><span class="s-present">П:${row.stats.presences}</span><span class="s-late">О:${row.stats.lates}</span><span class="s-absent">Н:${row.stats.absences}</span></div></td>`;
           row.days.forEach((day) => {
             const wClass = day.isWeekend ? "weekend-cell" : "";
             if (!day.present)
@@ -2088,26 +2237,24 @@
         });
         document.getElementById("journal-body").innerHTML = bodyHtml;
       }
-
       function downloadFoodReport() {
-        const gid = document.getElementById("f-group-select").value;
-        const month = document.getElementById("f-month").value;
+        const gid = document.getElementById("f-group-select").value,
+          month = document.getElementById("f-month").value;
         if (!gid || !month) {
           toast("Выберите группу и месяц", "info");
           return;
         }
         window.open(`/api/admin/report-food/${gid}/${month}`);
       }
-
       function downloadJournalExcel() {
-        const gid = document.getElementById("j-group-select").value;
-        const month = document.getElementById("j-month").value;
+        const gid = document.getElementById("j-group-select").value,
+          month = document.getElementById("j-month").value;
         if (!gid || !month)
           return toast("Сначала выберите группу и месяц", "error");
         window.open(`/api/admin/export-journal/${gid}/${month}`, "_blank");
       }
 
-      /* ── Настройка групп ── */
+      /* ── Group settings ── */
       async function loadGroupSettings() {
         const [gRes, pRes] = await Promise.all([
           fetch("/api/admin/groups-list"),
@@ -2130,12 +2277,8 @@
       function renderGsTable() {
         document.getElementById("gs-body").innerHTML = gsGroups
           .map(
-            (g) => `<tr>
-          <td class="fw-bold">${g.name}</td>
-          <td>${g.profRu ? `<span class="bp">${g.profRu}</span>` : `<span class="bp no">Не задана</span>`}</td>
-          <td class="d-none d-sm-table-cell" style="font-size:12px;color:var(--muted)">${g.duration || "—"}</td>
-          <td><button class="btn btn-outline-primary" style="font-size:11px;padding:2px 8px;border-radius:6px" onclick="gsQuickSelect('${g._id}')">Изменить</button></td>
-        </tr>`,
+            (g) =>
+              `<tr><td class="fw-bold">${g.name}</td><td>${g.profRu ? `<span class="bp">${g.profRu}</span>` : `<span class="bp no">Не задана</span>`}</td><td class="d-none d-sm-table-cell" style="font-size:12px;color:var(--muted)">${g.duration || "—"}</td><td><button class="btn btn-outline-primary" style="font-size:11px;padding:2px 8px;border-radius:6px" onclick="gsQuickSelect('${g._id}')">Изменить</button></td></tr>`,
           )
           .join("");
       }
@@ -2147,8 +2290,8 @@
           .scrollIntoView({ behavior: "smooth" });
       }
       function onGsSelect() {
-        const gid = document.getElementById("gs-group").value;
-        const g = gsGroups.find((x) => x._id === gid);
+        const gid = document.getElementById("gs-group").value,
+          g = gsGroups.find((x) => x._id === gid);
         if (g) {
           const p = gsProfessions.find((p) => p.ru === g.profRu);
           document.getElementById("gs-prof").value = p ? p.id : "";
@@ -2157,14 +2300,15 @@
       }
       async function saveGroupSettings() {
         const gid = document.getElementById("gs-group").value;
-        const profId = document.getElementById("gs-prof").value;
-        const shiftStart = document.getElementById("gs-shift").value;
         if (!gid) return toast("Выберите группу", "error");
         showLoader();
         const res = await fetch(`/api/admin/group/${gid}/settings`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ profId, shiftStart }),
+          body: JSON.stringify({
+            profId: document.getElementById("gs-prof").value,
+            shiftStart: document.getElementById("gs-shift").value,
+          }),
         });
         hideLoader();
         res.ok
@@ -2172,11 +2316,264 @@
           : toast("Ошибка сохранения", "error");
       }
 
+      /* ── Curators ── */
+      async function loadCuratorsSection() {
+        const [groupsRes, curatorsRes] = await Promise.all([
+          fetch("/api/admin/groups-list"),
+          fetch("/api/admin/curators"),
+        ]);
+        curatorGroups = await groupsRes.json();
+        const curators = await curatorsRes.json();
+        document.getElementById("cur-group-list").innerHTML =
+          curatorGroups.length
+            ? curatorGroups
+                .map(
+                  (g) =>
+                    `<label class="d-flex align-items-center justify-content-between gap-3 px-3 py-2 rounded-4 mb-2 curator-group-option" style="cursor:pointer;background:#ffffff;border:1px solid #dbe7f5;box-shadow:0 6px 18px rgba(15,23,42,.04)"><div><div class="fw-bold text-dark">${g.name}</div><div class="small text-muted">Доступ к данным группы</div></div><input type="checkbox" class="form-check-input m-0 curator-group-check" value="${g._id}" onchange="updateCuratorGroupSelectionInfo()"></label>`,
+                )
+                .join("")
+            : `<div class="text-muted small px-2 py-2">Группы не найдены</div>`;
+        updateCuratorGroupSelectionInfo();
+        document.getElementById("curators-body").innerHTML = curators.length
+          ? curators
+              .map(
+                (c) =>
+                  `<tr><td><div class="fw-bold">${c.fullName || "—"}</div></td><td><code>${c.username}</code></td><td>${(c.groupNames || []).length ? c.groupNames.map((name) => `<span class="badge bg-primary-subtle text-primary border border-primary-subtle me-1 mb-1">${name}</span>`).join("") : "—"}</td><td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="deleteCurator('${c._id}')">Удалить</button></td></tr>`,
+              )
+              .join("")
+          : `<tr><td colspan="4" class="text-center text-muted py-4">Доступы ещё не созданы</td></tr>`;
+      }
+      function updateCuratorGroupSelectionInfo() {
+        const selected = document.querySelectorAll(
+          ".curator-group-check:checked",
+        ).length;
+        const total = document.querySelectorAll(".curator-group-check").length;
+        const meta = document.getElementById("cur-group-meta");
+        if (meta)
+          meta.textContent = total
+            ? `Выбрано ${selected} из ${total} групп`
+            : "Группы пока не добавлены";
+      }
+      function toggleCuratorGroups(selectAll) {
+        document.querySelectorAll(".curator-group-check").forEach((input) => {
+          input.checked = selectAll;
+        });
+        updateCuratorGroupSelectionInfo();
+      }
+      async function saveCuratorAccess() {
+        const groupIds = [
+          ...document.querySelectorAll(".curator-group-check:checked"),
+        ].map((input) => input.value);
+        const fullName = document.getElementById("cur-fullname").value.trim();
+        const username = document.getElementById("cur-username").value.trim();
+        const password = document.getElementById("cur-password").value.trim();
+        if (!groupIds.length || !username || !password) {
+          toast("Выберите группы, логин и пароль", "error");
+          return;
+        }
+        showLoader();
+        try {
+          const res = await fetch("/api/admin/curators", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ groupIds, fullName, username, password }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            toast(data.error || "Не удалось сохранить доступ", "error");
+            return;
+          }
+          document.getElementById("cur-fullname").value = "";
+          document.getElementById("cur-username").value = "";
+          document.getElementById("cur-password").value = "";
+          toggleCuratorGroups(false);
+          toast("Доступ куратора сохранён");
+          loadCuratorsSection();
+        } catch (e) {
+          toast("Ошибка соединения", "error");
+        } finally {
+          hideLoader();
+        }
+      }
+      async function cleanupCurators() {
+        showLoader();
+        try {
+          const res = await fetch("/api/admin/curators/cleanup", {
+            method: "DELETE",
+          });
+          const data = await res.json();
+          if (res.ok) {
+            toast(
+              data.deleted > 0
+                ? `🧹 Удалено дублей: ${data.deleted}`
+                : "Дублей не найдено",
+              "success",
+            );
+            loadCuratorsSection();
+          } else toast(data.error || "Ошибка", "error");
+        } catch (e) {
+          toast("Ошибка соединения", "error");
+        } finally {
+          hideLoader();
+        }
+      }
+      function deleteCurator(id) {
+        showConfirm(
+          "Удалить доступ куратора?",
+          "Куратор больше не сможет входить в сводную ведомость.",
+          async () => {
+            showLoader();
+            const res = await fetch(`/api/admin/curators/${id}`, {
+              method: "DELETE",
+            });
+            hideLoader();
+            if (res.ok) {
+              toast("Доступ удалён");
+              loadCuratorsSection();
+            } else toast("Не удалось удалить доступ", "error");
+          },
+          "🔐",
+          "Удалить",
+          "btn-danger",
+        );
+      }
+
+      /* ══════════════════════════════════════════════════════
+       ВЕДОМОСТИ — поиск по месяцам (новая логика)
+    ══════════════════════════════════════════════════════ */
+
+      // Загрузить список всех месяцев где есть данные
+      async function loadVedmostiAllMonths() {
+        try {
+          const res = await fetch("/api/admin/summary-all-months");
+          if (!res.ok) return;
+          const months = await res.json();
+          const sel = document.getElementById("vd-month-sel");
+          sel.innerHTML =
+            '<option value="">— месяцы с данными —</option>' +
+            months
+              .map((m) => `<option value="${m}">${fmtMonthRu(m)}</option>`)
+              .join("");
+          // Если уже есть данные — показать последний месяц
+          if (months.length) {
+            sel.value = months[0];
+            await loadVedmostiByMonth();
+          }
+        } catch (e) {
+          console.error("loadVedmostiAllMonths:", e);
+        }
+      }
+
+      // Загрузить группы за выбранный месяц
+      async function loadVedmostiByMonth(manualVal) {
+        const sel = document.getElementById("vd-month-sel");
+        const month =
+          manualVal ||
+          sel.value ||
+          document.getElementById("vd-month-manual").value ||
+          "";
+
+        if (!month) {
+          document.getElementById("vd-hint").style.display = "";
+          document.getElementById("vd-list").style.display = "none";
+          return;
+        }
+
+        // Sync both controls
+        if (!manualVal)
+          document.getElementById("vd-month-manual").value = month;
+        if (sel.value !== month) {
+          // Try to set select value; if month not in list, add it temporarily
+          const exists = [...sel.options].some((o) => o.value === month);
+          if (!exists)
+            sel.innerHTML += `<option value="${month}">${fmtMonthRu(month)}</option>`;
+          sel.value = month;
+        }
+
+        showLoader();
+        try {
+          const res = await fetch(`/api/admin/summary-by-month/${month}`);
+          if (!res.ok) throw new Error(await res.text());
+          const rows = await res.json();
+
+          if (!rows.length) {
+            document.getElementById("vd-hint").style.display = "";
+            document.getElementById("vd-hint").innerHTML = `
+            <div style="font-size:40px;margin-bottom:10px">📭</div>
+            <p class="mb-1 fw-bold">За ${fmtMonthRu(month)} ведомостей нет</p>
+            <p class="mb-0 small text-muted">Попробуйте выбрать другой месяц</p>`;
+            document.getElementById("vd-list").style.display = "none";
+            return;
+          }
+
+          document.getElementById("vd-hint").style.display = "none";
+          document.getElementById("vd-list").style.display = "";
+          document.getElementById("vd-month-label").textContent =
+            `📅 ${fmtMonthRu(month)} — ${rows.length} групп`;
+
+          document.getElementById("vd-tbody").innerHTML = rows
+            .map((r) => {
+              const pctBadge =
+                r.pct >= 80
+                  ? `<span class="badge bg-success">${r.pct}%</span>`
+                  : r.pct >= 40
+                    ? `<span class="badge bg-warning text-dark">${r.pct}%</span>`
+                    : `<span class="badge bg-secondary">${r.pct}%</span>`;
+              return `<tr>
+            <td class="fw-bold">${r.groupName}</td>
+            <td class="d-none d-md-table-cell text-muted small">${r.profRu}</td>
+            <td class="text-center">${r.students}</td>
+            <td class="text-center">${pctBadge}</td>
+            <td class="text-end">
+              <div class="d-flex gap-1 justify-content-end flex-wrap">
+                <button class="btn btn-sm btn-outline-secondary"
+                  onclick="window.open('/api/admin/summary-print/${r.groupId}/${month}','_blank')"
+                  title="Печать">🖨️</button>
+                <button class="btn btn-sm btn-success"
+                  onclick="window.open('/api/admin/summary-word/${r.groupId}/${month}','_blank')"
+                  title="Скачать Word">📄 Word</button>
+                <button class="btn btn-sm btn-primary"
+                  onclick="sendVedmostTg('${r.groupId}','${month}')"
+                  title="Отправить в TG">📤 TG</button>
+              </div>
+            </td>
+          </tr>`;
+            })
+            .join("");
+        } catch (e) {
+          toast("Ошибка загрузки ведомостей: " + e.message, "error");
+          console.error(e);
+        } finally {
+          hideLoader();
+        }
+      }
+
+      async function sendVedmostTg(gid, month) {
+        showLoader();
+        try {
+          const res = await fetch(
+            `/api/admin/summary-send-tg/${gid}/${month}`,
+            { method: "POST" },
+          );
+          const data = await res.json();
+          if (!res.ok) {
+            toast(data.error || "Ошибка отправки", "error");
+            return;
+          }
+          toast(`📤 Отправлено ${data.sent} из ${data.total} получателей`);
+        } catch (e) {
+          toast("Ошибка соединения", "error");
+        } finally {
+          hideLoader();
+        }
+      }
+
       /* ── Init ── */
       window.onload = () => {
         const cm = curMonth();
         document.getElementById("j-month").value = cm;
         document.getElementById("f-month").value = cm;
+        document.getElementById("vd-month-manual").value = cm;
         loadStats();
       };
     </script>

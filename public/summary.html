@@ -1,0 +1,1406 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>Сводная ведомость | ПЛ №3</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #fff;
+      --border: #e2e8f0;
+      --accent: #4f46e5;
+      --sidebar-bg: #0f172a;
+      --muted: #64748b;
+      --text: #0f172a;
+      --success: #16a34a;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --sidebar-w: 240px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      background: var(--bg);
+      font-family: "Golos Text", "Segoe UI", sans-serif;
+      color: var(--text);
+      min-height: 100vh
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--sidebar-bg);
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      transition: transform .3s ease
+    }
+
+    .sb-logo {
+      padding: 20px 16px 16px;
+      border-bottom: 1px solid #1e293b;
+      text-align: center
+    }
+
+    .sb-logo h4 {
+      color: #fff;
+      font-weight: 900;
+      font-size: 15px;
+      margin: 0
+    }
+
+    .sb-logo span {
+      color: #38bdf8;
+      font-size: 11px;
+      font-weight: 500
+    }
+
+    .sb-menu {
+      padding: 12px 10px;
+      flex: 1
+    }
+
+    .sb-lbl {
+      font-size: 9px;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 4px 8px;
+      margin-top: 10px
+    }
+
+    .sb-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      color: #94a3b8;
+      padding: 9px 10px;
+      border-radius: 9px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all .15s;
+      margin-bottom: 1px
+    }
+
+    .sb-btn:hover {
+      background: #1e293b;
+      color: #e2e8f0
+    }
+
+    .sb-btn.active {
+      background: var(--accent);
+      color: #fff
+    }
+
+    .sb-btn .ico {
+      font-size: 15px;
+      flex-shrink: 0
+    }
+
+    .sb-footer {
+      padding: 12px 10px;
+      border-top: 1px solid #1e293b
+    }
+
+    .sb-footer a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 8px 10px;
+      border-radius: 8px;
+      transition: all .15s
+    }
+
+    .sb-footer a:hover {
+      background: #1e293b;
+      color: #ef4444
+    }
+
+    .sb-info {
+      font-size: 11px;
+      color: #475569;
+      padding: 8px 10px;
+      line-height: 1.5
+    }
+
+    /* ── TOPBAR (mobile) ── */
+    .topbar {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 52px;
+      background: var(--sidebar-bg);
+      z-index: 201;
+      align-items: center;
+      padding: 0 14px;
+      gap: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, .3)
+    }
+
+    .topbar h5 {
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      flex: 1;
+      margin: 0
+    }
+
+    .topbar .top-sub {
+      color: #38bdf8;
+      font-size: 10px;
+      font-weight: 500;
+      display: block
+    }
+
+    .burger {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px
+    }
+
+    .burger span {
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: #fff;
+      margin: 4px 0;
+      border-radius: 2px;
+      transition: all .3s
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .5);
+      z-index: 199
+    }
+
+    .overlay.on {
+      display: block
+    }
+
+    /* ── MAIN ── */
+    .main {
+      margin-left: var(--sidebar-w);
+      padding: 28px 28px;
+      min-height: 100vh;
+      transition: margin .3s
+    }
+
+    /* ── PAGE HEADER ── */
+    .ph {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap
+    }
+
+    .ph-title {
+      font-weight: 900;
+      font-size: 21px
+    }
+
+    .ph-sub {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px
+    }
+
+    .ph-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center
+    }
+
+    /* ── CARDS ── */
+    .card-st {
+      background: var(--card);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .04)
+    }
+
+    /* ── CONTROL ROW ── */
+    .ctrl {
+      background: var(--card);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 16px;
+      margin-bottom: 16px
+    }
+
+    .ctrl .row {
+      --bs-gutter-x: .75rem
+    }
+
+    label.fw-bold {
+      font-size: 12px;
+      color: #374151;
+      display: block;
+      margin-bottom: 4px
+    }
+
+    /* ── STATS BAR ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px
+    }
+
+    .stat-c {
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      text-align: center
+    }
+
+    .stat-c .sv {
+      font-size: 22px;
+      font-weight: 900
+    }
+
+    .stat-c .sl {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-top: 2px
+    }
+
+    /* ── TABLE SHELL ── */
+    .tshell {
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      overflow: auto;
+      background: #fff;
+      max-height: 65vh
+    }
+
+    .tshell table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 900px
+    }
+
+    .tshell thead th {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      background: #f8fafc;
+      font-size: 10px;
+      font-weight: 800;
+      border: 1px solid var(--border);
+      text-align: center;
+      vertical-align: bottom;
+      padding: 6px 4px
+    }
+
+    .tshell thead th.sticky-l {
+      position: sticky;
+      left: 0;
+      z-index: 4;
+      background: #f8fafc
+    }
+
+    .tshell .fio-th {
+      text-align: left;
+      min-width: 180px;
+      padding: 8px 12px;
+      white-space: nowrap
+    }
+
+    .tshell td {
+      border: 1px solid var(--border);
+      text-align: center;
+      vertical-align: middle;
+      padding: 6px 4px;
+      font-size: 12px
+    }
+
+    .tshell td.fio-td {
+      text-align: left;
+      padding: 7px 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      position: sticky;
+      left: 0;
+      background: #fff;
+      z-index: 1;
+      min-width: 180px
+    }
+
+    .tshell tr:nth-child(even) td {
+      background: #fafcff
+    }
+
+    .tshell tr:nth-child(even) td.fio-td {
+      background: #fafcff
+    }
+
+    .tshell tr:hover td {
+      background: #eff6ff
+    }
+
+    .tshell tr:hover td.fio-td {
+      background: #eff6ff
+    }
+
+    .th-vert {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      white-space: nowrap;
+      max-height: 110px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #374151;
+      padding: 4px 2px
+    }
+
+    .th-section {
+      background: #eef2ff;
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 11px
+    }
+
+    .grade-select {
+      width: 54px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      padding: 3px 2px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      background: #fff;
+      cursor: pointer;
+      transition: border .2s
+    }
+
+    .grade-select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, .15)
+    }
+
+    .grade-select.g5 {
+      background: #dcfce7;
+      border-color: #16a34a;
+      color: #15803d
+    }
+
+    .grade-select.g4 {
+      background: #dbeafe;
+      border-color: #2563eb;
+      color: #1d4ed8
+    }
+
+    .grade-select.g3 {
+      background: #fff;
+      color: #374151
+    }
+
+    .grade-select.g2 {
+      background: #fee2e2;
+      border-color: #ef4444;
+      color: #b91c1c
+    }
+
+    /* ── SUBJECTS EDITOR ── */
+    .subj-editor {
+      background: var(--card);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 16px
+    }
+
+    .subj-list {
+      display: grid;
+      gap: 6px;
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 4px
+    }
+
+    .subj-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 7px 10px;
+      cursor: move;
+      transition: box-shadow .2s
+    }
+
+    .subj-item:hover {
+      box-shadow: 0 2px 10px rgba(79, 70, 229, .15);
+      border-color: #c7d2fe
+    }
+
+    .subj-item.dragging {
+      opacity: .5;
+      box-shadow: 0 4px 20px rgba(79, 70, 229, .3)
+    }
+
+    .subj-item .drag-handle {
+      color: #94a3b8;
+      font-size: 14px;
+      flex-shrink: 0;
+      cursor: grab
+    }
+
+    .subj-item input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      outline: none;
+      min-width: 0
+    }
+
+    .subj-item .sect-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 5px;
+      flex-shrink: 0;
+      cursor: pointer;
+      user-select: none
+    }
+
+    .subj-item .sect-badge.theory {
+      background: #eef2ff;
+      color: var(--accent)
+    }
+
+    .subj-item .sect-badge.practice {
+      background: #fef3c7;
+      color: #92400e
+    }
+
+    .subj-item .del-btn {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0 2px;
+      flex-shrink: 0
+    }
+
+    .subj-item .del-btn:hover {
+      color: #ef4444
+    }
+
+    /* ── SAVED LIST ── */
+    .saved-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .saved-item:last-child {
+      border-bottom: none
+    }
+
+    .saved-item .si-info {
+      flex: 1;
+      min-width: 0
+    }
+
+    .saved-item .si-title {
+      font-weight: 700;
+      font-size: 13px
+    }
+
+    .saved-item .si-sub {
+      font-size: 11px;
+      color: var(--muted)
+    }
+
+    .saved-item .si-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0
+    }
+
+    /* ── TOAST ── */
+    #toast-wrap {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 6px
+    }
+
+    .toast-item {
+      background: #fff;
+      border-radius: 10px;
+      padding: 10px 14px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, .14);
+      border-left: 4px solid var(--success);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      min-width: 220px;
+      animation: tin .25s ease
+    }
+
+    .toast-item.error {
+      border-color: var(--danger)
+    }
+
+    .toast-item.info {
+      border-color: #3b82f6
+    }
+
+    @keyframes tin {
+      from {
+        transform: translateX(110%);
+        opacity: 0
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1
+      }
+    }
+
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 255, 255, .7);
+      z-index: 8000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(2px)
+    }
+
+    .spin {
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: sp .7s linear infinite
+    }
+
+    @keyframes sp {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    /* ── MODAL ── */
+    .modal-bk {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .6);
+      z-index: 6000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      backdrop-filter: blur(3px)
+    }
+
+    .modal-bk.on {
+      display: flex
+    }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 18px;
+      padding: 24px;
+      width: 100%;
+      max-width: 540px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, .2)
+    }
+
+    .modal-box h5 {
+      font-weight: 800;
+      font-size: 16px;
+      margin-bottom: 16px
+    }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:900px) {
+      .sidebar {
+        transform: translateX(-100%)
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 8px 0 32px rgba(0, 0, 0, .3)
+      }
+
+      .topbar {
+        display: flex
+      }
+
+      .main {
+        margin-left: 0;
+        padding: 68px 14px 20px
+      }
+
+      .stats-row {
+        grid-template-columns: repeat(2, 1fr)
+      }
+
+      .ph {
+        flex-direction: column;
+        gap: 8px
+      }
+
+      .ph-actions {
+        width: 100%;
+        justify-content: flex-start
+      }
+    }
+
+    @media(max-width:480px) {
+      .stats-row {
+        grid-template-columns: repeat(2, 1fr)
+      }
+
+      .ctrl .row {
+        flex-direction: column
+      }
+
+      .tshell {
+        max-height: 55vh
+      }
+
+      .ph-actions .btn {
+        font-size: 12px;
+        padding: 6px 10px
+      }
+    }
+
+    @media(max-width:768px) {
+
+      .form-select,
+      .form-control {
+        font-size: 16px !important
+      }
+
+      input,
+      select {
+        font-size: 16px !important
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="toast-wrap"></div>
+  <div id="loader">
+    <div class="spin"></div>
+  </div>
+
+  <!-- OVERLAY -->
+  <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+  <!-- TOPBAR (mobile) -->
+  <div class="topbar" id="topbar">
+    <button class="burger" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </button>
+    <div>
+      <h5>ПРОФЛИЦЕЙ №3 <span class="top-sub" id="topbar-sub">Сводная ведомость</span></h5>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <h4>ПРОФЛИЦЕЙ №3</h4><span>Учебная часть</span>
+    </div>
+    <div class="sb-menu">
+      <div class="sb-lbl">Ведомость</div>
+      <button class="sb-btn active" onclick="showPage('summary',this)"><span class="ico">📝</span>Сводная
+        ведомость</button>
+      <button class="sb-btn" onclick="showPage('subjects',this)"><span class="ico">📚</span>Предметы группы</button>
+      <button class="sb-btn" onclick="showPage('saved',this)"><span class="ico">📁</span>Сохранённые</button>
+      <div class="sb-lbl">Документы</div>
+      <button class="sb-btn" onclick="showPage('journal',this)"><span class="ico">🗓️</span>Журнал СКУД</button>
+      <button class="sb-btn" onclick="showPage('food',this)"><span class="ico">🍽️</span>Питание</button>
+    </div>
+    <div class="sb-info" id="sb-info">Загрузка...</div>
+    <div class="sb-footer"><a href="/logout"><span>🚪</span> Выйти</a></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ── PAGE: СВОДНАЯ ВЕДОМОСТЬ ── -->
+    <div id="page-summary">
+      <div class="ph">
+        <div>
+          <div class="ph-title">📝 Сводная ведомость</div>
+          <div class="ph-sub" id="sum-meta">Выберите группу и месяц</div>
+        </div>
+        <div class="ph-actions">
+          <button class="btn btn-outline-secondary btn-sm" onclick="printSummary()" title="Печать в браузере">🖨️
+            Печать</button>
+          <button class="btn btn-success btn-sm" onclick="downloadWord()" title="Скачать Word документ">📄 Word</button>
+          <button class="btn btn-primary btn-sm" onclick="sendToTg()" title="Отправить в Telegram">📤 Telegram</button>
+          <button class="btn btn-warning btn-sm fw-bold" onclick="saveSummary()" title="Сохранить оценки">💾
+            Сохранить</button>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="ctrl mb-3">
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-5">
+            <label class="fw-bold">Группа</label>
+            <select id="sum-group" class="form-select" onchange="onGroupChange()"></select>
+          </div>
+          <div class="col-7 col-md-4">
+            <label class="fw-bold">Месяц</label>
+            <input type="month" id="sum-month" class="form-control" />
+          </div>
+          <div class="col-5 col-md-3">
+            <button class="btn btn-primary w-100 fw-bold" onclick="loadSummary()">📊 Показать</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row" id="sum-stats" style="display:none">
+        <div class="stat-c">
+          <div class="sv" id="st-students">0</div>
+          <div class="sl">Студентов</div>
+        </div>
+        <div class="stat-c">
+          <div class="sv" style="color:var(--accent)" id="st-theory">0</div>
+          <div class="sl">Теория</div>
+        </div>
+        <div class="stat-c">
+          <div class="sv" style="color:#d97706" id="st-practice">0</div>
+          <div class="sl">Практика</div>
+        </div>
+        <div class="stat-c">
+          <div class="sv" style="color:var(--success)" id="st-filled">0%</div>
+          <div class="sl">Заполнено</div>
+        </div>
+      </div>
+
+      <!-- Table hint -->
+      <div id="sum-hint" class="card-st p-4 text-center text-muted">
+        <div style="font-size:36px;margin-bottom:8px">📝</div>
+        <p class="mb-0">Выберите группу и месяц, затем нажмите «Показать»</p>
+        <p class="mb-0 small mt-1">Оценки сохраняются автоматически при нажатии 💾</p>
+      </div>
+
+      <!-- Table -->
+      <div class="tshell" id="sum-table-wrap" style="display:none">
+        <table>
+          <thead id="sum-thead"></thead>
+          <tbody id="sum-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── PAGE: ПРЕДМЕТЫ ── -->
+    <div id="page-subjects" style="display:none">
+      <div class="ph">
+        <div>
+          <div class="ph-title">📚 Предметы группы</div>
+          <div class="ph-sub">Настройка списка предметов для сводной ведомости</div>
+        </div>
+      </div>
+      <div class="row g-3">
+        <div class="col-12 col-md-5">
+          <div class="card-st p-3 mb-3">
+            <label class="fw-bold mb-2" style="font-size:12px">Группа</label>
+            <select id="subj-group" class="form-select mb-3" onchange="loadSubjects()"></select>
+            <div class="d-flex gap-2 mb-3">
+              <button class="btn btn-outline-primary btn-sm flex-fill" onclick="addSubject('theory')">+ Теория</button>
+              <button class="btn btn-outline-warning btn-sm flex-fill" onclick="addSubject('practice')">+
+                Практика</button>
+            </div>
+            <button class="btn btn-primary w-100 fw-bold" onclick="saveSubjects()">💾 Сохранить предметы</button>
+          </div>
+          <div class="card-st p-3">
+            <p class="fw-bold mb-2" style="font-size:12px">📌 Инструкция</p>
+            <ul class="small text-muted mb-0 ps-3" style="line-height:1.8">
+              <li>Перетащите предметы для сортировки</li>
+              <li>Нажмите на badge чтобы переключить раздел</li>
+              <li>🔵 Теория / 🟡 Практика</li>
+              <li>После сохранения обновите ведомость</li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-12 col-md-7">
+          <div class="subj-editor">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="fw-bold m-0" style="font-size:14px">Список предметов</h6>
+              <span class="badge bg-primary-subtle text-primary" id="subj-count">0 предметов</span>
+            </div>
+            <div class="subj-list" id="subj-list">
+              <div class="text-center text-muted py-4 small">Выберите группу</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: СОХРАНЁННЫЕ ── -->
+    <div id="page-saved" style="display:none">
+      <div class="ph">
+        <div>
+          <div class="ph-title">📁 Сохранённые ведомости</div>
+          <div class="ph-sub">Готовые для печати и отправки документы</div>
+        </div>
+      </div>
+      <div class="card-st p-3 mb-3">
+        <label class="fw-bold mb-2" style="font-size:12px">Группа</label>
+        <select id="saved-group" class="form-select" onchange="loadSavedMonths()"></select>
+      </div>
+      <div class="card-st" id="saved-list-wrap">
+        <div class="text-center text-muted py-5 small">Выберите группу</div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: ЖУРНАЛ ── -->
+    <div id="page-journal" style="display:none">
+      <div class="ph">
+        <div>
+          <div class="ph-title">🗓️ Журнал посещаемости</div>
+          <div class="ph-sub">Данные СКУД по группе за месяц</div>
+        </div>
+      </div>
+      <div class="ctrl mb-3">
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-5"><label class="fw-bold">Группа</label><select id="j-group"
+              class="form-select"></select></div>
+          <div class="col-7 col-md-4"><label class="fw-bold">Месяц</label><input type="month" id="j-month"
+              class="form-control" /></div>
+          <div class="col-5 col-md-3 d-flex gap-2">
+            <button class="btn btn-primary w-100 fw-bold" onclick="loadJournal()">📊</button>
+            <button class="btn btn-success fw-bold" onclick="downloadJournal()" title="Excel">📥</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-st" style="overflow:auto">
+        <div id="j-hint" class="text-center text-muted py-5 small">Выберите группу и месяц</div>
+        <table class="table mb-0" id="j-table" style="display:none;font-size:11px;min-width:700px">
+          <thead id="j-thead" class="table-dark"></thead>
+          <tbody id="j-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── PAGE: ПИТАНИЕ ── -->
+    <div id="page-food" style="display:none">
+      <div class="ph">
+        <div>
+          <div class="ph-title">🍽️ Ведомость питания</div>
+          <div class="ph-sub">60 сом/день</div>
+        </div>
+      </div>
+      <div class="ctrl" style="max-width:420px">
+        <div class="mb-3"><label class="fw-bold">Группа</label><select id="f-group" class="form-select"></select></div>
+        <div class="mb-3"><label class="fw-bold">Месяц</label><input type="month" id="f-month" class="form-control" />
+        </div>
+        <button class="btn btn-success w-100 fw-bold py-2" onclick="downloadFood()">📥 Скачать DOCX</button>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    /* ==========================================
+       STATE
+    ========================================== */
+    let session = null;
+    let currentSummaryGroupId = "";
+    let currentSummaryMonth = "";
+    let summarySubjects = [];
+    let summaryRows = [];
+    let dragSrc = null;
+
+    /* ==========================================
+       UTILS
+    ========================================== */
+    function esc(v) { return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+    function cm() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; }
+    function fmtMonth(v) { if (!v) return "—"; const [y, m] = v.split("-").map(Number); const MN = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]; return `${MN[m - 1]} ${y}`; }
+    function toast(msg, type = "success") { const ic = { success: "✅", error: "❌", info: "ℹ️" }; const el = document.createElement("div"); el.className = `toast-item ${type}`; el.innerHTML = `<span>${ic[type] || "✅"}</span><span>${msg}</span>`; document.getElementById("toast-wrap").appendChild(el); setTimeout(() => el.remove(), 3500); }
+    function showLoader() { document.getElementById("loader").style.display = "flex"; }
+    function hideLoader() { document.getElementById("loader").style.display = "none"; }
+
+    /* ==========================================
+       SIDEBAR / NAVIGATION
+    ========================================== */
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("open");
+      document.getElementById("overlay").classList.toggle("on");
+    }
+    function closeSidebar() {
+      document.getElementById("sidebar").classList.remove("open");
+      document.getElementById("overlay").classList.remove("on");
+    }
+    function showPage(id, btn) {
+      document.querySelectorAll("[id^='page-']").forEach(el => el.style.display = "none");
+      document.getElementById("page-" + id).style.display = "block";
+      document.querySelectorAll(".sb-btn").forEach(b => b.classList.remove("active"));
+      if (btn) btn.classList.add("active");
+      document.getElementById("topbar-sub").textContent = btn?.textContent?.trim() || "";
+      closeSidebar();
+      if (id === "subjects") refreshSubjGroupSelect();
+      if (id === "saved") refreshSavedGroupSelect();
+      if (id === "journal" || id === "food") refreshAuxSelects();
+    }
+
+    /* ==========================================
+       SESSION & GROUPS
+    ========================================== */
+    async function loadSession() {
+      const res = await fetch("/api/admin/me");
+      session = await res.json();
+      const groups = Array.isArray(session.groups) ? session.groups : [];
+
+      // Fill sum-group
+      const sumGrp = document.getElementById("sum-group");
+      sumGrp.innerHTML = '<option value="">— Выберите группу —</option>' +
+        groups.map(g => `<option value="${g._id}">${esc(g.name)}</option>`).join("");
+
+      // Sidebar info
+      const info = session.role === "admin"
+        ? "Режим: Администратор"
+        : `Куратор: ${groups.map(g => g.name).join(", ") || "—"}`;
+      document.getElementById("sb-info").textContent = info;
+
+      // If curator and only one group — autoselect
+      if (groups.length === 1) {
+        sumGrp.value = groups[0]._id;
+        onGroupChange();
+      }
+    }
+
+    function onGroupChange() {
+      // Nothing auto-loads, just ready
+    }
+
+    function getGroups() {
+      return Array.isArray(session?.groups) ? session.groups : [];
+    }
+
+    function refreshSubjGroupSelect() {
+      const el = document.getElementById("subj-group");
+      const groups = getGroups();
+      el.innerHTML = '<option value="">— Выберите группу —</option>' +
+        groups.map(g => `<option value="${g._id}">${esc(g.name)}</option>`).join("");
+    }
+    function refreshSavedGroupSelect() {
+      const el = document.getElementById("saved-group");
+      const groups = getGroups();
+      el.innerHTML = '<option value="">— Выберите группу —</option>' +
+        groups.map(g => `<option value="${g._id}">${esc(g.name)}</option>`).join("");
+    }
+    function refreshAuxSelects() {
+      const groups = getGroups();
+      const opts = groups.map(g => `<option value="${g._id}">${esc(g.name)}</option>`).join("");
+      ["j-group", "f-group"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '<option value="">— Группа —</option>' + opts;
+      });
+      // auto-select if single group
+      if (groups.length === 1) {
+        document.getElementById("j-group") && (document.getElementById("j-group").value = groups[0]._id);
+        document.getElementById("f-group") && (document.getElementById("f-group").value = groups[0]._id);
+      }
+    }
+
+    /* ==========================================
+       SUMMARY — LOAD
+    ========================================== */
+    async function loadSummary() {
+      const gid = document.getElementById("sum-group").value;
+      const month = document.getElementById("sum-month").value;
+      if (!gid) return toast("Выберите группу", "error");
+      if (!month) return toast("Выберите месяц", "error");
+
+      showLoader();
+      try {
+        const res = await fetch(`/api/admin/summary/${gid}/${month}`);
+        const data = await res.json();
+        if (!res.ok) return toast(data.error || "Ошибка загрузки", "error");
+
+        currentSummaryGroupId = gid;
+        currentSummaryMonth = month;
+        summarySubjects = data.subjects || [];
+        summaryRows = data.rows || [];
+
+        const grpName = data.group?.name || "";
+        const profName = data.group?.profRu || "";
+        document.getElementById("sum-meta").textContent = `${grpName} · ${profName} · ${fmtMonth(month)}`;
+
+        renderSummaryStats();
+        renderSummaryTable();
+
+        document.getElementById("sum-hint").style.display = "none";
+        document.getElementById("sum-table-wrap").style.display = "block";
+        document.getElementById("sum-stats").style.display = "grid";
+      } catch (e) {
+        toast("Ошибка соединения", "error");
+      } finally {
+        hideLoader();
+      }
+    }
+
+    function renderSummaryStats() {
+      const theory = summarySubjects.filter(s => s.section !== "practice");
+      const practice = summarySubjects.filter(s => s.section === "practice");
+      document.getElementById("st-students").textContent = summaryRows.length;
+      document.getElementById("st-theory").textContent = theory.length;
+      document.getElementById("st-practice").textContent = practice.length;
+      // Fill % — count non-empty grades
+      const total = summaryRows.length * summarySubjects.length;
+      if (total === 0) { document.getElementById("st-filled").textContent = "—"; return; }
+      let filled = 0;
+      summaryRows.forEach(row => {
+        summarySubjects.forEach(s => {
+          if (row.grades?.[s.key]) filled++;
+        });
+      });
+      document.getElementById("st-filled").textContent = Math.round(filled / total * 100) + "%";
+    }
+
+    function renderSummaryTable() {
+      const theory = summarySubjects.filter(s => s.section !== "practice");
+      const practice = summarySubjects.filter(s => s.section === "practice");
+      const all = [...theory, ...practice];
+
+      // THEAD
+      let thead = `<tr>
+    <th class="fio-th sticky-l" rowspan="2">#</th>
+    <th class="fio-th sticky-l" rowspan="2" style="left:36px;min-width:180px">Фамилия, имя и отчество</th>
+    ${theory.length ? `<th class="th-section" colspan="${theory.length}">Предметы теоретического обучения</th>` : ""}
+    ${practice.length ? `<th class="th-section" style="background:#fef3c7;color:#92400e" colspan="${practice.length}">Спец.предметы (практика)</th>` : ""}
+  </tr><tr>
+    ${all.map(s => `<th><div class="th-vert">${esc(s.label)}</div></th>`).join("")}
+  </tr>`;
+      document.getElementById("sum-thead").innerHTML = thead;
+
+      // TBODY
+      let tbody = "";
+      summaryRows.forEach((row, idx) => {
+        tbody += `<tr data-sid="${row.studentId}">
+      <td class="fio-td" style="min-width:36px;text-align:center;color:var(--muted);font-size:11px">${idx + 1}</td>
+      <td class="fio-td" style="left:36px">${esc(row.fio)}</td>
+      ${all.map(s => {
+          const val = row.grades?.[s.key] || "";
+          const cls = val === "5" ? "g5" : val === "4" ? "g4" : val === "3" ? "g3" : val === "2" ? "g2" : "";
+          return `<td><select class="grade-select ${cls}" data-key="${s.key}" onchange="onGradeChange(this)">${["", "2", "3", "4", "5"].map(g => `<option value="${g}" ${g === val ? "selected" : ""}>${g || "—"}</option>`).join("")}</select></td>`;
+        }).join("")}
+    </tr>`;
+      });
+      document.getElementById("sum-tbody").innerHTML = tbody || `<tr><td colspan="${all.length + 2}" class="text-center text-muted py-4">Студентов нет</td></tr>`;
+    }
+
+    function onGradeChange(sel) {
+      const sid = sel.closest("tr").dataset.sid;
+      const key = sel.dataset.key;
+      const val = sel.value;
+      // Update local state
+      const row = summaryRows.find(r => String(r.studentId) === String(sid));
+      if (row) { if (!row.grades) row.grades = {}; row.grades[key] = val; }
+      // Update visual class
+      sel.className = "grade-select " + (val === "5" ? "g5" : val === "4" ? "g4" : val === "3" ? "g3" : val === "2" ? "g2" : "");
+      // Recalculate fill %
+      renderSummaryStats();
+    }
+
+    /* ==========================================
+       SUMMARY — SAVE
+    ========================================== */
+    async function saveSummary() {
+      if (!currentSummaryGroupId || !currentSummaryMonth) return toast("Сначала загрузите ведомость", "error");
+
+      const rows = [...document.querySelectorAll("#sum-tbody tr[data-sid]")].map(tr => {
+        const grades = {};
+        tr.querySelectorAll(".grade-select").forEach(sel => { grades[sel.dataset.key] = sel.value; });
+        return { studentId: tr.dataset.sid, grades };
+      });
+
+      showLoader();
+      try {
+        const res = await fetch(`/api/admin/summary/${currentSummaryGroupId}/${currentSummaryMonth}`, {
+          method: "PUT", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rows })
+        });
+        const data = await res.json();
+        if (!res.ok) return toast(data.error || "Ошибка сохранения", "error");
+        toast("Оценки сохранены ✅");
+      } catch (e) { toast("Ошибка соединения", "error"); }
+      finally { hideLoader(); }
+    }
+
+    /* ==========================================
+       SUMMARY — PRINT / WORD / TG
+    ========================================== */
+    function printSummary() {
+      if (!currentSummaryGroupId || !currentSummaryMonth) return toast("Загрузите ведомость", "error");
+      window.open(`/api/admin/summary-print/${currentSummaryGroupId}/${currentSummaryMonth}`, "_blank");
+    }
+    function downloadWord() {
+      if (!currentSummaryGroupId || !currentSummaryMonth) return toast("Загрузите ведомость", "error");
+      window.open(`/api/admin/summary-word/${currentSummaryGroupId}/${currentSummaryMonth}`, "_blank");
+    }
+    async function sendToTg() {
+      if (!currentSummaryGroupId || !currentSummaryMonth) return toast("Загрузите ведомость", "error");
+      // First save
+      await saveSummary();
+      showLoader();
+      try {
+        const res = await fetch(`/api/admin/summary-send-tg/${currentSummaryGroupId}/${currentSummaryMonth}`, { method: "POST" });
+        const data = await res.json();
+        if (!res.ok) return toast(data.error || "Ошибка отправки", "error");
+        toast(`📤 Отправлено ${data.sent} из ${data.total} получателей`);
+      } catch (e) { toast("Ошибка соединения", "error"); }
+      finally { hideLoader(); }
+    }
+
+    /* ==========================================
+       SUBJECTS EDITOR
+    ========================================== */
+    let subjDragSrc = null;
+
+    async function loadSubjects() {
+      const gid = document.getElementById("subj-group").value;
+      if (!gid) { document.getElementById("subj-list").innerHTML = '<div class="text-center text-muted py-4 small">Выберите группу</div>'; return; }
+      showLoader();
+      try {
+        const res = await fetch(`/api/admin/group/${gid}/summary-config`);
+        const data = await res.json();
+        if (!res.ok) return toast(data.error || "Ошибка", "error");
+        renderSubjectList(data.subjects || []);
+      } catch (e) { toast("Ошибка", "error"); }
+      finally { hideLoader(); }
+    }
+
+    function renderSubjectList(subjects) {
+      const list = document.getElementById("subj-list");
+      document.getElementById("subj-count").textContent = `${subjects.length} предметов`;
+      if (!subjects.length) { list.innerHTML = '<div class="text-center text-muted py-4 small">Предметов нет. Добавьте!</div>'; return; }
+      list.innerHTML = subjects.map((s, i) => subjectItemHTML(s, i)).join("");
+      list.querySelectorAll(".subj-item").forEach(el => {
+        el.addEventListener("dragstart", e => { subjDragSrc = el; el.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; });
+        el.addEventListener("dragend", () => { el.classList.remove("dragging"); });
+        el.addEventListener("dragover", e => { e.preventDefault(); });
+        el.addEventListener("drop", e => { e.preventDefault(); if (subjDragSrc && subjDragSrc !== el) { const items = [...list.querySelectorAll(".subj-item")]; const from = items.indexOf(subjDragSrc), to = items.indexOf(el); if (from < to) list.insertBefore(subjDragSrc, el.nextSibling); else list.insertBefore(subjDragSrc, el); } });
+      });
+    }
+
+    function subjectItemHTML(s, i) {
+      const bc = s.section === "practice" ? "practice" : "theory";
+      const bl = s.section === "practice" ? "Практика" : "Теория";
+      return `<div class="subj-item" draggable="true">
+    <span class="drag-handle" title="Перетащить">⠿</span>
+    <input type="text" value="${esc(s.label)}" placeholder="Название предмета" />
+    <span class="sect-badge ${bc}" onclick="toggleSection(this)" title="Нажмите для смены раздела">${bl}</span>
+    <button class="del-btn" onclick="this.closest('.subj-item').remove();updateSubjCount()">✕</button>
+  </div>`;
+    }
+
+    function toggleSection(el) {
+      if (el.classList.contains("theory")) { el.classList.remove("theory"); el.classList.add("practice"); el.textContent = "Практика"; }
+      else { el.classList.remove("practice"); el.classList.add("theory"); el.textContent = "Теория"; }
+    }
+
+    function addSubject(section) {
+      const list = document.getElementById("subj-list");
+      const hasPlaceholder = list.querySelector(".text-center");
+      if (hasPlaceholder) list.innerHTML = "";
+      const div = document.createElement("div");
+      div.innerHTML = subjectItemHTML({ label: "", section }, 0);
+      const item = div.firstElementChild;
+      item.addEventListener("dragstart", e => { subjDragSrc = item; item.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; });
+      item.addEventListener("dragend", () => { item.classList.remove("dragging"); });
+      item.addEventListener("dragover", e => { e.preventDefault(); });
+      item.addEventListener("drop", e => { e.preventDefault(); if (subjDragSrc && subjDragSrc !== item) { const items = [...list.querySelectorAll(".subj-item")]; const from = items.indexOf(subjDragSrc), to = items.indexOf(item); if (from < to) list.insertBefore(subjDragSrc, item.nextSibling); else list.insertBefore(subjDragSrc, item); } });
+      list.appendChild(item);
+      item.querySelector("input").focus();
+      updateSubjCount();
+    }
+
+    function updateSubjCount() {
+      const c = document.getElementById("subj-list").querySelectorAll(".subj-item").length;
+      document.getElementById("subj-count").textContent = `${c} предметов`;
+    }
+
+    async function saveSubjects() {
+      const gid = document.getElementById("subj-group").value;
+      if (!gid) return toast("Выберите группу", "error");
+      const items = [...document.querySelectorAll("#subj-list .subj-item")];
+      const subjects = items.map(el => ({
+        label: el.querySelector("input").value.trim(),
+        section: el.querySelector(".sect-badge").classList.contains("practice") ? "practice" : "theory"
+      })).filter(s => s.label);
+      if (!subjects.length) return toast("Добавьте хотя бы один предмет", "error");
+      showLoader();
+      try {
+        const res = await fetch(`/api/admin/group/${gid}/summary-subjects`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subjects }) });
+        const data = await res.json();
+        if (!res.ok) return toast(data.error || "Ошибка", "error");
+        toast(`Предметы сохранены (${data.subjects?.length || subjects.length} шт.)`);
+        renderSubjectList(data.subjects || subjects);
+      } catch (e) { toast("Ошибка", "error"); }
+      finally { hideLoader(); }
+    }
+
+    /* ==========================================
+       SAVED MONTHS
+    ========================================== */
+    async function loadSavedMonths() {
+      const gid = document.getElementById("saved-group").value;
+      const wrap = document.getElementById("saved-list-wrap");
+      if (!gid) { wrap.innerHTML = '<div class="text-center text-muted py-5 small">Выберите группу</div>'; return; }
+      showLoader();
+      try {
+        const res = await fetch(`/api/admin/summary-months/${gid}`);
+        const months = await res.json();
+        if (!months.length) { wrap.innerHTML = '<div class="text-center text-muted py-5 small">Нет сохранённых ведомостей</div>'; return; }
+        const grp = getGroups().find(g => g._id === gid);
+        wrap.innerHTML = months.map(m => `
+      <div class="saved-item">
+        <div class="si-info">
+          <div class="si-title">📝 ${esc(grp?.name || "")} — ${fmtMonth(m)}</div>
+          <div class="si-sub">${esc(grp?.profRu || "—")}</div>
+        </div>
+        <div class="si-actions">
+          <button class="btn btn-sm btn-outline-secondary" onclick="openSaved('${gid}','${m}')" title="Открыть">📋</button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="window.open('/api/admin/summary-print/${gid}/${m}','_blank')" title="Печать">🖨️</button>
+          <button class="btn btn-sm btn-success" onclick="window.open('/api/admin/summary-word/${gid}/${m}','_blank')" title="Word">📄</button>
+          <button class="btn btn-sm btn-primary" onclick="sendSavedTg('${gid}','${m}')" title="Telegram">📤</button>
+        </div>
+      </div>`).join("");
+      } catch (e) { toast("Ошибка", "error"); }
+      finally { hideLoader(); }
+    }
+
+    function openSaved(gid, month) {
+      // Switch to summary page and load
+      document.getElementById("sum-group").value = gid;
+      document.getElementById("sum-month").value = month;
+      showPage("summary", document.querySelector('.sb-btn.active') || document.querySelector('.sb-btn'));
+      loadSummary();
+    }
+
+    async function sendSavedTg(gid, month) {
+      showLoader();
+      try {
+        const res = await fetch(`/api/admin/summary-send-tg/${gid}/${month}`, { method: "POST" });
+        const data = await res.json();
+        if (!res.ok) return toast(data.error || "Ошибка", "error");
+        toast(`📤 Отправлено ${data.sent} из ${data.total}`);
+      } catch (e) { toast("Ошибка", "error"); }
+      finally { hideLoader(); }
+    }
+
+    /* ==========================================
+       JOURNAL
+    ========================================== */
+    async function loadJournal() {
+      const gid = document.getElementById("j-group").value;
+      const month = document.getElementById("j-month").value;
+      if (!gid || !month) return toast("Выберите группу и месяц", "error");
+      showLoader();
+      try {
+        const res = await fetch(`/api/admin/attendance-matrix/${gid}/${month}`);
+        const data = await res.json();
+        if (!res.ok) return toast(data.error || "Ошибка", "error");
+        document.getElementById("j-hint").style.display = "none";
+        const table = document.getElementById("j-table"); table.style.display = "table";
+        let h = `<tr><th style="min-width:150px;text-align:left;position:sticky;left:0;background:#1e293b">ФИО студента</th>`;
+        const [y, m] = month.split("-");
+        for (let d = 1; d <= data.daysInMonth; d++) { const do2 = new Date(Date.UTC(y, m - 1, d)); const iw = do2.getUTCDay() === 0 || do2.getUTCDay() === 6; h += `<th ${iw ? 'style="background:#7f1d1d"' : ''}>${d}</th>`; }
+        h += `<th>П</th><th>О</th><th>Н</th></tr>`;
+        document.getElementById("j-thead").innerHTML = h;
+        let b = "";
+        data.matrix.forEach(row => {
+          b += `<tr><td style="text-align:left;font-weight:700;position:sticky;left:0;background:#fff;white-space:nowrap">${esc(row.fio)}</td>`;
+          row.days.forEach(day => {
+            const wc = day.isWeekend ? "style='background:#fef2f2'" : "";
+            if (!day.present) b += `<td ${wc} style="color:#cbd5e1">-</td>`;
+            else if (day.late) b += `<td style="background:#f59e0b;color:#fff" title="${day.time}">О</td>`;
+            else b += `<td style="background:#22c55e;color:#fff" title="${day.time}">П</td>`;
+          });
+          b += `<td style="font-weight:700;color:var(--success)">${row.stats.presences}</td>`;
+          b += `<td style="font-weight:700;color:var(--warning)">${row.stats.lates}</td>`;
+          b += `<td style="font-weight:700;color:var(--danger)">${row.stats.absences}</td>`;
+          b += `</tr>`;
+        });
+        document.getElementById("j-tbody").innerHTML = b;
+      } catch (e) { toast("Ошибка", "error"); }
+      finally { hideLoader(); }
+    }
+    function downloadJournal() { const gid = document.getElementById("j-group").value; const month = document.getElementById("j-month").value; if (!gid || !month) return toast("Выберите группу и месяц", "error"); window.open(`/api/admin/export-journal/${gid}/${month}`, "_blank"); }
+    function downloadFood() { const gid = document.getElementById("f-group").value; const month = document.getElementById("f-month").value; if (!gid || !month) return toast("Выберите группу и месяц", "error"); window.open(`/api/admin/report-food/${gid}/${month}`, "_blank"); }
+
+    /* ==========================================
+       INIT
+    ========================================== */
+    window.onload = async () => {
+      const m = cm();
+      document.getElementById("sum-month").value = m;
+      document.getElementById("j-month").value = m;
+      document.getElementById("f-month").value = m;
+      await loadSession();
+    };
+  </script>
+</body>
+
+</html>
