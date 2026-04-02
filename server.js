@@ -2570,15 +2570,16 @@ app.get("/api/webapp/parent/attendance", async (req, res) => {
     const attMap = {};
     for (const day of days) {
       const skud = stu.skudDaily?.find((r) => r.date === day);
-      const att = stu.attendance?.find((a) => a.date === day);
-      let status = "a";
+      const att  = stu.attendance?.find((a) => a.date === day);
+      let status = "a", time = null;
       if (skud?.present) {
         if (skud.firstIn) {
           const dt = new Date(skud.firstIn);
           if (!isNaN(dt)) {
             const tm = dt.getUTCHours() * 60 + dt.getUTCMinutes() + 360;
-            const h = Math.floor(tm / 60) % 24, m = tm % 60;
-            status = h * 60 + m > stm ? "l" : "p";
+            const h  = Math.floor(tm / 60) % 24, m = tm % 60;
+            time     = `${pad2(h)}:${pad2(m)}`;
+            status   = h * 60 + m > stm ? "l" : "p";
           } else {
             status = "p";
           }
@@ -2588,7 +2589,7 @@ app.get("/api/webapp/parent/attendance", async (req, res) => {
       } else if (att?.present) {
         status = "p";
       }
-      attMap[day] = status;
+      attMap[day] = { status, time };
     }
     res.json({ fio: stu.fio, attMap });
   } catch (e) {

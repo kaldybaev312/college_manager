@@ -8,215 +8,334 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
 
+/* ── ТЕМА (переопределяется через JS при старте) ── */
 :root{
-  --tg-bg: var(--tg-theme-bg-color, #ffffff);
-  --tg-text: var(--tg-theme-text-color, #0f172a);
-  --tg-hint: var(--tg-theme-hint-color, #64748b);
-  --tg-link: var(--tg-theme-link-color, #4f46e5);
-  --tg-btn: var(--tg-theme-button-color, #4f46e5);
-  --tg-btn-text: var(--tg-theme-button-text-color, #ffffff);
+  --tg-bg:        var(--tg-theme-bg-color, #ffffff);
+  --tg-text:      var(--tg-theme-text-color, #0f172a);
+  --tg-hint:      var(--tg-theme-hint-color, #64748b);
+  --tg-btn:       var(--tg-theme-button-color, #4f46e5);
+  --tg-btn-text:  var(--tg-theme-button-text-color, #ffffff);
   --tg-secondary: var(--tg-theme-secondary-bg-color, #f1f5f9);
-  --accent: #4f46e5;
+  /* Динамические (JS перезапишет под светлую/тёмную тему) */
+  --card:    #ffffff;
+  --border:  rgba(0,0,0,0.08);
+  --accent:  #4f46e5;
   --success: #22c55e;
   --warning: #f59e0b;
-  --danger: #ef4444;
-  --card: #ffffff;
-  --border: #e2e8f0;
-  --radius: 16px;
+  --danger:  #ef4444;
+  --radius:    16px;
   --radius-sm: 10px;
+  /* Оценки */
+  --g5-bg:#dcfce7; --g5-fg:#15803d;
+  --g4-bg:#dbeafe; --g4-fg:#1d4ed8;
+  --g3-bg:#fef3c7; --g3-fg:#d97706;
+  --g2-bg:#fee2e2; --g2-fg:#dc2626;
+  /* Посещаемость */
+  --ap-bg:#dcfce7; --ap-fg:#15803d;
+  --al-bg:#fef3c7; --al-fg:#d97706;
+  --aa-bg:#fee2e2; --aa-fg:#dc2626;
+  --aw-bg:var(--tg-secondary);
 }
+
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:'Nunito',sans-serif;background:var(--tg-secondary);color:var(--tg-text);min-height:100vh;overflow-x:hidden}
+body{
+  font-family:'Nunito',sans-serif;
+  background:var(--tg-secondary);
+  color:var(--tg-text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
 
 /* ── SCREENS ── */
-.screen{display:none;flex-direction:column;min-height:100vh;animation:fadeIn .2s ease}
+.screen{display:none;flex-direction:column;min-height:100vh;animation:fadeIn .18s ease}
 .screen.active{display:flex}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── HEADER ── */
-.header{background:var(--tg-bg);padding:16px 20px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
-.header-back{width:36px;height:36px;border-radius:10px;background:var(--tg-secondary);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.header-title{font-weight:800;font-size:17px;flex:1}
-.header-sub{font-size:12px;color:var(--tg-hint);font-weight:600;margin-top:1px}
+.header{
+  background:var(--tg-bg);
+  padding:14px 16px 12px;
+  display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+}
+.header-back{
+  width:34px;height:34px;border-radius:10px;
+  background:var(--tg-secondary);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0;color:var(--tg-text);
+}
+.header-title{font-weight:800;font-size:16px;flex:1;line-height:1.2}
+.header-sub{font-size:11px;color:var(--tg-hint);font-weight:600;margin-top:2px}
 
 /* ── CONTENT ── */
-.content{padding:16px;flex:1;display:flex;flex-direction:column;gap:12px}
+.content{padding:14px;flex:1;display:flex;flex-direction:column;gap:10px}
 
-/* ── CARDS ── */
+/* ── CARD ── */
 .card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden}
-.card-header{padding:14px 16px 10px;font-weight:800;font-size:14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
-.card-body{padding:14px 16px}
+.card-header{
+  padding:12px 14px 10px;font-weight:800;font-size:13px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.card-body{padding:12px 14px}
 
-/* ── ROLE BADGE ── */
-.role-badge{background:var(--tg-secondary);border-radius:12px;padding:16px;display:flex;align-items:center;gap:14px}
-.role-avatar{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
-.role-name{font-weight:800;font-size:16px}
-.role-desc{font-size:12px;color:var(--tg-hint);margin-top:2px;font-weight:600}
+/* ── STATS ROW ── */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat-box{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px 8px;text-align:center;
+}
+.stat-val{font-size:24px;font-weight:900;line-height:1}
+.stat-lbl{font-size:9px;color:var(--tg-hint);font-weight:700;margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
 
 /* ── MENU GRID ── */
 .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.menu-btn{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 14px;display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:all .15s;text-align:left}
-.menu-btn:active{transform:scale(.97);background:var(--tg-secondary)}
+.menu-btn{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 14px;
+  display:flex;flex-direction:column;gap:7px;
+  cursor:pointer;transition:all .12s;text-align:left;
+}
+.menu-btn:active{transform:scale(.96);background:var(--tg-secondary)}
 .menu-btn-icon{font-size:26px;line-height:1}
 .menu-btn-label{font-weight:700;font-size:13px;line-height:1.3;color:var(--tg-text)}
 .menu-btn.accent{background:var(--accent);border-color:var(--accent)}
-.menu-btn.accent .menu-btn-label{color:white}
+.menu-btn.accent .menu-btn-label{color:#fff}
 .menu-btn.green{background:#16a34a;border-color:#16a34a}
-.menu-btn.green .menu-btn-label{color:white}
+.menu-btn.green .menu-btn-label{color:#fff}
 
-/* ── STATS BAR ── */
-.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stat-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 10px;text-align:center}
-.stat-val{font-size:22px;font-weight:900;line-height:1}
-.stat-lbl{font-size:10px;color:var(--tg-hint);font-weight:700;margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
-
-/* ── PROGRESS BAR ── */
-.progress-wrap{background:var(--tg-secondary);border-radius:99px;height:8px;overflow:hidden}
-.progress-fill{height:100%;border-radius:99px;transition:width .4s ease;background:var(--accent)}
-
-/* ── STUDENT LIST ── */
-.stu-row{display:flex;align-items:center;padding:11px 0;gap:12px;border-bottom:1px solid var(--border)}
+/* ── STUDENT ROW ── */
+.stu-row{display:flex;align-items:center;padding:10px 0;gap:10px;border-bottom:1px solid var(--border)}
 .stu-row:last-child{border-bottom:none}
-.stu-avatar{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:white;flex-shrink:0}
+.stu-avatar{
+  width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:#fff;flex-shrink:0;
+}
 .stu-name{font-weight:700;font-size:13px;flex:1;line-height:1.3}
-.stu-meta{font-size:11px;color:var(--tg-hint);font-weight:600;margin-top:2px}
-.stu-status{font-size:18px;flex-shrink:0}
+.stu-meta{font-size:11px;color:var(--tg-hint);font-weight:600;margin-top:1px}
+.stu-status{font-size:16px;flex-shrink:0}
 
 /* ── ATTENDANCE CALENDAR ── */
 .att-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-.att-day{aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
-.att-day.present{background:#dcfce7;color:#15803d}
-.att-day.absent{background:#fee2e2;color:#dc2626}
-.att-day.late{background:#fef3c7;color:#d97706}
-.att-day.weekend{background:var(--tg-secondary);color:var(--tg-hint)}
-.att-day.future{background:transparent;color:var(--border)}
-.att-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
-.att-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--tg-hint)}
-.att-legend-dot{width:10px;height:10px;border-radius:3px}
+.att-day{
+  aspect-ratio:1;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:800;
+  transition:transform .1s;
+}
+.att-day:active{transform:scale(.9)}
+.att-day.present{background:var(--ap-bg);color:var(--ap-fg)}
+.att-day.late   {background:var(--al-bg);color:var(--al-fg)}
+.att-day.absent {background:var(--aa-bg);color:var(--aa-fg)}
+.att-day.weekend{background:var(--aw-bg);color:var(--tg-hint)}
+.att-day.future {background:transparent;color:var(--border)}
+.att-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.att-leg{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--tg-hint)}
+.att-leg-dot{width:8px;height:8px;border-radius:3px}
 
-/* ── GRADES TABLE ── */
-.grades-subject{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
-.grades-subject:last-child{border-bottom:none}
-.grades-subject-name{font-size:13px;font-weight:700;flex:1}
-.grade-badge{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0}
-.grade-5{background:#dcfce7;color:#15803d}
-.grade-4{background:#dbeafe;color:#1d4ed8}
-.grade-3{background:#fef3c7;color:#d97706}
-.grade-2{background:#fee2e2;color:#dc2626}
-.grade-empty{background:var(--tg-secondary);color:var(--tg-hint)}
+/* ── ATT DAY LIST (родитель: по дням) ── */
+.att-day-list{display:flex;flex-direction:column}
+.att-day-row{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 0;border-bottom:1px solid var(--border);
+}
+.att-day-row:last-child{border-bottom:none}
+.att-day-badge{
+  width:36px;height:36px;border-radius:9px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:900;
+}
+.att-day-badge.present{background:var(--ap-bg);color:var(--ap-fg)}
+.att-day-badge.late   {background:var(--al-bg);color:var(--al-fg)}
+.att-day-badge.absent {background:var(--aa-bg);color:var(--aa-fg)}
+.att-day-date{font-size:13px;font-weight:700;flex:1}
+.att-day-sub {font-size:11px;color:var(--tg-hint);font-weight:600;margin-top:1px}
+.att-day-time{font-size:13px;font-weight:800;color:var(--tg-hint)}
 
-/* ── FILL TABLE ── */
-.fill-subject{padding:12px 0;border-bottom:1px solid var(--border)}
-.fill-subject:last-child{border-bottom:none}
-.fill-subject-name{font-weight:800;font-size:13px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
-.fill-student-row{display:flex;align-items:center;gap:8px;padding:5px 0}
-.fill-student-name{font-size:12px;flex:1;color:var(--tg-text);font-weight:600}
-.grade-btns{display:flex;gap:4px}
-.grade-btn{width:30px;height:30px;border-radius:8px;border:1.5px solid var(--border);background:var(--tg-secondary);font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .1s}
-.grade-btn.active-5{background:#dcfce7;border-color:#86efac;color:#15803d}
-.grade-btn.active-4{background:#dbeafe;border-color:#93c5fd;color:#1d4ed8}
-.grade-btn.active-3{background:#fef3c7;border-color:#fcd34d;color:#d97706}
-.grade-btn.active-2{background:#fee2e2;border-color:#fca5a5;color:#dc2626}
-.grade-btn:active{transform:scale(.9)}
+/* ── GRADES ── */
+.grades-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
+.grades-row:last-child{border-bottom:none}
+.grades-name{font-size:13px;font-weight:600;flex:1;line-height:1.3}
+.grade-badge{
+  width:34px;height:34px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:900;flex-shrink:0;
+}
+.g5{background:var(--g5-bg);color:var(--g5-fg)}
+.g4{background:var(--g4-bg);color:var(--g4-fg)}
+.g3{background:var(--g3-bg);color:var(--g3-fg)}
+.g2{background:var(--g2-bg);color:var(--g2-fg)}
+.g0{background:var(--tg-secondary);color:var(--tg-hint)}
+
+/* ── FILL GRADES ── */
+.fill-stu-row{display:flex;align-items:center;gap:8px;padding:6px 0}
+.fill-stu-name{font-size:12px;flex:1;font-weight:600}
+.grade-btns{display:flex;gap:3px}
+.grade-btn{
+  width:30px;height:30px;border-radius:8px;
+  border:1.5px solid var(--border);background:var(--tg-secondary);
+  font-size:13px;font-weight:800;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .1s;color:var(--tg-text);
+}
+.grade-btn.a5{background:var(--g5-bg);border-color:var(--g5-fg);color:var(--g5-fg)}
+.grade-btn.a4{background:var(--g4-bg);border-color:var(--g4-fg);color:var(--g4-fg)}
+.grade-btn.a3{background:var(--g3-bg);border-color:var(--g3-fg);color:var(--g3-fg)}
+.grade-btn.a2{background:var(--g2-bg);border-color:var(--g2-fg);color:var(--g2-fg)}
+.grade-btn:active{transform:scale(.88)}
 
 /* ── TABS ── */
 .tabs{display:flex;background:var(--tg-secondary);border-radius:12px;padding:3px;gap:2px}
-.tab{flex:1;padding:8px;border-radius:9px;border:none;background:none;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:var(--tg-hint);cursor:pointer;transition:all .15s;text-align:center}
-.tab.active{background:var(--card);color:var(--tg-text);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.tab{
+  flex:1;padding:8px;border-radius:9px;border:none;background:none;
+  font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;
+  color:var(--tg-hint);cursor:pointer;transition:all .13s;text-align:center;
+}
+.tab.active{background:var(--card);color:var(--tg-text);box-shadow:0 2px 8px rgba(0,0,0,.1)}
 
 /* ── MONTH SELECTOR ── */
-.month-sel{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px}
-.month-btn{width:32px;height:32px;border-radius:8px;border:none;background:var(--tg-secondary);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.month-sel{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:9px 12px;
+}
+.month-btn{
+  width:34px;height:34px;border-radius:8px;border:none;
+  background:var(--tg-secondary);cursor:pointer;font-size:18px;
+  display:flex;align-items:center;justify-content:center;color:var(--tg-text);
+}
+.month-btn:disabled{opacity:.3;cursor:default}
 .month-label{font-weight:800;font-size:14px}
 
 /* ── SECTION TITLE ── */
-.section-title{font-weight:900;font-size:13px;color:var(--tg-hint);text-transform:uppercase;letter-spacing:.8px;margin:4px 0 -4px}
+.section-title{
+  font-weight:900;font-size:11px;color:var(--tg-hint);
+  text-transform:uppercase;letter-spacing:.8px;padding:0 2px;
+}
 
-/* ── BOTTOM SAVE BAR ── */
-.save-bar{position:sticky;bottom:0;padding:12px 16px;background:var(--tg-bg);border-top:1px solid var(--border);display:flex;gap:8px}
-.btn-main{flex:1;height:48px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:white;font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
-.btn-sec{height:48px;padding:0 16px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--card);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
-.btn-main:active,.btn-sec:active{opacity:.8}
+/* ── GROUP TABS ── */
+.group-tabs{overflow-x:auto;white-space:nowrap;padding:8px 14px 2px;display:flex;gap:6px;scrollbar-width:none}
+.group-tabs::-webkit-scrollbar{display:none}
+.group-tab{
+  display:inline-flex;align-items:center;padding:6px 14px;
+  border-radius:20px;border:1.5px solid var(--border);background:var(--card);
+  font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;
+  transition:all .13s;color:var(--tg-hint);font-family:'Nunito',sans-serif;
+}
+.group-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
-/* ── EMPTY STATE ── */
+/* ── SUBJ TABS ── */
+.subj-tabs{overflow-x:auto;white-space:nowrap;padding:8px 14px 2px;display:flex;gap:5px;scrollbar-width:none}
+.subj-tabs::-webkit-scrollbar{display:none}
+.subj-tab{
+  display:inline-flex;align-items:center;gap:4px;padding:5px 12px;
+  border-radius:20px;border:1.5px solid var(--border);background:var(--card);
+  font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;
+  transition:all .13s;color:var(--tg-hint);font-family:'Nunito',sans-serif;
+}
+.subj-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.done-dot{width:6px;height:6px;border-radius:50%;background:var(--success)}
+
+/* ── CHILD CARD ── */
+.child-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+}
+.child-card-top{
+  display:flex;align-items:center;gap:12px;
+  padding:14px;cursor:pointer;
+  transition:background .1s;
+}
+.child-card-top:active{background:var(--tg-secondary)}
+.child-actions{
+  display:grid;grid-template-columns:1fr 1fr;gap:0;
+  border-top:1px solid var(--border);
+  max-height:0;overflow:hidden;transition:max-height .2s ease;
+}
+.child-actions.open{max-height:60px}
+.child-action-btn{
+  padding:12px;border:none;background:none;
+  font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;color:var(--accent);text-align:center;
+  transition:background .1s;
+}
+.child-action-btn:active{background:var(--tg-secondary)}
+.child-action-btn:first-child{border-right:1px solid var(--border)}
+
+/* ── ADMIN GROUP ROW ── */
+.group-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)}
+.group-row:last-child{border-bottom:none}
+.grp-name{font-weight:700;font-size:13px}
+.grp-meta{font-size:11px;color:var(--tg-hint);font-weight:600;margin-top:2px}
+
+/* ── GV TABLE ── */
+.gv-wrap{overflow-x:auto}
+.gv-table{width:100%;border-collapse:collapse;font-size:11px;min-width:300px}
+.gv-table th{font-weight:800;color:var(--tg-hint);text-align:center;padding:4px 3px;border-bottom:2px solid var(--border);font-size:9px;text-transform:uppercase;letter-spacing:.3px}
+.gv-table th.fio-col{text-align:left}
+.gv-table td{padding:4px 2px;border-bottom:1px solid var(--border);text-align:center}
+.gv-table td.fio-col{text-align:left;font-size:11px;font-weight:600;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gv-badge{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-size:11px;font-weight:900}
+
+/* ── PROGRESS BAR ── */
+.prog-wrap{background:var(--tg-secondary);border-radius:99px;height:6px;overflow:hidden;margin-top:6px}
+.prog-fill{height:100%;border-radius:99px;background:var(--accent);transition:width .4s}
+
+/* ── BTN ── */
+.btn-main{
+  width:100%;height:48px;border-radius:var(--radius-sm);border:none;
+  background:var(--accent);color:#fff;font-family:'Nunito',sans-serif;
+  font-size:15px;font-weight:800;cursor:pointer;
+}
+.btn-main:active{opacity:.85}
+
+/* ── INN INPUT ── */
+.inn-input{
+  width:100%;height:52px;border-radius:12px;
+  border:2px solid var(--border);padding:0 16px;
+  font-family:'Nunito',sans-serif;font-size:20px;font-weight:700;
+  outline:none;letter-spacing:2px;background:var(--card);color:var(--tg-text);
+}
+.inn-input:focus{border-color:var(--accent)}
+.inn-error{color:var(--danger);font-size:12px;font-weight:700;margin-top:6px;display:none}
+
+/* ── EMPTY / LOADING ── */
 .empty{text-align:center;padding:40px 20px;color:var(--tg-hint)}
-.empty-icon{font-size:40px;margin-bottom:8px}
-.empty-text{font-size:14px;font-weight:700}
-
-/* ── TOAST ── */
-.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);background:#0f172a;color:white;border-radius:12px;padding:10px 20px;font-size:13px;font-weight:700;z-index:9999;transition:transform .3s ease;white-space:nowrap;max-width:90vw;white-space:normal;text-align:center}
-.toast.show{transform:translateX(-50%) translateY(0)}
-
-/* ── LOADING ── */
+.empty-icon{font-size:36px;margin-bottom:8px}
+.empty-text{font-size:13px;font-weight:700}
 .loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--tg-hint);gap:8px}
 .spinner{width:20px;height:20px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ── INN INPUT ── */
-.inn-wrap{padding:20px}
-.inn-label{font-weight:800;font-size:15px;margin-bottom:6px}
-.inn-sub{font-size:13px;color:var(--tg-hint);font-weight:600;margin-bottom:16px}
-.inn-input{width:100%;height:52px;border-radius:12px;border:2px solid var(--border);padding:0 16px;font-family:'Nunito',sans-serif;font-size:18px;font-weight:700;outline:none;letter-spacing:2px;background:var(--card)}
-.inn-input:focus{border-color:var(--accent)}
-.inn-error{color:var(--danger);font-size:12px;font-weight:700;margin-top:6px;display:none}
-
-/* ── GROUP TABS ── */
-.group-tabs{overflow-x:auto;white-space:nowrap;padding:10px 16px 4px;display:flex;gap:6px;scrollbar-width:none}
-.group-tabs::-webkit-scrollbar{display:none}
-.group-tab{display:inline-flex;align-items:center;padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;color:var(--tg-hint);font-family:'Nunito',sans-serif}
-.group-tab.active{background:var(--accent);border-color:var(--accent);color:white}
-
-/* ── CHILD CARD ── */
-.child-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s}
-.child-card:active{background:var(--tg-secondary)}
-.child-actions{display:flex;gap:8px;margin-top:10px;display:none}
-.child-actions.open{display:flex}
-.child-action-btn{flex:1;padding:10px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--tg-secondary);font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-align:center}
-.child-action-btn:active{opacity:.8}
-
-/* ── ADMIN GROUP ROW ── */
-.group-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
-.group-row:last-child{border-bottom:none}
-.group-row-name{font-weight:700;font-size:13px}
-.group-row-meta{font-size:11px;color:var(--tg-hint);font-weight:600;margin-top:2px}
-.group-row-stat{text-align:right}
-.group-row-pct{font-weight:900;font-size:15px}
-.group-row-sub{font-size:11px;color:var(--tg-hint)}
-
-/* ── FILL SUBJECT TABS (scrollable) ── */
-.subj-tabs{overflow-x:auto;white-space:nowrap;padding:10px 16px 4px;display:flex;gap:6px;scrollbar-width:none}
-.subj-tabs::-webkit-scrollbar{display:none}
-.subj-tab{display:inline-flex;align-items:center;padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--card);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;color:var(--tg-hint);font-family:'Nunito',sans-serif}
-.subj-tab.active{background:var(--accent);border-color:var(--accent);color:white}
-.subj-tab .done-dot{width:7px;height:7px;border-radius:50%;background:var(--success);margin-left:5px;display:inline-block}
-
-/* ── GRADES VIEW TABLE ── */
-.gv-table{width:100%;border-collapse:collapse;font-size:11px}
-.gv-table th{font-weight:800;color:var(--tg-hint);text-align:center;padding:4px 3px;border-bottom:2px solid var(--border);font-size:10px}
-.gv-table th.fio-col{text-align:left;min-width:100px}
-.gv-table td{padding:5px 3px;border-bottom:1px solid var(--border);text-align:center;font-weight:700}
-.gv-table td.fio-col{text-align:left;font-size:11px;font-weight:600;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.gv-badge{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;font-size:12px;font-weight:900}
+/* ── TOAST ── */
+.toast{
+  position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-80px);
+  background:rgba(15,23,42,.92);color:#fff;border-radius:12px;
+  padding:10px 18px;font-size:13px;font-weight:700;z-index:9999;
+  transition:transform .28s ease;max-width:88vw;text-align:center;
+  backdrop-filter:blur(8px);
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{background:rgba(22,163,74,.92)}
+.toast.err{background:rgba(239,68,68,.92)}
 </style>
 </head>
 <body>
 
 <div id="toast" class="toast"></div>
 
-<!-- ══════════════════════════════════════
-     sc-load — Загрузка
-══════════════════════════════════════ -->
+<!-- sc-load -->
 <div id="sc-load" class="screen active">
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
-    <div style="font-size:48px">🎓</div>
-    <div style="font-weight:900;font-size:18px">ПРОФЛИЦЕЙ №3</div>
-    <div class="spinner"></div>
+    <div style="font-size:52px">🎓</div>
+    <div style="font-weight:900;font-size:20px;letter-spacing:.5px">ПРОФЛИЦЕЙ №3</div>
+    <div class="spinner" style="width:28px;height:28px;border-width:4px"></div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     sc-inn — Ввод ИНН (родитель без аккаунта)
-══════════════════════════════════════ -->
+<!-- sc-inn -->
 <div id="sc-inn" class="screen">
   <div class="header">
     <div>
@@ -227,39 +346,32 @@ body{font-family:'Nunito',sans-serif;background:var(--tg-secondary);color:var(--
   <div class="content">
     <div class="card">
       <div class="card-body">
-        <div style="text-align:center;font-size:36px;margin-bottom:12px">🔐</div>
-        <div class="inn-label">ИНН ребёнка</div>
-        <div class="inn-sub">Введите 14-значный ИНН из паспорта ребёнка</div>
-        <input id="inn-input" class="inn-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="12345678901234" maxlength="14"/>
-        <div id="inn-error" class="inn-error">Неверный ИНН</div>
-        <button class="btn-main" style="width:100%;margin-top:14px" onclick="submitInn()">✅ Привязать</button>
+        <div style="text-align:center;font-size:40px;margin-bottom:14px">🔐</div>
+        <div style="font-weight:800;font-size:15px;margin-bottom:4px">ИНН ребёнка</div>
+        <div style="font-size:12px;color:var(--tg-hint);font-weight:600;margin-bottom:14px">14-значный номер из паспорта или свидетельства о рождении</div>
+        <input id="inn-input" class="inn-input" type="number" inputmode="numeric" placeholder="12345678901234" maxlength="14"/>
+        <div id="inn-error" class="inn-error"></div>
+        <button class="btn-main" style="margin-top:14px" onclick="submitInn()">✅ Привязать ребёнка</button>
       </div>
-    </div>
-    <div style="text-align:center;font-size:12px;color:var(--tg-hint);font-weight:600;padding:8px">
-      ИНН можно найти в свидетельстве о рождении или паспорте ребёнка
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     sc-par — Главная родителя
-══════════════════════════════════════ -->
+<!-- sc-par (родитель — главная) -->
 <div id="sc-par" class="screen">
   <div class="header">
     <div>
       <div class="header-title">👨‍👩‍👧 Мои дети</div>
-      <div class="header-sub">Родительский кабинет</div>
+      <div class="header-sub" id="par-header-sub">Родительский кабинет</div>
     </div>
   </div>
   <div class="content">
     <div id="children-list"></div>
-    <button class="btn-sec" style="width:100%" onclick="go('sc-inn')">➕ Добавить ребёнка</button>
+    <button class="btn-main" style="background:var(--tg-secondary);color:var(--tg-hint);border:1.5px solid var(--border)" onclick="go('sc-inn')">➕ Добавить ребёнка</button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     sc-pgrades — Оценки ребёнка (родитель)
-══════════════════════════════════════ -->
+<!-- sc-pgrades (оценки ребёнка) -->
 <div id="sc-pgrades" class="screen">
   <div class="header">
     <button class="header-back" onclick="back()">‹</button>
@@ -278,9 +390,7 @@ body{font-family:'Nunito',sans-serif;background:var(--tg-secondary);color:var(--
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     sc-patt — Посещаемость ребёнка (родитель)
-══════════════════════════════════════ -->
+<!-- sc-patt (посещаемость ребёнка) -->
 <div id="sc-patt" class="screen">
   <div class="header">
     <button class="header-back" onclick="back()">‹</button>
@@ -295,16 +405,19 @@ body{font-family:'Nunito',sans-serif;background:var(--tg-secondary);color:var(--
       <span class="month-label" id="pa-month-label"></span>
       <button class="month-btn" id="pa-next-btn" onclick="changePaMonth(1)">›</button>
     </div>
+    <!-- Таб: Календарь / По дням -->
+    <div class="tabs" id="patt-tabs">
+      <button class="tab active" onclick="switchPattTab(0,this)">📅 Календарь</button>
+      <button class="tab" onclick="switchPattTab(1,this)">📋 По дням</button>
+    </div>
     <div id="pa-content"><div class="loading"><div class="spinner"></div></div></div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     sc-cur — Главная куратора
-══════════════════════════════════════ -->
+<!-- sc-cur (куратор — главная) -->
 <div id="sc-cur" class="screen">
   <div class="header">
-    <div>
+    <div style="flex:1">
       <div class="header-title" id="cur-header-title">📚 Кабинет куратора</div>
       <div class="header-sub" id="cur-header-sub"></div>
     </div>
@@ -312,9 +425,9 @@ body{font-family:'Nunito',sans-serif;background:var(--tg-secondary);color:var(--
   <div id="group-tabs" class="group-tabs" style="display:none"></div>
   <div class="content">
     <div class="stats-row" id="cur-stats">
-      <div class="stat-box"><div class="stat-val" id="s-present">—</div><div class="stat-lbl">Пришли</div></div>
-      <div class="stat-box"><div class="stat-val" id="s-absent">—</div><div class="stat-lbl">Отсутств.</div></div>
-      <div class="stat-box"><div class="stat-val" id="s-late">—</div><div class="stat-lbl">Опоздали</div></div>
+      <div class="stat-box"><div class="stat-val" id="s-present" style="color:var(--success)">—</div><div class="stat-lbl">Пришли</div></div>
+      <div class="stat-box"><div class="stat-val" id="s-absent"  style="color:var(--danger)">—</div><div class="stat-lbl">Отсутств.</div></div>
+      <div class="stat-box"><div class="stat-val" id="s-late"    style="color:var(--warning)">—</div><div class="stat-lbl">Опоздали</div></div>
     </div>
     <div class="menu-grid">
       <button class="menu-btn accent" onclick="go('sc-att')">
@@ -337,9 +450,7 @@ body{font-family:'Nunito',sans-serif;background:var(--tg-secondary);color:var(--
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     sc-att — Посещаемость группы (куратор)
-══════════════════════════════════════ -->
+<!-- sc-att (посещаемость группы — куратор) -->
 <div id="sc-att" class="screen">
   <div class="header">
     <button class="header-back" onclick="back()">‹</button>
@@ -364,9 +475,7 @@ body{font-family:'Nunito',sans-serif;background:var(--tg-secondary);color:var(--
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     sc-fill — Заполнение ведомости (куратор)
-══════════════════════════════════════ -->
+<!-- sc-fill (заполнение ведомости) -->
 <div id="sc-fill" class="screen">
   <div class="header">
     <button class="header-back" onclick="back()">‹</button>
@@ -381,14 +490,12 @@ body{font-family:'Nunito',sans-serif;background:var(--tg-secondary);color:var(--
     <button class="month-btn" id="fill-next-btn" onclick="changeFillMonth(1)">›</button>
   </div>
   <div class="subj-tabs" id="fill-subj-tabs"></div>
-  <div class="content" style="padding-top:8px">
+  <div class="content" style="padding-top:6px">
     <div id="fill-content"><div class="loading"><div class="spinner"></div></div></div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     sc-gview — Оценки группы (куратор)
-══════════════════════════════════════ -->
+<!-- sc-gview (оценки группы — куратор) -->
 <div id="sc-gview" class="screen">
   <div class="header">
     <button class="header-back" onclick="back()">‹</button>
@@ -407,9 +514,7 @@ body{font-family:'Nunito',sans-serif;background:var(--tg-secondary);color:var(--
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     sc-stus — Список студентов (куратор)
-══════════════════════════════════════ -->
+<!-- sc-stus (список студентов) -->
 <div id="sc-stus" class="screen">
   <div class="header">
     <button class="header-back" onclick="back()">‹</button>
@@ -423,9 +528,7 @@ body{font-family:'Nunito',sans-serif;background:var(--tg-secondary);color:var(--
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     sc-adm — Панель администратора
-══════════════════════════════════════ -->
+<!-- sc-adm (администратор) -->
 <div id="sc-adm" class="screen">
   <div class="header">
     <div>
@@ -434,920 +537,736 @@ body{font-family:'Nunito',sans-serif;background:var(--tg-secondary);color:var(--
     </div>
   </div>
   <div class="content">
-    <div class="section-title">Сегодня</div>
     <div id="adm-stats"><div class="loading"><div class="spinner"></div></div></div>
     <div id="adm-groups"></div>
   </div>
 </div>
 
 <script>
-/* ═══════════════════════════════════════════
-   ИНИЦИАЛИЗАЦИЯ TELEGRAM
-═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   ТЕМА
+═══════════════════════════════════════ */
 const tg = window.Telegram?.WebApp || null;
+
+function applyTheme() {
+  const dark = tg?.colorScheme === 'dark';
+  const r = document.documentElement;
+  r.style.setProperty('--card',   dark ? (tg?.themeParams?.bg_color        || '#1c1c1e') : '#ffffff');
+  r.style.setProperty('--border', dark ? 'rgba(255,255,255,0.09)'           : 'rgba(0,0,0,0.08)');
+  // Оценки
+  if (dark) {
+    r.style.setProperty('--g5-bg','rgba(34,197,94,.22)');  r.style.setProperty('--g5-fg','#4ade80');
+    r.style.setProperty('--g4-bg','rgba(59,130,246,.22)'); r.style.setProperty('--g4-fg','#60a5fa');
+    r.style.setProperty('--g3-bg','rgba(245,158,11,.22)'); r.style.setProperty('--g3-fg','#fbbf24');
+    r.style.setProperty('--g2-bg','rgba(239,68,68,.22)');  r.style.setProperty('--g2-fg','#f87171');
+    r.style.setProperty('--ap-bg','rgba(34,197,94,.2)');   r.style.setProperty('--ap-fg','#4ade80');
+    r.style.setProperty('--al-bg','rgba(245,158,11,.2)');  r.style.setProperty('--al-fg','#fbbf24');
+    r.style.setProperty('--aa-bg','rgba(239,68,68,.16)');  r.style.setProperty('--aa-fg','#f87171');
+    r.style.setProperty('--aw-bg','rgba(255,255,255,.05)');
+  } else {
+    r.style.setProperty('--g5-bg','#dcfce7'); r.style.setProperty('--g5-fg','#15803d');
+    r.style.setProperty('--g4-bg','#dbeafe'); r.style.setProperty('--g4-fg','#1d4ed8');
+    r.style.setProperty('--g3-bg','#fef3c7'); r.style.setProperty('--g3-fg','#d97706');
+    r.style.setProperty('--g2-bg','#fee2e2'); r.style.setProperty('--g2-fg','#dc2626');
+    r.style.setProperty('--ap-bg','#dcfce7'); r.style.setProperty('--ap-fg','#15803d');
+    r.style.setProperty('--al-bg','#fef3c7'); r.style.setProperty('--al-fg','#d97706');
+    r.style.setProperty('--aa-bg','#fee2e2'); r.style.setProperty('--aa-fg','#dc2626');
+    r.style.setProperty('--aw-bg','var(--tg-secondary)');
+  }
+}
+applyTheme();
+tg?.onEvent?.('themeChanged', applyTheme);
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
 const TG_CHAT_ID = tg?.initDataUnsafe?.user?.id
   ? String(tg.initDataUnsafe.user.id)
   : (new URLSearchParams(location.search).get('chatId') || 'demo');
 
-/* ═══════════════════════════════════════════
-   STATE
-═══════════════════════════════════════════ */
 const S = {
-  role: null,
-  chatId: TG_CHAT_ID,
-  // куратор / админ
-  groups: [],
-  curGroupIdx: 0,
-  subjects: [],
-  students: [],
-  // заполнение ведомости
-  fillMonth: mKey(),
-  fillSubjIdx: 0,
-  grades: {},
-  // оценки группы
-  gvMonth: mKey(),
-  // посещаемость
-  attTab: 0,
-  attMonth: mKey(),
-  // родитель
-  children: [],
-  curChildIdx: 0,
-  pgMonth: mKey(),
-  paMonth: mKey(),
-  // навигация
-  stack: [],
+  role:null, chatId:TG_CHAT_ID,
+  groups:[], curGroupIdx:0,
+  subjects:[], students:[],
+  fillMonth:mKey(), fillSubjIdx:0, grades:{},
+  gvMonth:mKey(), attTab:0, attMonth:mKey(),
+  children:[], curChildIdx:0,
+  pgMonth:mKey(), paMonth:mKey(),
+  pattTab:0,    // 0=calendar, 1=daylist
+  paData:null,  // кешированные данные посещаемости ребёнка
+  stack:[],
 };
+function curGroup()  { return S.groups[S.curGroupIdx]||{}; }
+function curGid()    { return curGroup().id||''; }
+function curChild()  { return S.children[S.curChildIdx]||{}; }
 
-function curGroup()  { return S.groups[S.curGroupIdx] || {}; }
-function curGid()    { return curGroup().id || ''; }
-function curChild()  { return S.children[S.curChildIdx] || {}; }
-
-/* ═══════════════════════════════════════════
+/* ═══════════════════════════════════════
    УТИЛИТЫ
-═══════════════════════════════════════════ */
+═══════════════════════════════════════ */
 function mKey() {
   const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
 }
-
 function fmtMonth(k) {
-  if (!k) return '';
-  const [y, m] = k.split('-').map(Number);
-  const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь',
-                  'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-  return MONTHS[m - 1] + ' ' + y;
+  if(!k) return '';
+  const [y,m]=k.split('-').map(Number);
+  const M=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  return M[m-1]+' '+y;
+}
+function fmtDate(iso) {
+  const d = new Date(iso+'T00:00:00');
+  const W=['воскр.','пн','вт','ср','чт','пт','сб'];
+  return `${d.getDate()} ${['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'][d.getMonth()]} (${W[d.getDay()]})`;
+}
+function shiftMonth(k,delta){
+  const[y,m]=k.split('-').map(Number);
+  const d=new Date(y,m-1+delta,1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
+function avatarColor(n){
+  const C=['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6'];
+  let h=0; for(const c of(n||'')) h=(h*31+c.charCodeAt(0))&0xffff;
+  return C[h%C.length];
+}
+function initials(n){return(n||'').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?';}
+function gradeClass(v){return v==='5'?'g5':v==='4'?'g4':v==='3'?'g3':v==='2'?'g2':'g0';}
+function updateMonthBtn(id,month){const b=document.getElementById(id);if(b){b.disabled=shiftMonth(month,1)>mKey();}}
+
+let _tt;
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast'+(type?' '+type:'');
+  el.classList.add('show'); clearTimeout(_tt);
+  _tt=setTimeout(()=>el.classList.remove('show'),2800);
 }
 
-function shiftMonth(k, delta) {
-  const [y, m] = k.split('-').map(Number);
-  const d = new Date(y, m - 1 + delta, 1);
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-}
-
-function avatarColor(name) {
-  const colors = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6'];
-  let h = 0;
-  for (let i = 0; i < (name||'').length; i++) h = (h * 31 + (name||'').charCodeAt(i)) & 0xffff;
-  return colors[h % colors.length];
-}
-
-function initials(name) {
-  return (name||'').split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?';
-}
-
-let _toastTimer;
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
-}
-
-function gradeClass(v) {
-  if (v === '5') return 'grade-5';
-  if (v === '4') return 'grade-4';
-  if (v === '3') return 'grade-3';
-  if (v === '2') return 'grade-2';
-  return 'grade-empty';
-}
-
-/* ═══════════════════════════════════════════
-   API HELPER
-═══════════════════════════════════════════ */
-async function api(path, opts = {}) {
-  const r = await fetch('/api/webapp/' + path, {
-    headers: {
-      'Content-Type': 'application/json',
-      'x-tg-chat-id': S.chatId,
-      ...(opts.headers || {}),
-    },
+/* ═══════════════════════════════════════
+   API
+═══════════════════════════════════════ */
+async function api(path, opts={}) {
+  const r = await fetch('/api/webapp/'+path, {
+    headers:{'Content-Type':'application/json','x-tg-chat-id':S.chatId,...(opts.headers||{})},
     ...opts,
   });
-  if (!r.ok) {
-    let msg;
-    try { msg = (await r.json()).error; } catch { msg = r.statusText; }
-    throw new Error(msg || 'Ошибка сервера');
-  }
+  if(!r.ok){ let m; try{m=(await r.json()).error;}catch{m=r.statusText;} throw new Error(m||'Ошибка'); }
   return r.json();
 }
 
-/* ═══════════════════════════════════════════
+/* ═══════════════════════════════════════
    НАВИГАЦИЯ
-═══════════════════════════════════════════ */
-const SCREEN_HOOKS = {};
-
-function go(id, opts = {}) {
+═══════════════════════════════════════ */
+const HOOKS = {};
+function go(id, opts={}) {
   const cur = document.querySelector('.screen.active');
-  if (cur && cur.id !== id) {
-    if (!opts.replace) S.stack.push(cur.id);
+  if(cur && cur.id!==id){
+    if(!opts.replace) S.stack.push(cur.id);
     cur.classList.remove('active');
   }
-  const next = document.getElementById(id);
-  if (next) next.classList.add('active');
-  if (S.stack.length > 0) {
-    tg?.BackButton?.show();
-  } else {
-    tg?.BackButton?.hide();
-  }
-  if (SCREEN_HOOKS[id]) SCREEN_HOOKS[id]();
+  document.getElementById(id)?.classList.add('active');
+  tg?.BackButton?.[S.stack.length>0?'show':'hide']?.();
+  if(HOOKS[id]) HOOKS[id]();
 }
-
 function back() {
-  const prev = S.stack.pop();
-  if (!prev) return;
-  const cur = document.querySelector('.screen.active');
-  if (cur) cur.classList.remove('active');
-  const target = document.getElementById(prev);
-  if (target) target.classList.add('active');
-  if (S.stack.length === 0) tg?.BackButton?.hide();
+  const prev=S.stack.pop();
+  if(!prev) return;
+  document.querySelector('.screen.active')?.classList.remove('active');
+  document.getElementById(prev)?.classList.add('active');
+  if(S.stack.length===0) tg?.BackButton?.hide();
 }
+if(tg?.BackButton) tg.BackButton.onClick(back);
 
-if (tg?.BackButton) tg.BackButton.onClick(back);
-
-/* ═══════════════════════════════════════════
-   ИНИЦИАЛИЗАЦИЯ
-═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
 async function init() {
-  if (S.chatId === 'demo') { loadDemo(); return; }
+  if(S.chatId==='demo'){ loadDemo(); return; }
   try {
-    const data = await api('me');
-    S.role = data.role;
-    if (data.role === 'curator') {
-      S.groups = data.groups || [];
-      S.curGroupIdx = 0;
-      document.getElementById('cur-header-sub').textContent = data.curatorName || '';
-      renderGroupTabs();
-      go('sc-cur', { replace: true });
-    } else if (data.role === 'parent') {
-      S.children = data.children || [];
-      S.curChildIdx = 0;
-      go('sc-par', { replace: true });
-    } else if (data.role === 'admin') {
-      S.groups = data.groups || [];
-      go('sc-adm', { replace: true });
+    const d = await api('me');
+    S.role = d.role;
+    if(d.role==='curator'){
+      S.groups=d.groups||[]; renderGroupTabs(); go('sc-cur',{replace:true});
+    } else if(d.role==='parent'){
+      S.children=d.children||[];
+      document.getElementById('cur-header-sub').textContent='';
+      go('sc-par',{replace:true});
+    } else if(d.role==='admin'){
+      S.groups=d.groups||[]; go('sc-adm',{replace:true});
     } else {
-      go('sc-inn', { replace: true });
+      go('sc-inn',{replace:true});
     }
-  } catch (e) {
-    toast('Ошибка загрузки: ' + e.message);
-    go('sc-inn', { replace: true });
+  } catch(e) {
+    toast('Ошибка загрузки','err'); go('sc-inn',{replace:true});
   }
 }
 
-/* ═══════════════════════════════════════════
-   ДЕМО РЕЖИМ
-═══════════════════════════════════════════ */
-function loadDemo() {
-  S.role = 'curator';
-  S.groups = [
-    { id: 'demo1', name: 'ИТ-21', profRu: 'Информационные технологии', shiftStart: '09:00' },
-    { id: 'demo2', name: 'ИТ-22', profRu: 'Сетевое администрирование', shiftStart: '09:30' },
+function loadDemo(){
+  S.role='curator';
+  S.groups=[
+    {id:'d1',name:'ИТ-21',profRu:'Информационные технологии',shiftStart:'09:30'},
+    {id:'d2',name:'ИТ-22',profRu:'Сетевое администрирование',shiftStart:'09:30'},
   ];
-  S.curGroupIdx = 0;
-  document.getElementById('cur-header-sub').textContent = 'Иванов И.И. (демо)';
+  document.getElementById('cur-header-sub').textContent='Демо режим';
   renderGroupTabs();
-  document.getElementById('s-present').textContent = '22';
-  document.getElementById('s-absent').textContent = '3';
-  document.getElementById('s-late').textContent = '2';
-  go('sc-cur', { replace: true });
+  document.getElementById('s-present').textContent='18';
+  document.getElementById('s-absent').textContent='4';
+  document.getElementById('s-late').textContent='2';
+  go('sc-cur',{replace:true});
 }
 
-/* ═══════════════════════════════════════════
-   КУРАТОР — ПЕРЕКЛЮЧЕНИЕ ГРУПП
-═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   КУРАТОР — ГРУППЫ
+═══════════════════════════════════════ */
 function renderGroupTabs() {
-  const wrap = document.getElementById('group-tabs');
-  if (S.groups.length <= 1) {
-    wrap.style.display = 'none';
-    if (S.groups.length === 1) {
-      document.getElementById('cur-header-title').textContent = '📚 ' + S.groups[0].name;
-    }
+  const wrap=document.getElementById('group-tabs');
+  if(S.groups.length<=1){
+    wrap.style.display='none';
+    if(S.groups[0]) document.getElementById('cur-header-title').textContent='📚 '+S.groups[0].name;
     return;
   }
-  wrap.style.display = 'flex';
-  wrap.innerHTML = S.groups.map((g, i) =>
-    `<button class="group-tab ${i === S.curGroupIdx ? 'active' : ''}" onclick="switchGroup(${i})">${g.name}</button>`
+  wrap.style.display='flex';
+  wrap.innerHTML=S.groups.map((g,i)=>
+    `<button class="group-tab ${i===S.curGroupIdx?'active':''}" onclick="switchGroup(${i})">${g.name}</button>`
   ).join('');
-  document.getElementById('cur-header-title').textContent = '📚 ' + (S.groups[S.curGroupIdx]?.name || 'Кабинет куратора');
+  document.getElementById('cur-header-title').textContent='📚 '+(curGroup().name||'Куратор');
 }
-
-function switchGroup(idx) {
-  S.curGroupIdx = idx;
-  S.subjects = [];
-  S.students = [];
+function switchGroup(idx){
+  S.curGroupIdx=idx; S.subjects=[]; S.students=[];
   renderGroupTabs();
-  document.getElementById('cur-header-title').textContent = '📚 ' + (curGroup().name || 'Кабинет куратора');
-  loadCuratorStats();
+  document.getElementById('cur-header-title').textContent='📚 '+(curGroup().name||'Куратор');
+  loadCurStats();
 }
 
-/* ═══════════════════════════════════════════
+/* ═══════════════════════════════════════
    КУРАТОР — ГЛАВНАЯ
-═══════════════════════════════════════════ */
-async function onEnterCurHome() {
-  loadCuratorStats();
+═══════════════════════════════════════ */
+async function onEnterCur(){
+  const name = S.groups.find((_,i)=>i===0)?.name;
+  if(S.groups.length===1 && name) document.getElementById('cur-header-sub').textContent=document.getElementById('cur-header-sub').textContent||'';
+  loadCurStats();
 }
-
-async function loadCuratorStats() {
-  const gid = curGid();
-  if (!gid || gid === 'demo1' || gid === 'demo2') return;
+async function loadCurStats(){
+  const gid=curGid(); if(!gid||gid==='d1'||gid==='d2') return;
   try {
-    const data = await api('attendance/today?gid=' + gid);
-    document.getElementById('s-present').textContent = data.present ?? '—';
-    document.getElementById('s-absent').textContent  = data.absent  ?? '—';
-    document.getElementById('s-late').textContent    = data.late    ?? '—';
-  } catch (e) {
-    // не критично, не показываем toast
-  }
+    const d=await api('attendance/today?gid='+gid);
+    document.getElementById('s-present').textContent=d.present??'—';
+    document.getElementById('s-absent').textContent=d.absent??'—';
+    document.getElementById('s-late').textContent=d.late??'—';
+  } catch {}
 }
 
-/* ═══════════════════════════════════════════
+/* ═══════════════════════════════════════
    ПОСЕЩАЕМОСТЬ (куратор)
-═══════════════════════════════════════════ */
-function onEnterAtt() {
-  S.attTab = 0;
-  S.attMonth = mKey();
-  document.getElementById('att-group-label').textContent = curGroup().name || '';
-  document.getElementById('att-month-sel').style.display = 'none';
-  document.querySelectorAll('#att-tabs .tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+═══════════════════════════════════════ */
+function onEnterAtt(){
+  S.attTab=0; S.attMonth=mKey();
+  document.getElementById('att-group-label').textContent=curGroup().name||'';
+  document.getElementById('att-month-sel').style.display='none';
+  document.querySelectorAll('#att-tabs .tab').forEach((t,i)=>t.classList.toggle('active',i===0));
   loadAttToday();
 }
-
-function switchAttTab(idx, btn) {
-  S.attTab = idx;
-  document.querySelectorAll('#att-tabs .tab').forEach(t => t.classList.remove('active'));
+function switchAttTab(idx,btn){
+  S.attTab=idx;
+  document.querySelectorAll('#att-tabs .tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
-  const monthSel = document.getElementById('att-month-sel');
-  if (idx === 0) {
-    monthSel.style.display = 'none';
-    loadAttToday();
-  } else {
-    S.attMonth = mKey();
-    monthSel.style.display = 'block';
-    document.getElementById('att-month-label').textContent = fmtMonth(S.attMonth);
-    updateMonthBtnState('att-next-btn', S.attMonth);
-    loadAttMonth(S.attMonth);
-  }
+  const ms=document.getElementById('att-month-sel');
+  if(idx===0){ ms.style.display='none'; loadAttToday(); }
+  else { ms.style.display='block'; S.attMonth=mKey(); document.getElementById('att-month-label').textContent=fmtMonth(S.attMonth); updateMonthBtn('att-next-btn',S.attMonth); loadAttMonth(S.attMonth); }
 }
-
-function changeAttMonth(delta) {
-  const next = shiftMonth(S.attMonth, delta);
-  if (delta > 0 && next > mKey()) return;
-  S.attMonth = next;
-  document.getElementById('att-month-label').textContent = fmtMonth(S.attMonth);
-  updateMonthBtnState('att-next-btn', S.attMonth);
-  loadAttMonth(S.attMonth);
+function changeAttMonth(delta){
+  const n=shiftMonth(S.attMonth,delta); if(delta>0&&n>mKey()) return;
+  S.attMonth=n; document.getElementById('att-month-label').textContent=fmtMonth(n); updateMonthBtn('att-next-btn',n); loadAttMonth(n);
 }
-
-async function loadAttToday() {
-  const gid = curGid();
-  if (!gid) return;
-  document.getElementById('att-content').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-  try {
-    const data = await api('attendance/today?gid=' + gid);
-    renderAttTodayList(data);
-  } catch (e) {
-    document.getElementById('att-content').innerHTML = `<div class="empty"><div class="empty-icon">😕</div><div class="empty-text">${e.message}</div></div>`;
-  }
+async function loadAttToday(){
+  const gid=curGid(); if(!gid) return;
+  document.getElementById('att-content').innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try { const d=await api('attendance/today?gid='+gid); renderAttTodayList(d,'att-content'); }
+  catch(e){ document.getElementById('att-content').innerHTML=errHtml(e.message); }
 }
-
-function renderAttTodayList(data) {
-  const { present = 0, absent = 0, late = 0, students = [] } = data;
-  const total = students.length;
-  const pct = total ? Math.round((present / total) * 100) : 0;
-  let html = `
-    <div class="stats-row">
-      <div class="stat-box"><div class="stat-val" style="color:var(--success)">${present}</div><div class="stat-lbl">Пришли</div></div>
-      <div class="stat-box"><div class="stat-val" style="color:var(--danger)">${absent}</div><div class="stat-lbl">Отсутств.</div></div>
-      <div class="stat-box"><div class="stat-val" style="color:var(--warning)">${late}</div><div class="stat-lbl">Опоздали</div></div>
-    </div>
-    <div class="card">
-      <div class="card-header">👥 Студенты (${total})</div>
-      <div class="card-body" style="padding:0 16px">`;
-  if (!students.length) {
-    html += '<div class="empty"><div class="empty-text">Нет данных</div></div>';
-  } else {
-    students.forEach(stu => {
-      const icon = stu.status === 'present' ? '✅' : stu.status === 'late' ? '⏰' : '❌';
-      const sub = stu.time ? stu.time : (stu.status === 'absent' ? 'Отсутствует' : '');
-      html += `<div class="stu-row">
-        <div class="stu-avatar" style="background:${avatarColor(stu.fio)}">${initials(stu.fio)}</div>
-        <div style="flex:1">
-          <div class="stu-name">${stu.fio}</div>
-          ${sub ? `<div class="stu-meta">${sub}</div>` : ''}
-        </div>
-        <div class="stu-status">${icon}</div>
-      </div>`;
-    });
-  }
-  html += '</div></div>';
-  document.getElementById('att-content').innerHTML = html;
-}
-
-async function loadAttMonth(month) {
-  month = month || S.attMonth || mKey();
-  S.attMonth = month;
-  const gid = curGid();
-  if (!gid) return;
-  document.getElementById('att-content').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-  try {
-    const data = await api(`attendance/month?gid=${gid}&month=${month}`);
-    renderAttMonthCalendar(data.days, data.students, month, 'att-content');
-  } catch (e) {
-    document.getElementById('att-content').innerHTML = `<div class="empty"><div class="empty-icon">😕</div><div class="empty-text">${e.message}</div></div>`;
-  }
-}
-
-function renderAttMonthCalendar(days, studentsData, month, targetId) {
-  if (!days || !days.length) {
-    document.getElementById(targetId).innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Нет данных за этот месяц</div></div>';
-    return;
-  }
-  const today = new Date().toISOString().slice(0, 10);
-  const [yr, mn] = month.split('-').map(Number);
-  const firstDow = new Date(Date.UTC(yr, mn - 1, 1)).getUTCDay(); // 0=Sun
-  const offset = (firstDow + 6) % 7; // Mon-based offset
-
-  // Aggregate stats for all students
-  let totPresent = 0, totAbsent = 0, totLate = 0;
-  const aggregated = {}; // day -> dominant status
-  days.forEach(day => {
-    const dow = new Date(day + 'T00:00:00Z').getUTCDay();
-    if (dow === 0 || dow === 6) { aggregated[day] = 'weekend'; return; }
-    if (day > today) { aggregated[day] = 'future'; return; }
-    let p = 0, a = 0, l = 0;
-    (studentsData || []).forEach(stu => {
-      const st = stu.statuses?.[day] || 'a';
-      if (st === 'p') p++;
-      else if (st === 'l') l++;
-      else a++;
-    });
-    totPresent += p; totAbsent += a; totLate += l;
-    // dominant
-    aggregated[day] = l > 0 ? 'late' : p > 0 ? 'present' : 'absent';
-  });
-
-  const WEEK = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-  let html = `<div class="card"><div class="card-header">📅 ${fmtMonth(month)}</div><div class="card-body">`;
-  html += `<div class="att-grid">`;
-  WEEK.forEach(d => html += `<div style="text-align:center;font-size:9px;font-weight:800;color:var(--tg-hint);padding:2px 0">${d}</div>`);
-  for (let i = 0; i < offset; i++) html += `<div></div>`;
-  days.forEach(day => {
-    const d = parseInt(day.slice(-2));
-    const cls = aggregated[day] || 'absent';
-    html += `<div class="att-day ${cls}">${d}</div>`;
-  });
-  html += `</div>`;
-  html += `<div class="att-legend" style="margin-top:10px">
-    <div class="att-legend-item"><div class="att-legend-dot" style="background:#dcfce7"></div>Пришли</div>
-    <div class="att-legend-item"><div class="att-legend-dot" style="background:#fef3c7"></div>Опоздали</div>
-    <div class="att-legend-item"><div class="att-legend-dot" style="background:#fee2e2"></div>Отсутств.</div>
-  </div>`;
-  html += `</div></div>`;
-
-  // per-student table
-  if (studentsData && studentsData.length) {
-    html += `<div class="card"><div class="card-header">👥 По студентам</div><div class="card-body" style="padding:0 16px;overflow-x:auto">`;
-    html += `<table class="gv-table">`;
-    html += `<tr><th class="fio-col">Студент</th>`;
-    days.forEach(day => {
-      const dow = new Date(day + 'T00:00:00Z').getUTCDay();
-      if (dow !== 0 && dow !== 6) html += `<th>${parseInt(day.slice(-2))}</th>`;
-    });
-    html += `</tr>`;
-    studentsData.forEach(stu => {
-      html += `<tr><td class="fio-col" title="${stu.fio}">${stu.fio.split(' ')[0]}</td>`;
-      days.forEach(day => {
-        const dow = new Date(day + 'T00:00:00Z').getUTCDay();
-        if (dow === 0 || dow === 6) return;
-        const st = stu.statuses?.[day] || 'a';
-        const ico = day > today ? '·' : st === 'p' ? '✅' : st === 'l' ? '⏰' : '❌';
-        const col = day > today ? 'var(--border)' : st === 'p' ? 'var(--success)' : st === 'l' ? 'var(--warning)' : 'var(--danger)';
-        html += `<td style="font-size:9px;color:${col}">${ico}</td>`;
-      });
-      html += `</tr>`;
-    });
-    html += `</table></div></div>`;
-  }
-  document.getElementById(targetId).innerHTML = html;
-}
-
-/* ═══════════════════════════════════════════
-   ЗАПОЛНЕНИЕ ВЕДОМОСТИ
-═══════════════════════════════════════════ */
-async function loadFill() {
-  const gid = curGid();
-  if (!gid) { document.getElementById('fill-content').innerHTML = '<div class="empty"><div class="empty-text">Нет группы</div></div>'; return; }
-  document.getElementById('fill-header-sub').textContent = curGroup().name || '';
-  document.getElementById('fill-month-label').textContent = fmtMonth(S.fillMonth);
-  updateMonthBtnState('fill-next-btn', S.fillMonth);
-  document.getElementById('fill-content').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-  try {
-    if (!S.subjects.length || !S.students.length) {
-      const [sjD, stD, grD] = await Promise.all([
-        api('subjects?gid=' + gid),
-        api('students?gid=' + gid),
-        api(`grades?gid=${gid}&month=${S.fillMonth}`),
-      ]);
-      S.subjects = sjD.subjects || [];
-      S.students = stD.students || [];
-      S.grades   = grD.grades   || {};
-    } else {
-      S.grades = (await api(`grades?gid=${gid}&month=${S.fillMonth}`)).grades || {};
-    }
-  } catch (e) {
-    document.getElementById('fill-content').innerHTML = `<div class="empty"><div class="empty-icon">😕</div><div class="empty-text">${e.message}</div></div>`;
-    return;
-  }
-  renderFillSubjTabs();
-  renderFillStudents();
-}
-
-function renderFillSubjTabs() {
-  const wrap = document.getElementById('fill-subj-tabs');
-  if (!S.subjects.length) { wrap.innerHTML = ''; return; }
-  wrap.innerHTML = S.subjects.map((s, i) => {
-    const filled = S.students.filter(stu => S.grades[stu.id]?.[s.key]).length;
-    const done = filled === S.students.length && S.students.length > 0;
-    return `<button class="subj-tab ${i === S.fillSubjIdx ? 'active' : ''}" onclick="switchFillSubj(${i})">${s.label}${done ? '<span class="done-dot"></span>' : ''}</button>`;
-  }).join('');
-}
-
-function switchFillSubj(idx) {
-  S.fillSubjIdx = idx;
-  renderFillSubjTabs();
-  renderFillStudents();
-}
-
-function renderFillStudents() {
-  const subj = S.subjects[S.fillSubjIdx];
-  if (!subj) {
-    document.getElementById('fill-content').innerHTML = '<div class="empty"><div class="empty-text">Нет предметов</div></div>';
-    return;
-  }
-  const filled = S.students.filter(s => S.grades[s.id]?.[subj.key]).length;
-  const pct = S.students.length ? Math.round(filled / S.students.length * 100) : 0;
-  const bar = '▓'.repeat(Math.round(pct/10)) + '░'.repeat(10 - Math.round(pct/10));
-
-  let html = `<div class="card"><div class="card-header">${subj.label} <span style="margin-left:auto;font-size:11px;color:var(--tg-hint);font-weight:600">${bar} ${pct}%</span></div><div class="card-body" style="padding:0 16px">`;
-  if (!S.students.length) {
-    html += '<div class="empty"><div class="empty-text">Нет студентов</div></div>';
-  } else {
-    S.students.forEach((stu, si) => {
-      const cur = S.grades[stu.id]?.[subj.key] || '';
-      html += `<div class="fill-student-row">
-        <div class="fill-student-name">${stu.fio}</div>
-        <div class="grade-btns">
-          ${['2','3','4','5'].map(v => `<button class="grade-btn ${cur===v?'active-'+v:''}" onclick="setGrade('${stu.id}','${subj.key}','${v}',this)">${v}</button>`).join('')}
-          <button class="grade-btn" title="Убрать" onclick="setGrade('${stu.id}','${subj.key}','',this)" style="${!cur?'opacity:.4':''}">✕</button>
-        </div>
-      </div>`;
-    });
-  }
-  html += '</div></div>';
-  document.getElementById('fill-content').innerHTML = html;
-}
-
-async function setGrade(stuId, subjKey, val, btn) {
-  if (!S.grades[stuId]) S.grades[stuId] = {};
-  if (val) {
-    S.grades[stuId][subjKey] = val;
-  } else {
-    delete S.grades[stuId][subjKey];
-  }
-  // Обновить UI кнопок в этой строке
-  const row = btn.closest('.fill-student-row');
-  row.querySelectorAll('.grade-btn').forEach(b => {
-    const v = b.textContent;
-    b.className = 'grade-btn';
-    if (v === val && val) b.classList.add('active-' + v);
-    if (v === '✕') b.style.opacity = val ? '0.4' : '1';
-  });
-  // Автосохранение
-  try {
-    const gid = curGid();
-    await api('grades/set', {
-      method: 'POST',
-      body: JSON.stringify({ gid, studentId: stuId, month: S.fillMonth, grades: S.grades[stuId] }),
-    });
-  } catch (e) {
-    toast('Ошибка сохранения: ' + e.message);
-  }
-  // Обновить прогресс в табах
-  renderFillSubjTabs();
-}
-
-function changeFillMonth(delta) {
-  const next = shiftMonth(S.fillMonth, delta);
-  if (delta > 0 && next > mKey()) return;
-  S.fillMonth = next;
-  S.grades = {};
-  document.getElementById('fill-month-label').textContent = fmtMonth(S.fillMonth);
-  updateMonthBtnState('fill-next-btn', S.fillMonth);
-  loadFill();
-}
-
-/* ═══════════════════════════════════════════
-   ОЦЕНКИ ГРУППЫ (куратор)
-═══════════════════════════════════════════ */
-async function loadGradesView() {
-  const gid = curGid();
-  document.getElementById('gv-group-label').textContent = curGroup().name || '';
-  document.getElementById('gv-month-label').textContent = fmtMonth(S.gvMonth);
-  updateMonthBtnState('gv-next-btn', S.gvMonth);
-  document.getElementById('gv-content').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-  try {
-    const [grD, stD, sjD] = await Promise.all([
-      api(`grades?gid=${gid}&month=${S.gvMonth}`),
-      S.students.length ? Promise.resolve({ students: S.students }) : api('students?gid=' + gid),
-      S.subjects.length ? Promise.resolve({ subjects: S.subjects }) : api('subjects?gid=' + gid),
-    ]);
-    if (!S.students.length) S.students = stD.students || [];
-    if (!S.subjects.length) S.subjects = sjD.subjects || [];
-    renderGradesTable(grD.grades || {});
-  } catch (e) {
-    document.getElementById('gv-content').innerHTML = `<div class="empty"><div class="empty-icon">😕</div><div class="empty-text">${e.message}</div></div>`;
-  }
-}
-
-function renderGradesTable(grades) {
-  if (!S.subjects.length || !S.students.length) {
-    document.getElementById('gv-content').innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Нет данных</div></div>';
-    return;
-  }
-  let html = `<div class="card" style="overflow-x:auto"><div class="card-body" style="padding:0 16px;overflow-x:auto"><table class="gv-table">`;
-  html += `<tr><th class="fio-col">Студент</th>`;
-  S.subjects.forEach(s => html += `<th title="${s.label}">${s.label.slice(0, 4)}</th>`);
-  html += `</tr>`;
-  S.students.forEach(stu => {
-    html += `<tr><td class="fio-col" title="${stu.fio}">${stu.fio.split(' ')[0]}</td>`;
-    S.subjects.forEach(s => {
-      const v = grades[stu.id]?.[s.key] || '';
-      html += `<td><div class="gv-badge ${gradeClass(v)}">${v || '—'}</div></td>`;
-    });
-    html += `</tr>`;
-  });
-  html += `</table></div></div>`;
-  document.getElementById('gv-content').innerHTML = html;
-}
-
-function changeGvMonth(delta) {
-  const next = shiftMonth(S.gvMonth, delta);
-  if (delta > 0 && next > mKey()) return;
-  S.gvMonth = next;
-  document.getElementById('gv-month-label').textContent = fmtMonth(S.gvMonth);
-  updateMonthBtnState('gv-next-btn', S.gvMonth);
-  loadGradesView();
-}
-
-/* ═══════════════════════════════════════════
-   СПИСОК СТУДЕНТОВ (куратор)
-═══════════════════════════════════════════ */
-async function onEnterStudents() {
-  const gid = curGid();
-  document.getElementById('stus-group-label').textContent = curGroup().name || '';
-  if (!S.students.length) {
-    document.getElementById('students-content').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-    try {
-      const d = await api('students?gid=' + gid);
-      S.students = d.students || [];
-    } catch (e) {
-      document.getElementById('students-content').innerHTML = `<div class="empty"><div class="empty-icon">😕</div><div class="empty-text">${e.message}</div></div>`;
-      return;
-    }
-  }
-  renderStudentsList();
-}
-
-function renderStudentsList() {
-  const { students } = S;
-  if (!students.length) {
-    document.getElementById('students-content').innerHTML = '<div class="empty"><div class="empty-icon">👤</div><div class="empty-text">Нет студентов</div></div>';
-    return;
-  }
-  let html = `<div class="card"><div class="card-header">👥 Студенты (${students.length})</div><div class="card-body" style="padding:0 16px">`;
-  students.forEach((stu, i) => {
-    html += `<div class="stu-row">
-      <div class="stu-avatar" style="background:${avatarColor(stu.fio)}">${initials(stu.fio)}</div>
-      <div style="flex:1">
-        <div class="stu-name">${stu.fio}</div>
-        <div class="stu-meta">${stu.birthDate || ''} ${stu.inn ? '· ИНН: ' + stu.inn : ''}</div>
-      </div>
-      <div style="font-size:12px;color:var(--tg-hint);font-weight:700">${i + 1}</div>
+function renderAttTodayList(data,targetId){
+  const {present=0,absent=0,late=0,students=[]}=data;
+  const total=students.length;
+  let html=`<div class="stats-row">
+    <div class="stat-box"><div class="stat-val" style="color:var(--success)">${present}</div><div class="stat-lbl">Пришли</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--danger)">${absent}</div><div class="stat-lbl">Отсутств.</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--warning)">${late}</div><div class="stat-lbl">Опоздали</div></div>
+  </div>
+  <div class="card"><div class="card-header">👥 Список (${total})</div><div class="card-body" style="padding:0 14px">`;
+  if(!students.length) html+='<div class="empty"><div class="empty-text">Нет данных</div></div>';
+  else students.forEach(s=>{
+    const ico=s.status==='present'?'✅':s.status==='late'?'⏰':'❌';
+    html+=`<div class="stu-row">
+      <div class="stu-avatar" style="background:${avatarColor(s.fio)}">${initials(s.fio)}</div>
+      <div style="flex:1"><div class="stu-name">${s.fio}</div>${s.time?`<div class="stu-meta">Вход: ${s.time}</div>`:''}</div>
+      <div class="stu-status">${ico}</div>
     </div>`;
   });
-  html += '</div></div>';
-  document.getElementById('students-content').innerHTML = html;
+  html+='</div></div>';
+  document.getElementById(targetId).innerHTML=html;
+}
+async function loadAttMonth(month){
+  const gid=curGid(); if(!gid) return;
+  document.getElementById('att-content').innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try { const d=await api(`attendance/month?gid=${gid}&month=${month}`); renderAttCalendar(d.days,d.students,month,'att-content'); }
+  catch(e){ document.getElementById('att-content').innerHTML=errHtml(e.message); }
+}
+function renderAttCalendar(days,stuData,month,targetId){
+  if(!days?.length){ document.getElementById(targetId).innerHTML='<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Нет данных</div></div>'; return; }
+  const today=new Date().toISOString().slice(0,10);
+  const [yr,mn]=month.split('-').map(Number);
+  const offset=(new Date(Date.UTC(yr,mn-1,1)).getUTCDay()+6)%7;
+  const agg={};
+  days.forEach(day=>{
+    const dow=new Date(day+'T00:00:00Z').getUTCDay();
+    if(dow===0||dow===6){agg[day]='weekend';return;}
+    if(day>today){agg[day]='future';return;}
+    let p=0,l=0; (stuData||[]).forEach(s=>{const st=s.statuses?.[day]||'a'; if(st==='p')p++; else if(st==='l')l++;});
+    agg[day]=l?'late':p?'present':'absent';
+  });
+  const W=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  let html=`<div class="card"><div class="card-header">📅 ${fmtMonth(month)}</div><div class="card-body">
+  <div class="att-grid">`;
+  W.forEach(d=>html+=`<div style="text-align:center;font-size:9px;font-weight:800;color:var(--tg-hint);padding:2px 0">${d}</div>`);
+  for(let i=0;i<offset;i++) html+='<div></div>';
+  days.forEach(day=>{ const d=+day.slice(-2); const cls=agg[day]||'absent'; html+=`<div class="att-day ${cls}">${d}</div>`; });
+  html+=`</div>
+  <div class="att-legend" style="margin-top:10px">
+    <div class="att-leg"><div class="att-leg-dot" style="background:var(--ap-bg)"></div>Пришли</div>
+    <div class="att-leg"><div class="att-leg-dot" style="background:var(--al-bg)"></div>Опоздали</div>
+    <div class="att-leg"><div class="att-leg-dot" style="background:var(--aa-bg)"></div>Отсутств.</div>
+  </div></div></div>`;
+  // По студентам
+  if(stuData?.length){
+    html+=`<div class="card"><div class="card-header">👥 По студентам</div><div class="card-body" style="padding:0 14px;overflow-x:auto">
+    <div class="gv-wrap"><table class="gv-table"><tr><th class="fio-col">Студент</th>`;
+    const workDays=days.filter(d=>{const w=new Date(d+'T00:00:00Z').getUTCDay();return w!==0&&w!==6;});
+    workDays.forEach(d=>html+=`<th>${+d.slice(-2)}</th>`);
+    html+='</tr>';
+    stuData.forEach(s=>{
+      html+=`<tr><td class="fio-col" title="${s.fio}">${s.fio.split(' ')[0]}</td>`;
+      workDays.forEach(day=>{
+        const st=s.statuses?.[day]||'a';
+        const ico=day>today?'·':st==='p'?'✓':st==='l'?'!':'✗';
+        const col=day>today?'var(--border)':st==='p'?'var(--ap-fg)':st==='l'?'var(--al-fg)':'var(--aa-fg)';
+        html+=`<td style="color:${col};font-size:9px;font-weight:900">${ico}</td>`;
+      });
+      html+='</tr>';
+    });
+    html+='</table></div></div></div>';
+  }
+  document.getElementById(targetId).innerHTML=html;
 }
 
-/* ═══════════════════════════════════════════
-   РОДИТЕЛЬ — СПИСОК ДЕТЕЙ
-═══════════════════════════════════════════ */
-function renderChildrenList() {
-  const wrap = document.getElementById('children-list');
-  if (!S.children.length) {
-    wrap.innerHTML = '<div class="empty"><div class="empty-icon">👶</div><div class="empty-text">Дети не привязаны</div></div>';
-    return;
-  }
-  wrap.innerHTML = S.children.map((child, i) => `
-    <div style="margin-bottom:10px">
-      <div class="child-card" onclick="toggleChildActions(${i})">
-        <div class="stu-avatar" style="background:${avatarColor(child.fio)};width:44px;height:44px;border-radius:12px">${initials(child.fio)}</div>
-        <div style="flex:1">
-          <div class="stu-name" style="font-size:14px">${child.fio}</div>
-          <div class="stu-meta">${child.groupName}${child.profRu ? ' · ' + child.profRu : ''}</div>
-        </div>
-        <div style="font-size:18px;color:var(--tg-hint)">›</div>
+/* ═══════════════════════════════════════
+   ВЕДОМОСТЬ (куратор)
+═══════════════════════════════════════ */
+async function loadFill(){
+  const gid=curGid(); if(!gid){ document.getElementById('fill-content').innerHTML=errHtml('Нет группы'); return; }
+  document.getElementById('fill-header-sub').textContent=curGroup().name||'';
+  document.getElementById('fill-month-label').textContent=fmtMonth(S.fillMonth);
+  updateMonthBtn('fill-next-btn',S.fillMonth);
+  document.getElementById('fill-content').innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try {
+    if(!S.subjects.length||!S.students.length){
+      const[sj,st,gr]=await Promise.all([api('subjects?gid='+gid),api('students?gid='+gid),api(`grades?gid=${gid}&month=${S.fillMonth}`)]);
+      S.subjects=sj.subjects||[]; S.students=st.students||[]; S.grades=gr.grades||{};
+    } else {
+      S.grades=(await api(`grades?gid=${gid}&month=${S.fillMonth}`)).grades||{};
+    }
+  } catch(e){ document.getElementById('fill-content').innerHTML=errHtml(e.message); return; }
+  renderFillSubjTabs(); renderFillStudents();
+}
+function renderFillSubjTabs(){
+  const wrap=document.getElementById('fill-subj-tabs');
+  if(!S.subjects.length){wrap.innerHTML='';return;}
+  wrap.innerHTML=S.subjects.map((s,i)=>{
+    const done=S.students.length&&S.students.every(st=>S.grades[st.id]?.[s.key]);
+    return `<button class="subj-tab ${i===S.fillSubjIdx?'active':''}" onclick="switchFillSubj(${i})">${s.label}${done?'<span class="done-dot"></span>':''}</button>`;
+  }).join('');
+}
+function switchFillSubj(idx){S.fillSubjIdx=idx; renderFillSubjTabs(); renderFillStudents();}
+function renderFillStudents(){
+  const subj=S.subjects[S.fillSubjIdx];
+  if(!subj){ document.getElementById('fill-content').innerHTML='<div class="empty"><div class="empty-text">Нет предметов</div></div>'; return; }
+  const filled=S.students.filter(s=>S.grades[s.id]?.[subj.key]).length;
+  const pct=S.students.length?Math.round(filled/S.students.length*100):0;
+  let html=`<div class="card"><div class="card-header"><span>${subj.label}</span><span style="font-size:11px;color:var(--tg-hint);font-weight:600">${filled}/${S.students.length}</span></div>
+  <div class="card-body" style="padding:0 14px">
+  <div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div>
+  <div style="height:8px"></div>`;
+  if(!S.students.length) html+='<div class="empty"><div class="empty-text">Нет студентов</div></div>';
+  else S.students.forEach(stu=>{
+    const cur=S.grades[stu.id]?.[subj.key]||'';
+    html+=`<div class="fill-stu-row">
+      <div class="fill-stu-name">${stu.fio}</div>
+      <div class="grade-btns">
+        ${['2','3','4','5'].map(v=>`<button class="grade-btn ${cur===v?'a'+v:''}" onclick="setGrade('${stu.id}','${subj.key}','${v}',this)">${v}</button>`).join('')}
+        <button class="grade-btn" style="${!cur?'opacity:.35':''}" onclick="setGrade('${stu.id}','${subj.key}','',this)" title="Убрать">✕</button>
       </div>
-      <div class="child-actions" id="child-actions-${i}">
+    </div>`;
+  });
+  html+='</div></div>';
+  document.getElementById('fill-content').innerHTML=html;
+}
+async function setGrade(stuId,subjKey,val,btn){
+  if(!S.grades[stuId]) S.grades[stuId]={};
+  if(val) S.grades[stuId][subjKey]=val; else delete S.grades[stuId][subjKey];
+  const row=btn.closest('.fill-stu-row');
+  row.querySelectorAll('.grade-btn').forEach(b=>{
+    const v=b.textContent; b.className='grade-btn';
+    if(v===val&&val) b.classList.add('a'+v);
+    if(v==='✕') b.style.opacity=val?'0.35':'1';
+  });
+  try { await api('grades/set',{method:'POST',body:JSON.stringify({gid:curGid(),studentId:stuId,month:S.fillMonth,grades:S.grades[stuId]})}); }
+  catch(e){ toast('Ошибка: '+e.message,'err'); }
+  renderFillSubjTabs();
+}
+function changeFillMonth(delta){
+  const n=shiftMonth(S.fillMonth,delta); if(delta>0&&n>mKey()) return;
+  S.fillMonth=n; S.grades={};
+  document.getElementById('fill-month-label').textContent=fmtMonth(n);
+  updateMonthBtn('fill-next-btn',n); loadFill();
+}
+
+/* ═══════════════════════════════════════
+   ОЦЕНКИ ГРУППЫ
+═══════════════════════════════════════ */
+async function loadGradesView(){
+  const gid=curGid();
+  document.getElementById('gv-group-label').textContent=curGroup().name||'';
+  document.getElementById('gv-month-label').textContent=fmtMonth(S.gvMonth);
+  updateMonthBtn('gv-next-btn',S.gvMonth);
+  document.getElementById('gv-content').innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const[gr,st,sj]=await Promise.all([
+      api(`grades?gid=${gid}&month=${S.gvMonth}`),
+      S.students.length?Promise.resolve({students:S.students}):api('students?gid='+gid),
+      S.subjects.length?Promise.resolve({subjects:S.subjects}):api('subjects?gid='+gid),
+    ]);
+    if(!S.students.length) S.students=st.students||[];
+    if(!S.subjects.length) S.subjects=sj.subjects||[];
+    renderGradesTable(gr.grades||{});
+  } catch(e){ document.getElementById('gv-content').innerHTML=errHtml(e.message); }
+}
+function renderGradesTable(grades){
+  if(!S.subjects.length||!S.students.length){ document.getElementById('gv-content').innerHTML='<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Нет данных</div></div>'; return; }
+  let html=`<div class="card"><div class="card-body" style="padding:0 14px"><div class="gv-wrap"><table class="gv-table">
+  <tr><th class="fio-col">Студент</th>`;
+  S.subjects.forEach(s=>html+=`<th title="${s.label}">${s.label.slice(0,5)}</th>`);
+  html+='</tr>';
+  S.students.forEach(s=>{
+    html+=`<tr><td class="fio-col" title="${s.fio}">${s.fio.split(' ').slice(0,2).join(' ')}</td>`;
+    S.subjects.forEach(sj=>{const v=grades[s.id]?.[sj.key]||''; html+=`<td><div class="gv-badge ${gradeClass(v)}">${v||'—'}</div></td>`;});
+    html+='</tr>';
+  });
+  html+='</table></div></div></div>';
+  document.getElementById('gv-content').innerHTML=html;
+}
+function changeGvMonth(delta){
+  const n=shiftMonth(S.gvMonth,delta); if(delta>0&&n>mKey()) return;
+  S.gvMonth=n; document.getElementById('gv-month-label').textContent=fmtMonth(n); updateMonthBtn('gv-next-btn',n); loadGradesView();
+}
+
+/* ═══════════════════════════════════════
+   СТУДЕНТЫ
+═══════════════════════════════════════ */
+async function onEnterStudents(){
+  document.getElementById('stus-group-label').textContent=curGroup().name||'';
+  if(!S.students.length){
+    document.getElementById('students-content').innerHTML='<div class="loading"><div class="spinner"></div></div>';
+    try { S.students=(await api('students?gid='+curGid())).students||[]; }
+    catch(e){ document.getElementById('students-content').innerHTML=errHtml(e.message); return; }
+  }
+  let html=`<div class="card"><div class="card-header">👥 Студентов: ${S.students.length}</div><div class="card-body" style="padding:0 14px">`;
+  S.students.forEach((s,i)=>html+=`<div class="stu-row">
+    <div class="stu-avatar" style="background:${avatarColor(s.fio)}">${initials(s.fio)}</div>
+    <div style="flex:1"><div class="stu-name">${s.fio}</div><div class="stu-meta">${s.birthDate||''}${s.inn?' · '+s.inn:''}</div></div>
+    <div style="font-size:11px;color:var(--tg-hint);font-weight:700">${i+1}</div>
+  </div>`);
+  html+='</div></div>';
+  document.getElementById('students-content').innerHTML=html;
+}
+
+/* ═══════════════════════════════════════
+   РОДИТЕЛЬ — СПИСОК ДЕТЕЙ
+═══════════════════════════════════════ */
+function renderChildrenList(){
+  const wrap=document.getElementById('children-list');
+  if(!S.children.length){ wrap.innerHTML='<div class="empty"><div class="empty-icon">👶</div><div class="empty-text">Дети не привязаны</div></div>'; return; }
+  wrap.innerHTML=S.children.map((c,i)=>`
+    <div class="child-card" style="margin-bottom:10px">
+      <div class="child-card-top" onclick="toggleChild(${i})">
+        <div class="stu-avatar" style="background:${avatarColor(c.fio)};width:44px;height:44px;border-radius:12px;font-size:15px">${initials(c.fio)}</div>
+        <div style="flex:1">
+          <div class="stu-name" style="font-size:14px">${c.fio}</div>
+          <div class="stu-meta">${c.groupName}${c.profRu?' · '+c.profRu:''}</div>
+        </div>
+        <div style="font-size:16px;color:var(--tg-hint)" id="child-arrow-${i}">›</div>
+      </div>
+      <div class="child-actions" id="child-act-${i}">
         <button class="child-action-btn" onclick="openPgrades(${i})">📊 Оценки</button>
         <button class="child-action-btn" onclick="openPatt(${i})">🗓 Посещаемость</button>
       </div>
     </div>
   `).join('');
 }
-
-function toggleChildActions(idx) {
-  S.curChildIdx = idx;
-  document.querySelectorAll('.child-actions').forEach((el, i) => {
-    el.classList.toggle('open', i === idx && !el.classList.contains('open'));
-  });
+let _openChild=-1;
+function toggleChild(idx){
+  if(_openChild===idx){
+    document.getElementById('child-act-'+idx)?.classList.remove('open');
+    document.getElementById('child-arrow-'+idx).textContent='›';
+    _openChild=-1;
+  } else {
+    if(_openChild>=0){
+      document.getElementById('child-act-'+_openChild)?.classList.remove('open');
+      document.getElementById('child-arrow-'+_openChild).textContent='›';
+    }
+    _openChild=idx;
+    document.getElementById('child-act-'+idx)?.classList.add('open');
+    document.getElementById('child-arrow-'+idx).textContent='⌄';
+  }
 }
+function openPgrades(idx){ S.curChildIdx=idx; S.pgMonth=mKey(); go('sc-pgrades'); }
+function openPatt(idx){ S.curChildIdx=idx; S.paMonth=mKey(); S.paData=null; S.pattTab=0; go('sc-patt'); }
 
-function openPgrades(idx) {
-  S.curChildIdx = idx;
-  S.pgMonth = mKey();
-  go('sc-pgrades');
-}
-
-function openPatt(idx) {
-  S.curChildIdx = idx;
-  S.paMonth = mKey();
-  go('sc-patt');
-}
-
-/* ═══════════════════════════════════════════
-   ОЦЕНКИ РЕБЁНКА (родитель)
-═══════════════════════════════════════════ */
-async function loadParentGrades() {
-  const child = curChild();
-  document.getElementById('pg-child-name').textContent = child.fio || '';
-  document.getElementById('pg-month-label').textContent = fmtMonth(S.pgMonth);
-  updateMonthBtnState('pg-next-btn', S.pgMonth);
-  document.getElementById('pg-content').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+/* ═══════════════════════════════════════
+   ОЦЕНКИ РЕБЁНКА
+═══════════════════════════════════════ */
+async function loadParentGrades(){
+  const c=curChild();
+  document.getElementById('pg-child-name').textContent=c.fio||'';
+  document.getElementById('pg-month-label').textContent=fmtMonth(S.pgMonth);
+  updateMonthBtn('pg-next-btn',S.pgMonth);
+  document.getElementById('pg-content').innerHTML='<div class="loading"><div class="spinner"></div></div>';
   try {
-    const data = await api(`parent/grades?inn=${child.inn}&month=${S.pgMonth}`);
-    renderParentGrades(data.grades || {}, data.subjects || []);
-  } catch (e) {
-    document.getElementById('pg-content').innerHTML = `<div class="empty"><div class="empty-icon">😕</div><div class="empty-text">${e.message}</div></div>`;
+    const d=await api(`parent/grades?inn=${c.inn}&month=${S.pgMonth}`);
+    renderParentGrades(d.grades||{},d.subjects||[]);
+  } catch(e){ document.getElementById('pg-content').innerHTML=errHtml(e.message); }
+}
+function renderParentGrades(grades,subjects){
+  if(!subjects.length){ document.getElementById('pg-content').innerHTML='<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Нет данных за этот месяц</div></div>'; return; }
+  const theory=subjects.filter(s=>s.section!=='practice');
+  const prac  =subjects.filter(s=>s.section==='practice');
+  let html='';
+  function section(title,list){
+    if(!list.length) return '';
+    let h=`<div class="section-title">${title}</div><div class="card"><div class="card-body" style="padding:0 14px">`;
+    list.forEach(s=>{ const v=grades[s.key]||''; h+=`<div class="grades-row"><div class="grades-name">${s.label}</div><div class="grade-badge ${gradeClass(v)}">${v||'—'}</div></div>`; });
+    return h+'</div></div>';
   }
+  html+=section('📖 Теория',theory)+section('🔧 Практика',prac);
+  document.getElementById('pg-content').innerHTML=html||'<div class="empty"><div class="empty-text">Нет оценок</div></div>';
+}
+function changePgMonth(delta){ const n=shiftMonth(S.pgMonth,delta); if(delta>0&&n>mKey()) return; S.pgMonth=n; loadParentGrades(); }
+
+/* ═══════════════════════════════════════
+   ПОСЕЩАЕМОСТЬ РЕБЁНКА — с детализацией по дням
+═══════════════════════════════════════ */
+function switchPattTab(idx,btn){
+  S.pattTab=idx;
+  document.querySelectorAll('#patt-tabs .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  if(S.paData) renderPatt(S.paData); // перерисовать с теми же данными
 }
 
-function renderParentGrades(grades, subjects) {
-  if (!subjects.length) {
-    document.getElementById('pg-content').innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Нет данных за этот месяц</div></div>';
-    return;
-  }
-  const theory   = subjects.filter(s => s.section !== 'practice');
-  const practice = subjects.filter(s => s.section === 'practice');
-  let html = '';
-  if (theory.length) {
-    html += `<div class="section-title">📖 Теория</div>
-    <div class="card"><div class="card-body" style="padding:0 16px">`;
-    theory.forEach(s => {
-      const v = grades[s.key] || '';
-      html += `<div class="grades-subject"><div class="grades-subject-name">${s.label}</div><div class="grade-badge ${gradeClass(v)}">${v || '—'}</div></div>`;
-    });
-    html += '</div></div>';
-  }
-  if (practice.length) {
-    html += `<div class="section-title">🔧 Практика</div>
-    <div class="card"><div class="card-body" style="padding:0 16px">`;
-    practice.forEach(s => {
-      const v = grades[s.key] || '';
-      html += `<div class="grades-subject"><div class="grades-subject-name">${s.label}</div><div class="grade-badge ${gradeClass(v)}">${v || '—'}</div></div>`;
-    });
-    html += '</div></div>';
-  }
-  document.getElementById('pg-content').innerHTML = html || '<div class="empty"><div class="empty-text">Нет оценок</div></div>';
-}
-
-function changePgMonth(delta) {
-  const next = shiftMonth(S.pgMonth, delta);
-  if (delta > 0 && next > mKey()) return;
-  S.pgMonth = next;
-  document.getElementById('pg-month-label').textContent = fmtMonth(S.pgMonth);
-  updateMonthBtnState('pg-next-btn', S.pgMonth);
-  loadParentGrades();
-}
-
-/* ═══════════════════════════════════════════
-   ПОСЕЩАЕМОСТЬ РЕБЁНКА (родитель) — FIX БАГ #1
-═══════════════════════════════════════════ */
-async function loadParentAttendance() {
-  const child = curChild();
-  document.getElementById('pa-child-name').textContent = child.fio || '';
-  document.getElementById('pa-month-label').textContent = fmtMonth(S.paMonth);
-  updateMonthBtnState('pa-next-btn', S.paMonth);
-  // ИСПРАВЛЕНО: пишем в pa-content (не att-content)
-  document.getElementById('pa-content').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+async function loadParentAttendance(){
+  const c=curChild();
+  document.getElementById('pa-child-name').textContent=c.fio||'';
+  document.getElementById('pa-month-label').textContent=fmtMonth(S.paMonth);
+  updateMonthBtn('pa-next-btn',S.paMonth);
+  S.pattTab=0;
+  document.querySelectorAll('#patt-tabs .tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+  // ИСПРАВЛЕНО: пишет в pa-content
+  document.getElementById('pa-content').innerHTML='<div class="loading"><div class="spinner"></div></div>';
   try {
-    const data = await api(`parent/attendance?inn=${child.inn}&month=${S.paMonth}`);
-    renderParentAttCalendar(data.attMap || {}, S.paMonth, 'pa-content');
-  } catch (e) {
-    document.getElementById('pa-content').innerHTML = `<div class="empty"><div class="empty-icon">😕</div><div class="empty-text">${e.message}</div></div>`;
-  }
+    const d=await api(`parent/attendance?inn=${c.inn}&month=${S.paMonth}`);
+    S.paData=d;
+    renderPatt(d);
+  } catch(e){ document.getElementById('pa-content').innerHTML=errHtml(e.message); }
+}
+function renderPatt(data){
+  if(S.pattTab===0) renderParentAttCalendar(data.attMap||{},S.paMonth,'pa-content');
+  else renderParentAttDayList(data.attMap||{},S.paMonth,'pa-content');
 }
 
-function renderParentAttCalendar(attMap, month, targetId) {
-  const [yr, mn] = month.split('-').map(Number);
-  const dim = new Date(yr, mn, 0).getDate();
-  const days = [];
-  for (let d = 1; d <= dim; d++) {
-    days.push(`${yr}-${String(mn).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+/* Календарь (родитель) */
+function renderParentAttCalendar(attMap,month,targetId){
+  const[yr,mn]=month.split('-').map(Number);
+  const dim=new Date(yr,mn,0).getDate();
+  const today=new Date().toISOString().slice(0,10);
+  const offset=(new Date(Date.UTC(yr,mn-1,1)).getUTCDay()+6)%7;
+  let present=0,absent=0,late=0;
+  const W=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  let html=`<div class="card"><div class="card-header">📅 ${fmtMonth(month)}</div><div class="card-body">
+  <div class="att-grid">`;
+  W.forEach(d=>html+=`<div style="text-align:center;font-size:9px;font-weight:800;color:var(--tg-hint);padding:2px 0">${d}</div>`);
+  for(let i=0;i<offset;i++) html+='<div></div>';
+  for(let d=1;d<=dim;d++){
+    const day=`${yr}-${String(mn).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow=new Date(day+'T00:00:00Z').getUTCDay();
+    let cls;
+    if(dow===0||dow===6) cls='weekend';
+    else if(day>today) cls='future';
+    else {
+      const st=(attMap[day]?.status||attMap[day]||'a');
+      cls=st==='p'?'present':st==='l'?'late':'absent';
+      if(cls==='present') present++;
+      else if(cls==='late'){present++;late++;}
+      else absent++;
+    }
+    html+=`<div class="att-day ${cls}">${d}</div>`;
   }
-  const today = new Date().toISOString().slice(0, 10);
-  const firstDow = new Date(Date.UTC(yr, mn - 1, 1)).getUTCDay();
-  const offset = (firstDow + 6) % 7;
-
-  let present = 0, absent = 0, late = 0;
-  days.forEach(day => {
-    const dow = new Date(day + 'T00:00:00Z').getUTCDay();
-    if (dow === 0 || dow === 6 || day > today) return;
-    const st = attMap[day] || 'a';
-    if (st === 'p') present++;
-    else if (st === 'l') { present++; late++; }
-    else absent++;
-  });
-
-  const WEEK = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-  let html = `<div class="stats-row">
-    <div class="stat-box"><div class="stat-val" style="color:var(--success)">${present}</div><div class="stat-lbl">Пришёл</div></div>
+  html+=`</div>
+  <div class="att-legend" style="margin-top:10px">
+    <div class="att-leg"><div class="att-leg-dot" style="background:var(--ap-bg)"></div>Присутствовал</div>
+    <div class="att-leg"><div class="att-leg-dot" style="background:var(--al-bg)"></div>Опоздал</div>
+    <div class="att-leg"><div class="att-leg-dot" style="background:var(--aa-bg)"></div>Отсутствовал</div>
+  </div>
+  </div></div>
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-val" style="color:var(--success)">${present}</div><div class="stat-lbl">Дней пришёл</div></div>
     <div class="stat-box"><div class="stat-val" style="color:var(--danger)">${absent}</div><div class="stat-lbl">Отсутств.</div></div>
     <div class="stat-box"><div class="stat-val" style="color:var(--warning)">${late}</div><div class="stat-lbl">Опоздал</div></div>
-  </div>
-  <div class="card"><div class="card-header">📅 ${fmtMonth(month)}</div><div class="card-body">
-  <div class="att-grid">`;
-  WEEK.forEach(d => html += `<div style="text-align:center;font-size:9px;font-weight:800;color:var(--tg-hint);padding:2px 0">${d}</div>`);
-  for (let i = 0; i < offset; i++) html += `<div></div>`;
-  days.forEach(day => {
-    const d = parseInt(day.slice(-2));
-    const dow = new Date(day + 'T00:00:00Z').getUTCDay();
-    let cls;
-    if (dow === 0 || dow === 6) cls = 'weekend';
-    else if (day > today) cls = 'future';
-    else {
-      const st = attMap[day] || 'a';
-      cls = st === 'p' ? 'present' : st === 'l' ? 'late' : 'absent';
-    }
-    html += `<div class="att-day ${cls}">${d}</div>`;
+  </div>`;
+  document.getElementById(targetId).innerHTML=html;
+}
+
+/* По дням (родитель) */
+function renderParentAttDayList(attMap,month,targetId){
+  const[yr,mn]=month.split('-').map(Number);
+  const dim=new Date(yr,mn,0).getDate();
+  const today=new Date().toISOString().slice(0,10);
+  const rows=[];
+  for(let d=1;d<=dim;d++){
+    const day=`${yr}-${String(mn).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow=new Date(day+'T00:00:00Z').getUTCDay();
+    if(dow===0||dow===6) continue; // пропускаем выходные
+    if(day>today) break;           // будущее не показываем
+    const raw=attMap[day];
+    const st=typeof raw==='object'?raw.status:(raw||'a');
+    const time=typeof raw==='object'?raw.time:null;
+    rows.push({day,st,time});
+  }
+  if(!rows.length){ document.getElementById(targetId).innerHTML='<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Нет данных</div></div>'; return; }
+  const DAYS=['воскр.','пн','вт','ср','чт','пт','сб'];
+  let html=`<div class="card"><div class="card-body" style="padding:0 14px"><div class="att-day-list">`;
+  rows.slice().reverse().forEach(({day,st,time})=>{
+    const label=st==='p'?'Пришёл':st==='l'?'Опоздал':'Отсутствовал';
+    const[y,m,d]=day.split('-').map(Number);
+    const dow=new Date(Date.UTC(y,m-1,d)).getUTCDay();
+    const dateStr=`${d} ${['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'][m-1]}, ${DAYS[dow]}`;
+    html+=`<div class="att-day-row">
+      <div class="att-day-badge ${st==='p'?'present':st==='l'?'late':'absent'}">${st==='p'?'✓':st==='l'?'!':'✗'}</div>
+      <div style="flex:1">
+        <div class="att-day-date">${dateStr}</div>
+        <div class="att-day-sub">${label}</div>
+      </div>
+      <div class="att-day-time">${time||''}</div>
+    </div>`;
   });
-  html += `</div>
-  <div class="att-legend">
-    <div class="att-legend-item"><div class="att-legend-dot" style="background:#dcfce7"></div>Присутствовал</div>
-    <div class="att-legend-item"><div class="att-legend-dot" style="background:#fef3c7"></div>Опоздал</div>
-    <div class="att-legend-item"><div class="att-legend-dot" style="background:#fee2e2"></div>Отсутствовал</div>
-  </div>
-  </div></div>`;
-  document.getElementById(targetId).innerHTML = html;
+  html+='</div></div></div>';
+  document.getElementById(targetId).innerHTML=html;
 }
 
-function changePaMonth(delta) {
-  const next = shiftMonth(S.paMonth, delta);
-  if (delta > 0 && next > mKey()) return;
-  S.paMonth = next;
-  document.getElementById('pa-month-label').textContent = fmtMonth(S.paMonth);
-  updateMonthBtnState('pa-next-btn', S.paMonth);
-  loadParentAttendance();
+function changePaMonth(delta){
+  const n=shiftMonth(S.paMonth,delta); if(delta>0&&n>mKey()) return;
+  S.paMonth=n; S.paData=null; loadParentAttendance();
 }
 
-/* ═══════════════════════════════════════════
+/* ═══════════════════════════════════════
    АДМИНИСТРАТОР
-═══════════════════════════════════════════ */
-async function loadAdminStats() {
-  const now = new Date();
-  const DAYS = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
-  document.getElementById('adm-date-label').textContent = now.toLocaleDateString('ru', { day:'numeric', month:'long' }) + ', ' + DAYS[now.getDay()];
-  document.getElementById('adm-stats').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+═══════════════════════════════════════ */
+async function loadAdminStats(){
+  const now=new Date();
+  const WDAYS=['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+  document.getElementById('adm-date-label').textContent=
+    WDAYS[now.getDay()]+', '+now.toLocaleDateString('ru',{day:'numeric',month:'long'});
+  document.getElementById('adm-stats').innerHTML='<div class="loading"><div class="spinner"></div></div>';
   try {
-    const data = await api('stats');
-    document.getElementById('adm-stats').innerHTML = `
-      <div class="stats-row">
-        <div class="stat-box"><div class="stat-val" style="color:var(--success)">${data.present}</div><div class="stat-lbl">Пришли</div></div>
-        <div class="stat-box"><div class="stat-val" style="color:var(--danger)">${data.absent}</div><div class="stat-lbl">Отсутств.</div></div>
-        <div class="stat-box"><div class="stat-val" style="color:var(--warning)">${data.late}</div><div class="stat-lbl">Опоздали</div></div>
-      </div>`;
-    renderAdminGroups(data.groups || []);
-  } catch (e) {
-    document.getElementById('adm-stats').innerHTML = `<div class="empty"><div class="empty-text">${e.message}</div></div>`;
+    const d=await api('stats');
+    const pct=d.total?Math.round(d.present/d.total*100):0;
+    document.getElementById('adm-stats').innerHTML=`
+      <div class="card"><div class="card-body">
+        <div class="stats-row" style="margin-bottom:10px">
+          <div class="stat-box"><div class="stat-val" style="color:var(--success)">${d.present}</div><div class="stat-lbl">Пришли</div></div>
+          <div class="stat-box"><div class="stat-val" style="color:var(--danger)">${d.absent}</div><div class="stat-lbl">Отсутств.</div></div>
+          <div class="stat-box"><div class="stat-val" style="color:var(--warning)">${d.late}</div><div class="stat-lbl">Опоздали</div></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:12px;font-weight:700;color:var(--tg-hint)">Посещаемость сегодня</span>
+          <span style="font-size:14px;font-weight:900">${pct}%</span>
+        </div>
+        <div class="prog-wrap"><div class="prog-fill" style="width:${pct}%;background:${pct>=80?'var(--success)':pct>=60?'var(--warning)':'var(--danger)'}"></div></div>
+        <div style="font-size:11px;color:var(--tg-hint);font-weight:600;margin-top:6px;text-align:right">${d.present} из ${d.total} студентов</div>
+      </div></div>`;
+    renderAdminGroups(d.groups||[]);
+  } catch(e){
+    document.getElementById('adm-stats').innerHTML=errHtml(e.message);
   }
 }
-
-function renderAdminGroups(groups) {
-  if (!groups.length) { document.getElementById('adm-groups').innerHTML = ''; return; }
-  let html = `<div class="card"><div class="card-header">📂 Группы сегодня</div><div class="card-body" style="padding:0 16px">`;
-  groups.forEach(g => {
-    const pct = g.total ? Math.round(g.present / g.total * 100) : 0;
-    const pctColor = pct >= 80 ? 'var(--success)' : pct >= 60 ? 'var(--warning)' : 'var(--danger)';
-    html += `<div class="group-row">
+function renderAdminGroups(groups){
+  if(!groups.length){document.getElementById('adm-groups').innerHTML='';return;}
+  let html=`<div class="section-title">📂 Группы</div><div class="card"><div class="card-body" style="padding:0 14px">`;
+  groups.forEach(g=>{
+    const pct=g.total?Math.round(g.present/g.total*100):0;
+    const col=pct>=80?'var(--success)':pct>=60?'var(--warning)':'var(--danger)';
+    html+=`<div class="group-row">
       <div style="flex:1">
-        <div class="group-row-name">${g.name}</div>
-        <div class="group-row-meta">✅ ${g.present} · ⏰ ${g.late} · ❌ ${g.absent}</div>
+        <div class="grp-name">${g.name}</div>
+        <div class="grp-meta">✅ ${g.present} · ⏰ ${g.late} · ❌ ${g.absent}</div>
       </div>
-      <div class="group-row-stat">
-        <div class="group-row-pct" style="color:${pctColor}">${pct}%</div>
-        <div class="group-row-sub">${g.present}/${g.total}</div>
+      <div style="text-align:right">
+        <div style="font-weight:900;font-size:16px;color:${col}">${pct}%</div>
+        <div style="font-size:10px;color:var(--tg-hint);font-weight:600">${g.present}/${g.total}</div>
       </div>
     </div>`;
   });
-  html += '</div></div>';
-  document.getElementById('adm-groups').innerHTML = html;
+  html+='</div></div>';
+  document.getElementById('adm-groups').innerHTML=html;
 }
 
-/* ═══════════════════════════════════════════
-   ИНН — ПРИВЯЗАТЬ РЕБЁНКА
-═══════════════════════════════════════════ */
-async function submitInn() {
-  const inp = document.getElementById('inn-input');
-  const errEl = document.getElementById('inn-error');
-  const inn = inp.value.replace(/\D/g, '');
-  if (inn.length < 12) {
-    errEl.textContent = 'ИНН должен содержать минимум 12 цифр';
-    errEl.style.display = 'block';
-    return;
-  }
-  errEl.style.display = 'none';
+/* ═══════════════════════════════════════
+   ИНН — ПРИВЯЗАТЬ
+═══════════════════════════════════════ */
+async function submitInn(){
+  const inp=document.getElementById('inn-input');
+  const errEl=document.getElementById('inn-error');
+  const inn=inp.value.replace(/\D/g,'');
+  if(inn.length<12){ errEl.textContent='Минимум 12 цифр'; errEl.style.display='block'; return; }
+  errEl.style.display='none';
   try {
-    const r = await api('parent/link', {
-      method: 'POST',
-      body: JSON.stringify({ inn, chatId: S.chatId }),
-    });
-    // перезагружаем список детей
-    const me = await api('me');
-    S.role = 'parent';
-    S.children = me.children || [{ inn, fio: r.fio, groupName: r.groupName, profRu: '' }];
-    S.curChildIdx = 0;
-    inp.value = '';
-    toast('✅ Привязан: ' + r.fio);
-    go('sc-par', { replace: true });
-  } catch (e) {
-    errEl.textContent = e.message;
-    errEl.style.display = 'block';
-  }
+    const r=await api('parent/link',{method:'POST',body:JSON.stringify({inn,chatId:S.chatId})});
+    const me=await api('me');
+    S.role='parent'; S.children=me.children||[{inn,fio:r.fio,groupName:r.groupName,profRu:''}];
+    inp.value=''; toast('✅ Привязан: '+r.fio,'ok'); go('sc-par',{replace:true});
+  } catch(e){ errEl.textContent=e.message; errEl.style.display='block'; }
 }
 
-/* ═══════════════════════════════════════════
+/* ═══════════════════════════════════════
    ВСПОМОГАТЕЛЬНЫЕ
-═══════════════════════════════════════════ */
-function updateMonthBtnState(btnId, month) {
-  const btn = document.getElementById(btnId);
-  if (!btn) return;
-  btn.disabled = shiftMonth(month, 1) > mKey();
-  btn.style.opacity = btn.disabled ? '0.3' : '1';
-}
+═══════════════════════════════════════ */
+function errHtml(msg){ return `<div class="empty"><div class="empty-icon">😕</div><div class="empty-text">${msg||'Ошибка'}</div></div>`; }
 
-/* ═══════════════════════════════════════════
-   РЕГИСТРАЦИЯ ХУКОВ ЭКРАНОВ
-═══════════════════════════════════════════ */
-Object.assign(SCREEN_HOOKS, {
-  'sc-cur':     onEnterCurHome,
+/* ═══════════════════════════════════════
+   ХУКИ ЭКРАНОВ
+═══════════════════════════════════════ */
+Object.assign(HOOKS,{
+  'sc-cur':     onEnterCur,
   'sc-att':     onEnterAtt,
-  'sc-fill':    loadFill,          // FIX: теперь всегда вызывается при go('sc-fill')
-  'sc-gview':   loadGradesView,    // FIX: загружает subjects/students если нет
+  'sc-fill':    loadFill,
+  'sc-gview':   loadGradesView,
   'sc-stus':    onEnterStudents,
   'sc-par':     renderChildrenList,
   'sc-pgrades': loadParentGrades,
-  'sc-patt':    loadParentAttendance,  // FIX: пишет в pa-content
+  'sc-patt':    loadParentAttendance,
   'sc-adm':     loadAdminStats,
 });
 
-/* ═══════════════════════════════════════════
+/* ═══════════════════════════════════════
    СТАРТ
-═══════════════════════════════════════════ */
-window.addEventListener('load', () => {
-  tg?.ready?.();
-  tg?.expand?.();
-  setTimeout(init, 300);
+═══════════════════════════════════════ */
+window.addEventListener('load',()=>{
+  tg?.ready?.(); tg?.expand?.();
+  setTimeout(init,300);
 });
 </script>
 </body>
