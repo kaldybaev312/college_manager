@@ -90,6 +90,7 @@ module.exports = function createBot(models, helpers, buildSummaryDocx) {
     [{text:"📊 Статистика"},           {text:"📅 Посещаемость групп"}],
     [{text:"🔍 Найти студента"},        {text:"📝 Ведомость"}],
     [{text:"⏰ Список опозданий"},      {text:"🔗 Ссылки кураторов"}],
+    [{text:"📱 Мини-приложение", web_app:{url: process.env.RENDER_EXTERNAL_URL ? process.env.RENDER_EXTERNAL_URL+"/api/webapp/open" : "https://pl3service.onrender.com/api/webapp/open"}}],
   ], resize_keyboard:true }};
 
   function KB_CUR() { return { reply_markup:{ keyboard:[

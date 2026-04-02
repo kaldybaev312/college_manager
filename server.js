@@ -2221,31 +2221,55 @@ app.get("/api/webapp/me", async (req, res) => {
   try {
     const sub = await resolveWebappUser(req);
     if (!sub) return res.json({ role: null });
-    if (sub.role === "admin") return res.json({ role: "admin" });
+
+    if (sub.role === "admin") {
+      const groups = await Group.find().sort({ name: 1 }).select("name profRu shiftStart");
+      return res.json({
+        role: "admin",
+        groups: groups.map((g) => ({
+          id: String(g._id),
+          name: g.name,
+          profRu: g.profRu || "",
+          shiftStart: g.shiftStart || "09:30",
+        })),
+      });
+    }
+
     if (sub.role === "curator" && sub.curatorId) {
       const cur = await Curator.findById(sub.curatorId).populate(
         "groups",
-        "name profRu",
+        "name profRu shiftStart",
       );
       if (!cur) return res.json({ role: null });
       return res.json({
         role: "curator",
-        groupId: String(cur.groups[0]?._id || ""),
-        groupName: cur.groups[0]?.name || "",
-        groupIds: cur.groups.map((g) => String(g._id)),
+        curatorName: cur.fullName || cur.username || "",
+        groups: cur.groups.map((g) => ({
+          id: String(g._id),
+          name: g.name,
+          profRu: g.profRu || "",
+          shiftStart: g.shiftStart || "09:30",
+        })),
       });
     }
+
     if (sub.role === "parent" && sub.linkedInns?.length) {
-      const inn = sub.linkedInns[0];
-      const stu = await Student.findOne({ inn }).populate("group");
-      return res.json({
-        role: "parent",
-        inn,
-        childFio: stu?.fio || "",
-        groupName: stu?.group?.name || "",
-        groupId: String(stu?.group?._id || ""),
-      });
+      const children = await Promise.all(
+        sub.linkedInns.map(async (inn) => {
+          const stu = await Student.findOne({ inn }).populate("group", "name profRu");
+          if (!stu) return null;
+          return {
+            inn,
+            fio: stu.fio || "",
+            groupId: String(stu.group?._id || ""),
+            groupName: stu.group?.name || "",
+            profRu: stu.group?.profRu || "",
+          };
+        }),
+      );
+      return res.json({ role: "parent", children: children.filter(Boolean) });
     }
+
     return res.json({ role: null });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -2310,6 +2334,61 @@ app.get("/api/webapp/attendance/today", async (req, res) => {
       };
     });
     res.json({ present, absent, late, students: list });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Посещаемость группы за месяц
+app.get("/api/webapp/attendance/month", async (req, res) => {
+  try {
+    const sub = await resolveWebappUser(req);
+    if (!sub) return res.status(401).json({ error: "Unauthorized" });
+    const { gid, month } = req.query;
+    if (sub.role === "curator") {
+      const cur = await Curator.findById(sub.curatorId);
+      const gids = cur?.groups?.map(String) || [];
+      if (!gids.includes(gid))
+        return res.status(403).json({ error: "No access" });
+    }
+    const [yr, mn] = (month || "").split("-").map(Number);
+    if (!yr || !mn) return res.status(400).json({ error: "Invalid month" });
+    const dim = new Date(yr, mn, 0).getDate();
+    const days = [];
+    for (let d = 1; d <= dim; d++) days.push(`${yr}-${pad2(mn)}-${pad2(d)}`);
+    const g = await Group.findById(gid);
+    const [sH, sM] = (g?.shiftStart || "09:30").split(":").map(Number);
+    const stm = sH * 60 + sM;
+    const students = await Student.find({ group: gid })
+      .sort({ fio: 1 })
+      .select("fio skudDaily attendance");
+    const result = students.map((stu) => {
+      const statuses = {};
+      for (const day of days) {
+        const skud = stu.skudDaily?.find((r) => r.date === day);
+        const att = stu.attendance?.find((a) => a.date === day);
+        let status = "a";
+        if (skud?.present) {
+          if (skud.firstIn) {
+            const dt = new Date(skud.firstIn);
+            if (!isNaN(dt)) {
+              const tm = dt.getUTCHours() * 60 + dt.getUTCMinutes() + 360;
+              const h = Math.floor(tm / 60) % 24, m = tm % 60;
+              status = h * 60 + m > stm ? "l" : "p";
+            } else {
+              status = "p";
+            }
+          } else {
+            status = "p";
+          }
+        } else if (att?.present) {
+          status = "p";
+        }
+        statuses[day] = status;
+      }
+      return { fio: stu.fio, statuses };
+    });
+    res.json({ days, students: result });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -2468,6 +2547,106 @@ app.get("/api/webapp/parent/grades", async (req, res) => {
         if (!k.startsWith("$")) grades[k] = v;
       });
     res.json({ grades, subjects });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Посещаемость ребёнка за месяц (родитель)
+app.get("/api/webapp/parent/attendance", async (req, res) => {
+  try {
+    const { inn, month } = req.query;
+    const stu = await Student.findOne({ inn })
+      .populate("group", "shiftStart")
+      .select("fio skudDaily attendance group");
+    if (!stu) return res.status(404).json({ error: "Не найдено" });
+    const [yr, mn] = (month || "").split("-").map(Number);
+    if (!yr || !mn) return res.status(400).json({ error: "Invalid month" });
+    const dim = new Date(yr, mn, 0).getDate();
+    const days = [];
+    for (let d = 1; d <= dim; d++) days.push(`${yr}-${pad2(mn)}-${pad2(d)}`);
+    const [sH, sM] = (stu.group?.shiftStart || "09:30").split(":").map(Number);
+    const stm = sH * 60 + sM;
+    const attMap = {};
+    for (const day of days) {
+      const skud = stu.skudDaily?.find((r) => r.date === day);
+      const att = stu.attendance?.find((a) => a.date === day);
+      let status = "a";
+      if (skud?.present) {
+        if (skud.firstIn) {
+          const dt = new Date(skud.firstIn);
+          if (!isNaN(dt)) {
+            const tm = dt.getUTCHours() * 60 + dt.getUTCMinutes() + 360;
+            const h = Math.floor(tm / 60) % 24, m = tm % 60;
+            status = h * 60 + m > stm ? "l" : "p";
+          } else {
+            status = "p";
+          }
+        } else {
+          status = "p";
+        }
+      } else if (att?.present) {
+        status = "p";
+      }
+      attMap[day] = status;
+    }
+    res.json({ fio: stu.fio, attMap });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Глобальная статистика сегодня (только admin)
+app.get("/api/webapp/stats", async (req, res) => {
+  try {
+    const sub = await resolveWebappUser(req);
+    if (!sub || sub.role !== "admin")
+      return res.status(403).json({ error: "Admin only" });
+    const tdk = getTodayKey();
+    const allGroups = await Group.find().sort({ name: 1 });
+    let totalAll = 0, presentAll = 0, absentAll = 0, lateAll = 0;
+    const groups = await Promise.all(
+      allGroups.map(async (g) => {
+        const [sH, sM] = (g.shiftStart || "09:30").split(":").map(Number);
+        const stm = sH * 60 + sM;
+        const students = await Student.find({ group: g._id }).select(
+          "skudDaily attendance",
+        );
+        let present = 0, absent = 0, late = 0;
+        for (const stu of students) {
+          const skud = stu.skudDaily?.find((r) => r.date === tdk);
+          const att = stu.attendance?.find((a) => a.date === tdk);
+          let here = false, isLate = false;
+          if (skud) {
+            here = skud.present;
+            if (skud.firstIn) {
+              const dt = new Date(skud.firstIn);
+              if (!isNaN(dt)) {
+                const tm = dt.getUTCHours() * 60 + dt.getUTCMinutes() + 360;
+                const h = Math.floor(tm / 60) % 24, m = tm % 60;
+                isLate = h * 60 + m > stm;
+              }
+            }
+          } else if (att) {
+            here = att.present;
+          }
+          if (here && isLate) { present++; late++; }
+          else if (here) { present++; }
+          else { absent++; }
+        }
+        totalAll += students.length;
+        presentAll += present;
+        absentAll += absent;
+        lateAll += late;
+        return {
+          id: String(g._id),
+          name: g.name,
+          present, absent, late,
+          total: students.length,
+        };
+      }),
+    );
+    res.json({ total: totalAll, present: presentAll, absent: absentAll, late: lateAll, groups });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
