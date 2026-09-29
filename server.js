@@ -260,6 +260,24 @@ const PROFESSIONS = [
     kg: "Басма жабдууларын оператору",
     duration: "2 года",
   },
+  {
+    id: 14,
+    ru: "Компютерная диагностика",
+    kg: "Компьютердик диагностика",
+    duration: "10 месяцев",
+  },
+  {
+    id: 15,
+    ru: "Системный администратор",
+    kg: "Системалык администратор",
+    duration: "10 месяцев",
+  },
+  {
+    id: 16,
+    ru: "Разработчик Web и мультимедийных приложений",
+    kg: "Web жана мультимедиалык тиркемелерди иштеп чыгуучу",
+    duration: "10 месяцев",
+  }
 ];
 
 const SUMMARY_BASE_SUBJECTS = [
@@ -892,8 +910,18 @@ app.get("/admin/events", requireAuth, requireAdmin, (req, res) =>
 app.get("/summary.html", requireAuth, (req, res) =>
   res.sendFile(path.join(__dirname, "public", "summary.html")),
 );
+app.get("/skud-register.html", requireAuth, requireAdmin, (req, res) =>
+  res.sendFile(path.join(__dirname, "public", "skud-register.html")),
+);
 app.use("/api/admin", requireAuth);
 app.use(express.static("public"));
+require("./skud-register")(app, {
+  Student,
+  Group,
+  requireAdmin,
+  normalizeINN,
+  AGENT_API_KEY,
+});
 
 app.get("/api/admin/me", async (req, res) => {
   try {
@@ -2223,7 +2251,9 @@ app.get("/api/webapp/me", async (req, res) => {
     if (!sub) return res.json({ role: null });
 
     if (sub.role === "admin") {
-      const groups = await Group.find().sort({ name: 1 }).select("name profRu shiftStart");
+      const groups = await Group.find()
+        .sort({ name: 1 })
+        .select("name profRu shiftStart");
       return res.json({
         role: "admin",
         groups: groups.map((g) => ({
@@ -2256,7 +2286,10 @@ app.get("/api/webapp/me", async (req, res) => {
     if (sub.role === "parent" && sub.linkedInns?.length) {
       const children = await Promise.all(
         sub.linkedInns.map(async (inn) => {
-          const stu = await Student.findOne({ inn }).populate("group", "name profRu");
+          const stu = await Student.findOne({ inn }).populate(
+            "group",
+            "name profRu",
+          );
           if (!stu) return null;
           return {
             inn,
@@ -2373,7 +2406,8 @@ app.get("/api/webapp/attendance/month", async (req, res) => {
             const dt = new Date(skud.firstIn);
             if (!isNaN(dt)) {
               const tm = dt.getUTCHours() * 60 + dt.getUTCMinutes() + 360;
-              const h = Math.floor(tm / 60) % 24, m = tm % 60;
+              const h = Math.floor(tm / 60) % 24,
+                m = tm % 60;
               status = h * 60 + m > stm ? "l" : "p";
             } else {
               status = "p";
@@ -2570,16 +2604,18 @@ app.get("/api/webapp/parent/attendance", async (req, res) => {
     const attMap = {};
     for (const day of days) {
       const skud = stu.skudDaily?.find((r) => r.date === day);
-      const att  = stu.attendance?.find((a) => a.date === day);
-      let status = "a", time = null;
+      const att = stu.attendance?.find((a) => a.date === day);
+      let status = "a",
+        time = null;
       if (skud?.present) {
         if (skud.firstIn) {
           const dt = new Date(skud.firstIn);
           if (!isNaN(dt)) {
             const tm = dt.getUTCHours() * 60 + dt.getUTCMinutes() + 360;
-            const h  = Math.floor(tm / 60) % 24, m = tm % 60;
-            time     = `${pad2(h)}:${pad2(m)}`;
-            status   = h * 60 + m > stm ? "l" : "p";
+            const h = Math.floor(tm / 60) % 24,
+              m = tm % 60;
+            time = `${pad2(h)}:${pad2(m)}`;
+            status = h * 60 + m > stm ? "l" : "p";
           } else {
             status = "p";
           }
@@ -2605,7 +2641,10 @@ app.get("/api/webapp/stats", async (req, res) => {
       return res.status(403).json({ error: "Admin only" });
     const tdk = getTodayKey();
     const allGroups = await Group.find().sort({ name: 1 });
-    let totalAll = 0, presentAll = 0, absentAll = 0, lateAll = 0;
+    let totalAll = 0,
+      presentAll = 0,
+      absentAll = 0,
+      lateAll = 0;
     const groups = await Promise.all(
       allGroups.map(async (g) => {
         const [sH, sM] = (g.shiftStart || "09:30").split(":").map(Number);
@@ -2613,27 +2652,36 @@ app.get("/api/webapp/stats", async (req, res) => {
         const students = await Student.find({ group: g._id }).select(
           "skudDaily attendance",
         );
-        let present = 0, absent = 0, late = 0;
+        let present = 0,
+          absent = 0,
+          late = 0;
         for (const stu of students) {
           const skud = stu.skudDaily?.find((r) => r.date === tdk);
           const att = stu.attendance?.find((a) => a.date === tdk);
-          let here = false, isLate = false;
+          let here = false,
+            isLate = false;
           if (skud) {
             here = skud.present;
             if (skud.firstIn) {
               const dt = new Date(skud.firstIn);
               if (!isNaN(dt)) {
                 const tm = dt.getUTCHours() * 60 + dt.getUTCMinutes() + 360;
-                const h = Math.floor(tm / 60) % 24, m = tm % 60;
+                const h = Math.floor(tm / 60) % 24,
+                  m = tm % 60;
                 isLate = h * 60 + m > stm;
               }
             }
           } else if (att) {
             here = att.present;
           }
-          if (here && isLate) { present++; late++; }
-          else if (here) { present++; }
-          else { absent++; }
+          if (here && isLate) {
+            present++;
+            late++;
+          } else if (here) {
+            present++;
+          } else {
+            absent++;
+          }
         }
         totalAll += students.length;
         presentAll += present;
@@ -2642,12 +2690,20 @@ app.get("/api/webapp/stats", async (req, res) => {
         return {
           id: String(g._id),
           name: g.name,
-          present, absent, late,
+          present,
+          absent,
+          late,
           total: students.length,
         };
       }),
     );
-    res.json({ total: totalAll, present: presentAll, absent: absentAll, late: lateAll, groups });
+    res.json({
+      total: totalAll,
+      present: presentAll,
+      absent: absentAll,
+      late: lateAll,
+      groups,
+    });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
