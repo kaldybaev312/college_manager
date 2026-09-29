@@ -327,7 +327,7 @@ const Group = mongoose.model(
     profRu: String,
     profKg: String,
     duration: String,
-    shiftStart: { type: String, default: "09:30" },
+    shiftStart: { type: String, default: "08:00" },
     summarySubjects: [
       {
         key: String,
