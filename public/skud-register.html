@@ -202,6 +202,17 @@
         height: 100%;
         object-fit: contain;
       }
+      .shot.drag {
+        border-color: var(--accent);
+        background: var(--accent-light);
+        color: var(--accent);
+      }
+      .pick {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
       .msg {
         font-size: 13px;
         min-height: 20px;
@@ -251,13 +262,24 @@
     <dialog id="dlg">
       <h2 id="d-name"></h2>
       <div class="meta" id="d-meta"></div>
-      <label class="shot" id="shot" for="file"
-        ><span
-          >Нажмите, чтобы сделать фото<br />(анфас, без очков и головного
-          убора)</span
-        ></label
-      >
-      <input type="file" id="file" accept="image/*" capture="user" hidden />
+      <div
+        class="shot"
+        id="shot"
+        tabindex="0"
+        role="button"
+        aria-label="Выбрать фото или перетащить сюда"
+      ></div>
+      <div class="pick">
+        <button class="ghost" id="pick-cam" type="button">📷 Камера</button>
+        <button class="ghost" id="pick-file" type="button">📁 Файл</button>
+      </div>
+      <input
+        type="file"
+        id="file"
+        accept="image/jpeg,image/png,image/webp,image/*"
+        hidden
+      />
+      <input type="file" id="cam" accept="image/*" capture="user" hidden />
       <div class="msg" id="msg" role="status"></div>
       <div class="actions">
         <button class="ghost" id="cancel" type="button">Отмена</button
@@ -284,6 +306,8 @@
         current = null,
         blob = null,
         timer = null;
+      const HINT =
+        "<span>Перетащите фото сюда, вставьте (Ctrl+V)<br>или нажмите, чтобы выбрать файл<br><small>Лицо крупно, анфас, ровный свет, без очков и головного убора</small></span>";
 
       async function j(url, opt) {
         const r = await fetch(url, opt);
@@ -351,34 +375,45 @@
         $("send").disabled = true;
         $("msg").textContent = "";
         $("msg").className = "msg";
-        $("shot").innerHTML =
-          "<span>Нажмите, чтобы сделать фото<br>(анфас, без очков и головного убора)</span>";
+        $("shot").innerHTML = HINT;
         $("d-name").textContent = current.fio;
         $("d-meta").textContent = `ИНН ${current.inn} · № ${current.lyceumId}`;
         $("dlg").showModal();
       };
       $("cancel").onclick = () => $("dlg").close();
 
-      // Уменьшаем до 640px и подбираем качество, чтобы JPEG был не больше 200 КБ
+      // Уменьшаем до 1024px и подбираем качество, чтобы JPEG был не больше 200 КБ
       async function shrink(file) {
         const img = await createImageBitmap(file, {
           imageOrientation: "from-image",
         });
-        const k = Math.min(1, 640 / Math.max(img.width, img.height));
+        const k = Math.min(1, 1024 / Math.max(img.width, img.height));
         const c = document.createElement("canvas");
         c.width = Math.round(img.width * k);
         c.height = Math.round(img.height * k);
         c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-        for (const q of [0.85, 0.75, 0.65, 0.55, 0.45]) {
+        for (const q of [0.85, 0.75, 0.65, 0.55, 0.45, 0.35]) {
           const b = await new Promise((r) => c.toBlob(r, "image/jpeg", q));
           if (b.size <= 190 * 1024) return b;
         }
         throw new Error("Не удалось уменьшить фото, попробуйте другое");
       }
 
-      $("file").onchange = async () => {
-        const f = $("file").files[0];
+      const bad = (t) => {
+        $("msg").textContent = t;
+        $("msg").className = "msg bad";
+      };
+
+      // Общий обработчик: выбор файла, камера, перетаскивание, вставка из буфера
+      async function handleFile(f) {
         if (!f) return;
+        if (!/^image\//.test(f.type) && !/\.(jpe?g|png|webp)$/i.test(f.name))
+          return bad("Нужен файл-изображение (JPG, PNG)");
+        if (f.size > 25 * 1024 * 1024)
+          return bad("Файл слишком большой (больше 25 МБ)");
+        $("msg").className = "msg";
+        $("msg").textContent = "Обработка фото…";
+        $("send").disabled = true;
         try {
           blob = await shrink(f);
           $("shot").innerHTML =
@@ -386,11 +421,68 @@
           $("send").disabled = false;
           $("msg").textContent = "";
         } catch (e) {
-          $("msg").textContent = e.message;
-          $("msg").className = "msg bad";
+          blob = null;
+          bad(
+            /HEIC|HEIF/i.test(f.type + f.name)
+              ? "Формат HEIC не поддерживается, сохраните как JPG"
+              : e.message || "Не удалось открыть фото",
+          );
         }
-        $("file").value = "";
+      }
+
+      $("pick-file").onclick = () => $("file").click();
+      $("pick-cam").onclick = () => $("cam").click();
+      $("shot").onclick = () => $("file").click();
+      $("shot").onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          $("file").click();
+        }
       };
+      for (const id of ["file", "cam"])
+        $(id).onchange = async () => {
+          await handleFile($(id).files[0]);
+          $(id).value = "";
+        };
+
+      // Drag & drop
+      const shot = $("shot");
+      ["dragenter", "dragover"].forEach((ev) =>
+        shot.addEventListener(ev, (e) => {
+          e.preventDefault();
+          shot.classList.add("drag");
+        }),
+      );
+      ["dragleave", "drop"].forEach((ev) =>
+        shot.addEventListener(ev, (e) => {
+          e.preventDefault();
+          shot.classList.remove("drag");
+        }),
+      );
+      shot.addEventListener("drop", (e) =>
+        handleFile(
+          [...e.dataTransfer.files].find(
+            (f) =>
+              /^image\//.test(f.type) || /\.(jpe?g|png|webp)$/i.test(f.name),
+          ),
+        ),
+      );
+      // не даём браузеру открыть файл в вкладке, если промахнулись мимо зоны
+      ["dragover", "drop"].forEach((ev) =>
+        window.addEventListener(ev, (e) => e.preventDefault()),
+      );
+
+      // Вставка из буфера (Ctrl+V), пока открыто окно
+      document.addEventListener("paste", (e) => {
+        if (!$("dlg").open) return;
+        const f = [...(e.clipboardData?.files || [])].find((f) =>
+          /^image\//.test(f.type),
+        );
+        if (f) {
+          e.preventDefault();
+          handleFile(f);
+        }
+      });
 
       $("send").onclick = async () => {
         $("send").disabled = true;
@@ -421,6 +513,7 @@
         clearTimeout($("q")._t);
         $("q")._t = setTimeout(load, 300);
       };
+      $("shot").innerHTML = HINT;
       loadGroups();
     </script>
   </body>
