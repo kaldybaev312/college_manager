@@ -1,4 +1,4 @@
-﻿require("dotenv").config(); // загружаем .env
+require("dotenv").config(); // загружаем .env
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
@@ -13,14 +13,25 @@ const xlsx = require("xlsx");
 const TelegramBot = require("node-telegram-bot-api");
 const cron = require("node-cron");
 
+// Секреты берутся ТОЛЬКО из переменных окружения (.env / Render → Environment).
+// Если переменной нет, сервер не запускается и сразу говорит какой.
+function requireEnv(name) {
+  const v = process.env[name];
+  if (!v) {
+    console.error(`❌ Не задана переменная окружения ${name}`);
+    process.exit(1);
+  }
+  return v;
+}
+
 const app = express();
 const upload = multer({ dest: "uploads/" });
 if (!fs.existsSync("uploads")) fs.mkdirSync("uploads");
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-const ADMIN_LOGIN = process.env.ADMIN_LOGIN || "admin";
-const ADMIN_PASS = process.env.ADMIN_PASS || "pl3-2026";
+const ADMIN_LOGIN = requireEnv("ADMIN_LOGIN");
+const ADMIN_PASS = requireEnv("ADMIN_PASS");
 const AUTH_COOKIE = "pl3_auth";
 
 function getCookie(req, name) {
@@ -174,9 +185,7 @@ setInterval(
 );
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 
-const MONGO_URI =
-  process.env.MONGO_URI ||
-  "mongodb+srv://ilimkaldybaev5_db_user:liceyStudents@riestr.uki8ep8.mongodb.net/PL3_Database?retryWrites=true&w=majority&appName=riestr";
+const MONGO_URI = requireEnv("MONGO_URI");
 mongoose
   .connect(MONGO_URI)
   .then(async () => {
@@ -199,16 +208,11 @@ mongoose
   })
   .catch((e) => console.log("Mongo error:", e.message));
 
-const AGENT_API_KEY = process.env.AGENT_API_KEY || "pl3_secret_key";
+const AGENT_API_KEY = requireEnv("AGENT_API_KEY");
 
 const PROFESSIONS = [
   { id: 1, ru: "Токарь", kg: "Токарь", duration: "2 года" },
-  {
-    id: 2,
-    ru: "Электрогазосварщик",
-    kg: "Электргазоширетүүчү",
-    duration: "2 года",
-  },
+  { id: 2, ru: "Электрогазосварщик", kg: "Электргазоширетүүчү", duration: "2 года" },
   {
     id: 3,
     ru: "Электромонтер по ремонту и обслуживанию электрооборудования",
@@ -233,51 +237,21 @@ const PROFESSIONS = [
     kg: "Web жана мультимедиалык тиркемелерди иштеп чыгуучу",
     duration: "2 года",
   },
-  {
-    id: 7,
-    ru: "Оператор цифровой печати",
-    kg: "Санариптик басма оператору",
-    duration: "2 года",
-  },
+  { id: 7, ru: "Оператор цифровой печати", kg: "Санариптик басма оператору", duration: "2 года" },
   { id: 8, ru: "Повар", kg: "Ашпозчу", duration: "2 года" },
   { id: 9, ru: "Переплетчик", kg: "Түптөөчү", duration: "10 месяцев" },
-  {
-    id: 10,
-    ru: "Электромонтер (10 м.)",
-    kg: "Электромонтер",
-    duration: "10 месяцев",
-  },
-  {
-    id: 11,
-    ru: "Автослесарь-Автоэлектрик",
-    kg: "Автослесарь-Автоэлектрик",
-    duration: "10 месяцев",
-  },
+  { id: 10, ru: "Электромонтер (10 м.)", kg: "Электромонтер", duration: "10 месяцев" },
+  { id: 11, ru: "Автослесарь-Автоэлектрик", kg: "Автослесарь-Автоэлектрик", duration: "10 месяцев" },
   { id: 12, ru: "Программист", kg: "Программист", duration: "10 месяцев" },
-  {
-    id: 13,
-    ru: "Оператор печатного оборудования",
-    kg: "Басма жабдууларын оператору",
-    duration: "2 года",
-  },
-  {
-    id: 14,
-    ru: "Компютерная диагностика",
-    kg: "Компьютердик диагностика",
-    duration: "10 месяцев",
-  },
-  {
-    id: 15,
-    ru: "Системный администратор",
-    kg: "Системалык администратор",
-    duration: "10 месяцев",
-  },
+  { id: 13, ru: "Оператор печатного оборудования", kg: "Басма жабдууларын оператору", duration: "2 года" },
+  { id: 14, ru: "Компютерная диагностика", kg: "Компьютердик диагностика", duration: "10 месяцев" },
+  { id: 15, ru: "Системный администратор", kg: "Системалык администратор", duration: "10 месяцев" },
   {
     id: 16,
     ru: "Разработчик Web и мультимедийных приложений",
     kg: "Web жана мультимедиалык тиркемелерди иштеп чыгуучу",
     duration: "10 месяцев",
-  }
+  },
 ];
 
 const SUMMARY_BASE_SUBJECTS = [
@@ -509,18 +483,8 @@ async function ensureGroupSummarySubjects(g) {
   return ss;
 }
 const MRU = [
-  "Январь",
-  "Февраль",
-  "Март",
-  "Апрель",
-  "Май",
-  "Июнь",
-  "Июль",
-  "Август",
-  "Сентябрь",
-  "Октябрь",
-  "Ноябрь",
-  "Декабрь",
+  "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+  "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
 ];
 function formatMonthLabel(m) {
   const [y, mn] = String(m || "")
@@ -1532,18 +1496,8 @@ app.get("/api/admin/print/:id/:type", requireAdmin, async (req, res) => {
     });
     const nowD = new Date(),
       mRu = [
-        "января",
-        "февраля",
-        "марта",
-        "апреля",
-        "мая",
-        "июня",
-        "июля",
-        "августа",
-        "сентября",
-        "октября",
-        "ноября",
-        "декабря",
+        "января", "февраля", "марта", "апреля", "мая", "июня",
+        "июля", "августа", "сентября", "октября", "ноября", "декабря",
       ];
     doc.render({
       fio: student.fio,
@@ -1614,18 +1568,8 @@ app.get(
       if (!fs.existsSync(tplPath))
         return res.json({ message: "Шаблон template_food.docx не найден." });
       const MU = [
-        "ЯНВАРЬ",
-        "ФЕВРАЛЬ",
-        "МАРТ",
-        "АПРЕЛЬ",
-        "МАЙ",
-        "ИЮНЬ",
-        "ИЮЛЬ",
-        "АВГУСТ",
-        "СЕНТЯБРЬ",
-        "ОКТЯБРЬ",
-        "НОЯБРЬ",
-        "ДЕКАБРЬ",
+        "ЯНВАРЬ", "ФЕВРАЛЬ", "МАРТ", "АПРЕЛЬ", "МАЙ", "ИЮНЬ",
+        "ИЮЛЬ", "АВГУСТ", "СЕНТЯБРЬ", "ОКТЯБРЬ", "НОЯБРЬ", "ДЕКАБРЬ",
       ];
       const gt = rows.reduce((s, r) => s + r.totalAmount, 0);
       const content = fs.readFileSync(tplPath, "binary"),
@@ -1684,12 +1628,12 @@ app.get("/api/admin/curator-link/:id", requireAdmin, async (req, res) => {
     const curId = String(cur._id);
     // HMAC подпись — защита от подбора
     const hmac = require("crypto")
-      .createHmac("sha256", process.env.ADMIN_TG_SECRET || "pl3admin2026")
+      .createHmac("sha256", requireEnv("ADMIN_TG_SECRET"))
       .update(curId)
       .digest("hex")
       .slice(0, 8);
     const token = `${curId}_${hmac}`;
-    const botUser = process.env.BOT_USERNAME || "pl3_school_bot";
+    const botUser = requireEnv("BOT_USERNAME");
     const link = `https://t.me/${botUser}?start=curator_${token}`;
     res.json({
       ok: true,
@@ -1726,18 +1670,8 @@ function buildSummaryDocx(data) {
   const all = [...theory, ...practice];
 
   const MONTHS_RU = [
-    "ЯНВАРЬ",
-    "ФЕВРАЛЬ",
-    "МАРТ",
-    "АПРЕЛЬ",
-    "МАЙ",
-    "ИЮНЬ",
-    "ИЮЛЬ",
-    "АВГУСТ",
-    "СЕНТЯБРЬ",
-    "ОКТЯБРЬ",
-    "НОЯБРЬ",
-    "ДЕКАБРЬ",
+    "ЯНВАРЬ", "ФЕВРАЛЬ", "МАРТ", "АПРЕЛЬ", "МАЙ", "ИЮНЬ",
+    "ИЮЛЬ", "АВГУСТ", "СЕНТЯБРЬ", "ОКТЯБРЬ", "НОЯБРЬ", "ДЕКАБРЬ",
   ];
   const [y, mn] = String(data.month || "")
     .split("-")
@@ -2058,18 +1992,8 @@ app.post(
       );
       const filename = `Vedomost_${sn}_${month}.docx`;
       const MONTHS_RU = [
-        "Январь",
-        "Февраль",
-        "Март",
-        "Апрель",
-        "Май",
-        "Июнь",
-        "Июль",
-        "Август",
-        "Сентябрь",
-        "Октябрь",
-        "Ноябрь",
-        "Декабрь",
+        "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+        "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
       ];
       const [y, mn] = String(month || "")
         .split("-")
