@@ -299,6 +299,11 @@
     </div>
 
     <script>
+      // Ключ просмотра из ссылки /journal.html?k=... (без входа в систему)
+      const SHARE_K = new URLSearchParams(location.search).get("k");
+      const SHARE_Q = SHARE_K ? "?k=" + encodeURIComponent(SHARE_K) : "";
+      const escH = (v) =>
+        String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
       function showLoader() {
         document.getElementById("loader").style.display = "flex";
       }
@@ -311,7 +316,7 @@
           .toISOString()
           .slice(0, 7);
         try {
-          const res = await fetch("/api/admin/groups-list");
+          const res = await fetch("/api/admin/groups-list" + SHARE_Q);
           if (res.ok) {
             const groups = await res.json();
             document.getElementById("j-group-select").innerHTML =
@@ -332,8 +337,12 @@
         showLoader();
         try {
           const res = await fetch(
-            `/api/admin/attendance-matrix/${gid}/${month}`,
+            `/api/admin/attendance-matrix/${gid}/${month}` + SHARE_Q,
           );
+          if (res.status === 401) {
+            alert("Ссылка недействительна. Попросите новую у администратора или войдите в систему.");
+            return;
+          }
           if (!res.ok) throw new Error("Ошибка сервера");
           const data = await res.json();
           document.getElementById("journal-hint").style.display = "none";
@@ -360,7 +369,7 @@
           let bodyHtml = "";
           data.matrix.forEach((row) => {
             let tr = `<tr><td class="fio-col">
-              <div>${row.fio}</div>
+              <div>${escH(row.fio)}</div>
               <div class="student-stats">
                 <span class="s-present">П:${row.stats.presences}</span>
                 <span class="s-late">О:${row.stats.lates}</span>
@@ -368,7 +377,11 @@
               </div></td>`;
             row.days.forEach((day) => {
               const wClass = day.isWeekend ? "weekend-cell" : "";
-              if (!day.present)
+              if (day.absent && day.reason)
+                tr += `<td class="${wClass}" style="background:#e0e7ff;color:#4338ca;font-weight:800" title="${escH(day.reason.label)}">${escH(day.reason.code)}</td>`;
+              else if (day.absent)
+                tr += `<td class="${wClass}" style="color:#dc2626;font-weight:800">Н</td>`;
+              else if (!day.present)
                 tr += `<td class="${wClass}" style="color:#cbd5e1">-</td>`;
               else if (day.late)
                 tr += `<td class="late ${wClass}" title="${day.time}">О<span class="cell-time">${day.time}</span></td>`;

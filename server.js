@@ -11,7 +11,9 @@ const QRCode = require("qrcode");
 const multer = require("multer");
 const xlsx = require("xlsx");
 const TelegramBot = require("node-telegram-bot-api");
-const cron = require("node-cron");
+const att = require("./attendance-utils");
+const absence = require("./absence");
+const { createReports } = require("./reports");
 
 // Секреты берутся ТОЛЬКО из переменных окружения (.env / Render → Environment).
 // Если переменной нет, сервер не запускается и сразу говорит какой.
@@ -44,12 +46,28 @@ function getCookie(req, name) {
     .find((s) => s.startsWith(name + "="));
   return found ? found.slice(name.length + 1) : null;
 }
+// Пароли кураторов: scrypt с солью ("scrypt$соль$хеш").
+// Старые хеши SHA-256 без соли ещё принимаются и заменяются на scrypt при входе.
 function hashPassword(p) {
-  return crypto
-    .createHash("sha256")
-    .update(String(p || ""))
-    .digest("hex");
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(String(p || ""), salt, 64).toString("hex");
+  return `scrypt$${salt}$${hash}`;
 }
+function legacySha256(p) {
+  return crypto.createHash("sha256").update(String(p || "")).digest("hex");
+}
+function verifyPassword(p, stored) {
+  stored = String(stored || "");
+  if (stored.startsWith("scrypt$")) {
+    const [, salt, hash] = stored.split("$");
+    if (!salt || !hash) return false;
+    const calc = crypto.scryptSync(String(p || ""), salt, 64);
+    const want = Buffer.from(hash, "hex");
+    return want.length === calc.length && crypto.timingSafeEqual(calc, want);
+  }
+  return !!stored && safeEq(stored, legacySha256(p));
+}
+const isLegacyHash = (stored) => !!stored && !String(stored).startsWith("scrypt$");
 
 // Сессия подписана HMAC: подделать cookie без SESSION_SECRET нельзя.
 // Без SESSION_SECRET ключ выводится из других секретов (см. .env.example), но лучше задать его явно.
@@ -200,11 +218,16 @@ app.post("/login", (req, res) => {
     .then((curator) => {
       if (
         !curator ||
-        !safeEq(curator.passwordHash, hashPassword(password)) ||
+        !verifyPassword(password, curator.passwordHash) ||
         !curator.groups?.length
       )
         return bad();
       loginFails.delete(ip);
+      if (isLegacyHash(curator.passwordHash))
+        Curator.updateOne(
+          { _id: curator._id },
+          { $set: { passwordHash: hashPassword(password) } },
+        ).catch(() => null);
       const groups = curator.groups.map((g) => ({
         id: String(g._id),
         name: g.name,
@@ -243,6 +266,7 @@ mongoose
   .connect(MONGO_URI)
   .then(async () => {
     console.log("MongoDB connected");
+    restoreSkudEvents();
     // Удалить устаревший уникальный индекс group_1 из коллекции curators
     try {
       await mongoose.connection.collection("curators").dropIndex("group_1");
@@ -377,13 +401,13 @@ const Group = mongoose.model(
 const Student = mongoose.model(
   "Student",
   new mongoose.Schema({
-    fio: String,
+    fio: { type: String, index: true },
     birthDate: String,
-    inn: String,
+    inn: { type: String, index: true },
     lyceumId: String,
     skudConsentAt: Date, // согласие на обработку биометрии (СКУД)
     skudConsentBy: String,
-    group: { type: mongoose.Schema.Types.ObjectId, ref: "Group" },
+    group: { type: mongoose.Schema.Types.ObjectId, ref: "Group", index: true },
     attendance: [{ date: String, present: Boolean }],
     skudDaily: [
       new mongoose.Schema(
@@ -471,6 +495,10 @@ async function notifyTg(message) {
 
 function pad2(n) {
   return String(n).padStart(2, "0");
+}
+// Экранирование для Telegram MarkdownV2
+function mdv2(v) {
+  return String(v ?? "").replace(/[_*[\]()~`>#+=|{}.!\-\\]/g, "\\$&");
 }
 function isoToDateKey(iso) {
   const d = new Date(iso);
@@ -655,27 +683,66 @@ function contentDisposition(filename) {
   return `attachment; filename="${ascii}"; filename*=UTF-8''${encoded}`;
 }
 
+// Лента событий СКУД: последние 500 в памяти + копия в Mongo (хранится 14 дней),
+// чтобы после перезапуска Render лента и "опоздавшие сегодня" не пропадали.
+const SkudEventLog = mongoose.model(
+  "SkudEventLog",
+  new mongoose.Schema(
+    { ev: Object, createdAt: { type: Date, default: Date.now, expires: 14 * 24 * 3600 } },
+    { versionKey: false },
+  ),
+);
 function pushSkudEvent(ev) {
   SKUD_EVENTS.unshift(ev);
   if (SKUD_EVENTS.length > 500) SKUD_EVENTS.pop();
+  SkudEventLog.create({ ev }).catch(() => null);
+}
+async function restoreSkudEvents() {
+  try {
+    const last = await SkudEventLog.find().sort({ createdAt: -1 }).limit(500).lean();
+    if (!SKUD_EVENTS.length) SKUD_EVENTS.push(...last.map((d) => d.ev));
+    console.log(`🗂 Лента СКУД восстановлена: ${last.length}`);
+  } catch (e) {
+    console.log("skud events restore:", e.message);
+  }
 }
 
-/* === ПУБЛИЧНЫЕ МАРШРУТЫ === */
+/* === ЖУРНАЛ: доступ по входу или по секретной ссылке для просмотра === */
+// Ссылка /journal.html?k=<ключ> даёт только просмотр журнала (без ИНН и комментариев).
+// Ключ выводится из SESSION_SECRET: смена SESSION_SECRET отзывает старые ссылки.
+const JOURNAL_KEY = sign("journal-share-v1");
+function journalAccess(req, res, next) {
+  const s = getSession(req);
+  if (s?.role) {
+    req.auth = s;
+    return next();
+  }
+  if (req.query.k && safeEq(req.query.k, JOURNAL_KEY)) {
+    req.journalShare = true;
+    return next();
+  }
+  res.status(401).json({ error: "Нужен вход или ссылка для просмотра" });
+}
+
 app.get("/journal.html", (req, res) =>
   res.sendFile(path.join(__dirname, "public", "journal.html")),
 );
 
-app.get("/api/admin/groups-list", async (req, res) => {
+app.get("/api/admin/journal-link", requireAuth, requireAdmin, (req, res) =>
+  res.json({ url: `/journal.html?k=${JOURNAL_KEY}` }),
+);
+
+app.get("/api/admin/groups-list", journalAccess, async (req, res) => {
   try {
-    const ids = getAccessibleGroupIds(req);
-    const filter = ids === null ? {} : ids.length ? { _id: { $in: ids } } : {};
+    const ids = req.journalShare ? null : getAccessibleGroupIds(req);
+    const filter = ids === null ? {} : { _id: { $in: ids } };
     res.json(await Group.find(filter).sort({ name: 1 }));
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-app.get("/api/admin/global-stats", async (req, res) => {
+app.get("/api/admin/global-stats", requireAuth, requireAdmin, async (req, res) => {
   try {
     const tk = getTodayKey();
     const c = await Student.countDocuments({
@@ -690,22 +757,25 @@ app.get("/api/admin/global-stats", async (req, res) => {
   }
 });
 
-app.get("/api/admin/attendance-matrix/:gid/:month", async (req, res) => {
+app.get("/api/admin/attendance-matrix/:gid/:month", journalAccess, async (req, res) => {
   try {
-    const session = getSession(req);
-    if (session?.role && !canAccessGroup(req, req.params.gid))
+    if (!req.journalShare && !canAccessGroup(req, req.params.gid))
       return res.status(403).json({ error: "Нет доступа к этой группе" });
-    const { gid, month } = req.params,
-      [year, mon] = month.split("-").map(Number),
-      dim = new Date(year, mon, 0).getDate();
+    const { gid, month } = req.params;
+    if (!/^\d{4}-\d{2}$/.test(month))
+      return res.status(400).json({ error: "Неверный месяц" });
+    const { from, to } = att.monthRange(month);
+    const dim = Number(to.slice(8));
     const group = await Group.findById(gid),
-      shiftTime = group?.shiftStart || "09:30";
-    const [sH, sM] = shiftTime.split(":").map(Number),
-      stm = sH * 60 + sM;
-    const students = await Student.find({ group: gid }).sort({ fio: 1 });
-    const bd = getBishkekNow(),
-      tdk = `${bd.getFullYear()}-${pad2(bd.getMonth() + 1)}-${pad2(bd.getDate())}`,
-      tiw = bd.getDay() === 0 || bd.getDay() === 6;
+      shiftTime = group?.shiftStart || "09:30",
+      shiftMin = att.shiftMinutes(shiftTime);
+    const students = await Student.find({ group: gid })
+      .sort({ fio: 1 })
+      .select("fio skudDaily attendance")
+      .lean();
+    const reasons = await absence.reasonsIndex({ group: gid }, from, to);
+    const tdk = getTodayKey(),
+      tiw = att.isWeekend(tdk);
     let ptc = 0,
       tml = 0;
     const matrix = students.map((s) => {
@@ -713,51 +783,52 @@ app.get("/api/admin/attendance-matrix/:gid/:month", async (req, res) => {
       let ipt = false,
         sl = 0,
         sp = 0,
-        sa = 0;
+        sa = 0,
+        se = 0;
       for (let d = 1; d <= dim; d++) {
-        const dk = `${year}-${pad2(mon)}-${pad2(d)}`,
-          do2 = new Date(Date.UTC(year, mon - 1, d)),
-          iw = do2.getUTCDay() === 0 || do2.getUTCDay() === 6;
-        const skud = s.skudDaily?.find((r) => r.date === dk),
-          att = s.attendance?.find((a) => a.date === dk);
-        let present = false,
-          late = false,
-          ts = "";
-        if (skud) {
-          present = skud.present;
-          if (skud.firstIn) {
-            const dt = new Date(skud.firstIn);
-            if (!isNaN(dt.getTime())) {
-              const tm = dt.getUTCHours() * 60 + dt.getUTCMinutes() + 360,
-                lh = Math.floor(tm / 60) % 24,
-                lm = tm % 60;
-              ts = `${pad2(lh)}:${pad2(lm)}`;
-              late = lh * 60 + lm > stm;
-            }
-          }
-        } else if (att) {
-          present = att.present;
+        const dk = `${month}-${pad2(d)}`,
+          iw = att.isWeekend(dk);
+        const st = att.dayStatus(s, dk, shiftMin);
+        let reason = null;
+        if (!st.present && !iw && dk <= tdk) {
+          const r = reasons.get(`${s._id}|${dk}`);
+          if (r) {
+            reason = {
+              id: r.id,
+              code: r.code,
+              label: r.label,
+              excused: r.excused,
+              confirmed: r.confirmed,
+              comment: req.journalShare ? "" : r.comment,
+              dateFrom: r.dateFrom,
+              dateTo: r.dateTo,
+              type: r.type,
+            };
+            if (r.excused && r.confirmed) se++;
+            else sa++;
+          } else sa++;
         }
-        if (present) sp++;
-        else if (!iw && dk <= tdk) sa++;
-        if (late) {
+        if (st.present) sp++;
+        if (st.late) {
           sl++;
           tml++;
         }
-        if (dk === tdk && present) ipt = true;
-        days.push({ present, late, time: ts, isWeekend: iw });
+        if (dk === tdk && st.present) ipt = true;
+        days.push({ date: dk, present: st.present, late: st.late, time: st.time, isWeekend: iw, absent: !st.present && !iw && dk <= tdk, reason });
       }
       if (ipt) ptc++;
       return {
+        id: String(s._id),
         fio: s.fio,
         days,
-        stats: { presences: sp, lates: sl, absences: sa },
+        stats: { presences: sp, lates: sl, absences: sa, excused: se },
       };
     });
     res.json({
       daysInMonth: dim,
       matrix,
       shiftStart: shiftTime,
+      canEdit: !req.journalShare,
       stats: {
         totalStudents: students.length,
         presentToday: ptc,
@@ -810,12 +881,12 @@ app.post("/api/agent/sync", async (req, res) => {
       const inn = normalizeINN(extractINN(rawName)),
         fioNorm = normalizeFIO(extractFIO(rawName));
       let student = null;
-      if (inn) student = await Student.findOne({ inn });
+      if (inn) student = await Student.findOne({ inn }).select("fio inn group");
       if (!student && fioNorm) {
         const fp = fioNorm.split(" ")[0],
-          cands = await Student.find({ fio: new RegExp("^" + fp, "i") }).limit(
-            50,
-          );
+          cands = await Student.find({ fio: new RegExp("^" + fp.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") })
+            .select("fio inn group")
+            .limit(50);
         student = cands.find((c) => normalizeFIO(c.fio) === fioNorm) || null;
       }
       if (!student) {
@@ -831,79 +902,75 @@ app.post("/api/agent/sync", async (req, res) => {
         fail++;
         continue;
       }
-      const exist = student.attendance.find((a) => a.date === dateKey);
-      if (exist) exist.present = true;
-      else student.attendance.push({ date: dateKey, present: true });
-      let rec = student.skudDaily.find((r) => r.date === dateKey);
-      if (!rec) {
-        student.skudDaily.push({
-          date: dateKey,
-          inCount: 0,
-          outCount: 0,
-          present: false,
-        });
-        rec = student.skudDaily[student.skudDaily.length - 1];
-      }
-      let isFirst = false,
-        timeStr = "—",
-        lh = 0,
-        lm = 0;
+      // Атомарные обновления: не перезаписываем массивы целиком и не теряем
+      // события, если два запроса агента пришли одновременно.
+      const sid = student._id;
+      await Student.updateOne(
+        { _id: sid, "attendance.date": { $ne: dateKey } },
+        { $push: { attendance: { date: dateKey, present: true } } },
+      );
+      await Student.updateOne(
+        { _id: sid, "attendance.date": dateKey },
+        { $set: { "attendance.$.present": true } },
+      );
+      await Student.updateOne(
+        { _id: sid, "skudDaily.date": { $ne: dateKey } },
+        { $push: { skudDaily: { date: dateKey, inCount: 0, outCount: 0, present: false } } },
+      );
+      const local = att.localTime(eventIso);
+      const timeStr = local ? local.str : "—";
       if (direction === "in") {
-        isFirst = rec.inCount === 0;
-        rec.inCount++;
-        rec.present = true;
-        rec.firstIn = rec.firstIn || eventIso;
-        rec.lastIn = eventIso;
-        const dtE = new Date(eventIso);
-        if (!isNaN(dtE.getTime())) {
-          const tm = dtE.getUTCHours() * 60 + dtE.getUTCMinutes() + 360;
-          lh = Math.floor(tm / 60) % 24;
-          lm = tm % 60;
-          timeStr = `${pad2(lh)}:${pad2(lm)}`;
-        }
-        if (isFirst) {
-          await student.populate("group");
-          const st = student.group?.shiftStart || "09:30",
-            [shH, shM] = st.split(":").map(Number);
-          if (lh * 60 + lm > shH * 60 + shM) {
-            // Сохраняем опоздание — куратор видит через кнопку "Опоздавшие сегодня" в боте
+        // старая версия записи дня: по ней понимаем, первый ли это вход
+        const prev = await Student.findOneAndUpdate(
+          { _id: sid, "skudDaily.date": dateKey },
+          {
+            $inc: { "skudDaily.$.inCount": 1 },
+            $set: { "skudDaily.$.present": true, "skudDaily.$.lastIn": eventIso },
+          },
+          { new: false, projection: { skudDaily: { $elemMatch: { date: dateKey } } } },
+        ).lean();
+        const before = prev?.skudDaily?.[0] || {};
+        if (!before.firstIn)
+          await Student.updateOne(
+            { _id: sid, skudDaily: { $elemMatch: { date: dateKey, firstIn: null } } },
+            { $set: { "skudDaily.$.firstIn": eventIso } },
+          );
+        if (!before.inCount) {
+          const group = await Group.findById(student.group).select("name shiftStart").lean();
+          if (local && local.min > att.shiftMinutes(group?.shiftStart)) {
+            // Опоздание — куратор видит через кнопку "Опоздавшие сегодня" в боте
             pushSkudEvent({
               ok: true,
               type: "late",
               studentFio: student.fio,
               studentInn: student.inn || "",
-              groupId: String(student.group?._id || ""),
-              groupName: student.group?.name || "—",
+              groupId: String(group?._id || ""),
+              groupName: group?.name || "—",
               time: timeStr,
               at: eventIso,
             });
           }
-          if (student.inn) {
+          if (student.inn)
             notifyParents(
               student.inn,
-              `✅ *Вход в лицей*\n🧑‍🎓 ${student.fio}\n🕒 *${timeStr}*`,
+              `✅ *Вход в лицей*\n🧑‍🎓 ${mdv2(student.fio)}\n🕒 *${mdv2(timeStr)}*`,
             ).catch(() => null);
-          }
         }
       } else {
-        rec.outCount++;
-        rec.firstOut = rec.firstOut || eventIso;
-        rec.lastOut = eventIso;
-        const dtE = new Date(eventIso);
-        if (!isNaN(dtE.getTime()) && student.inn) {
-          const tm = dtE.getUTCHours() * 60 + dtE.getUTCMinutes() + 360,
-            tStr = `${pad2(Math.floor(tm / 60) % 24)}:${pad2(tm % 60)}`;
-          if (student.inn) {
-            notifyParents(
-              student.inn,
-              `🏃‍♂️ *Выход из лицея*\n🧑‍🎓 ${student.fio}\n🕒 *${tStr}*`,
-            ).catch(() => null);
-          }
-        }
+        await Student.updateOne(
+          { _id: sid, "skudDaily.date": dateKey },
+          { $inc: { "skudDaily.$.outCount": 1 }, $set: { "skudDaily.$.lastOut": eventIso } },
+        );
+        await Student.updateOne(
+          { _id: sid, skudDaily: { $elemMatch: { date: dateKey, firstOut: null } } },
+          { $set: { "skudDaily.$.firstOut": eventIso } },
+        );
+        if (local && student.inn)
+          notifyParents(
+            student.inn,
+            `🏃‍♂️ *Выход из лицея*\n🧑‍🎓 ${mdv2(student.fio)}\n🕒 *${mdv2(timeStr)}*`,
+          ).catch(() => null);
       }
-      student.markModified("attendance");
-      student.markModified("skudDaily");
-      await student.save();
       pushSkudEvent({
         ok: true,
         rawName,
@@ -944,6 +1011,7 @@ app.get("/skud-register.html", requireAuth, (req, res) =>
 require("./practice")(app, { Student, Group, Curator, getSession, getTodayKey });
 app.use("/api/admin", requireAuth);
 app.use(express.static("public"));
+absence.registerAbsenceRoutes(app, { Student, canAccessGroup });
 const skud = require("./skud")(app, {
   Student,
   Group,
@@ -1406,66 +1474,56 @@ app.get(
   requireGroupAccess("gid"),
   async (req, res) => {
     try {
-      const { gid, month } = req.params,
-        [year, mon] = month.split("-").map(Number),
-        dim = new Date(year, mon, 0).getDate();
+      const { gid, month } = req.params;
+      if (!/^\d{4}-\d{2}$/.test(month)) return res.status(400).send("Неверный месяц");
+      const { from, to } = att.monthRange(month);
+      const dim = Number(to.slice(8));
       const g = await Group.findById(gid);
       if (!g) return res.status(404).send("Группа не найдена");
-      const [sH, sM] = (g.shiftStart || "09:30").split(":").map(Number),
-        stm = sH * 60 + sM;
-      const students = await Student.find({ group: gid }).sort({ fio: 1 });
-      const bd = getBishkekNow(),
-        tdk = `${bd.getFullYear()}-${pad2(bd.getMonth() + 1)}-${pad2(bd.getDate())}`;
+      const shiftMin = att.shiftMinutes(g.shiftStart);
+      const students = await Student.find({ group: gid })
+        .sort({ fio: 1 })
+        .select("fio skudDaily attendance")
+        .lean();
+      const reasons = await absence.reasonsIndex({ group: gid }, from, to);
+      const tdk = getTodayKey();
       const excelData = [],
         hdr = ["№", "ФИО Студента"];
       for (let d = 1; d <= dim; d++) hdr.push(String(d));
-      hdr.push("Присутствий", "Отсутствий", "Опозданий");
+      hdr.push("Присутствий", "Опозданий", "Пропусков уваж.", "Пропусков без уваж.");
       excelData.push(hdr);
       students.forEach((s, i) => {
         const row = [i + 1, s.fio];
         let sp = 0,
           sa = 0,
+          se = 0,
           sl = 0;
         for (let d = 1; d <= dim; d++) {
-          const dk = `${year}-${pad2(mon)}-${pad2(d)}`,
-            do2 = new Date(Date.UTC(year, mon - 1, d)),
-            iw = do2.getUTCDay() === 0 || do2.getUTCDay() === 6;
-          const skud = s.skudDaily?.find((r) => r.date === dk),
-            att = s.attendance?.find((a) => a.date === dk);
-          let present = false,
-            late = false;
-          if (skud) {
-            present = skud.present;
-            if (skud.firstIn) {
-              const dt = new Date(skud.firstIn);
-              if (!isNaN(dt.getTime())) {
-                const tm = dt.getUTCHours() * 60 + dt.getUTCMinutes() + 360;
-                if ((Math.floor(tm / 60) % 24) * 60 + (tm % 60) > stm)
-                  late = true;
-              }
-            }
-          } else if (att) {
-            present = att.present;
-          }
-          if (present) {
+          const dk = `${month}-${pad2(d)}`;
+          const st = att.dayStatus(s, dk, shiftMin);
+          if (st.present) {
             sp++;
-            if (late) {
-              sl++;
-              row.push("О");
-            } else row.push("П");
-          } else if (!iw && dk <= tdk) {
-            sa++;
-            row.push("Н");
+            if (st.late) sl++;
+            row.push(st.late ? "О" : "П");
+          } else if (!att.isWeekend(dk) && dk <= tdk) {
+            const r = reasons.get(`${s._id}|${dk}`);
+            if (r && r.excused && r.confirmed) se++;
+            else sa++;
+            row.push(r ? r.code + (r.confirmed ? "" : "?") : "Н");
           } else row.push("-");
         }
-        row.push(sp, sa, sl);
+        row.push(sp, sl, se, sa);
         excelData.push(row);
       });
+      excelData.push(
+        [],
+        ["", "П — был, О — опоздал, Н — без причины, Б — болезнь, С — семейные, Л — по направлению лицея, Д — другая причина, ? — не подтверждено"],
+      );
       const wb = xlsx.utils.book_new(),
         ws = xlsx.utils.aoa_to_sheet(excelData);
       const cw = [{ wch: 4 }, { wch: 35 }];
       for (let d = 1; d <= dim; d++) cw.push({ wch: 4 });
-      cw.push({ wch: 12 }, { wch: 12 }, { wch: 12 });
+      cw.push({ wch: 12 }, { wch: 11 }, { wch: 15 }, { wch: 18 });
       ws["!cols"] = cw;
       xlsx.utils.book_append_sheet(wb, ws, "Журнал");
       const buf = xlsx.write(wb, { type: "buffer", bookType: "xlsx" });
@@ -2232,484 +2290,31 @@ notifyAdmins = _notifyAdmins;
 notifyCuratorsOfGroup = _notifyCurators;
 
 /* ================================================================
-   TELEGRAM MINI APP API  — /api/webapp/*
-   Аутентификация через chatId из заголовка x-tg-chat-id
+   TELEGRAM MINI APP API — /api/webapp/* (webapp.js)
+   Причины отсутствия — absence.js, отчёты — reports.js
 ================================================================ */
-
-async function resolveWebappUser(req) {
-  const chatId = String(req.headers["x-tg-chat-id"] || "").trim();
-  if (!chatId) return null;
-  return await TgSub.findOne({ chatId });
-}
-
-// Кто я?
-app.get("/api/webapp/me", async (req, res) => {
-  try {
-    const sub = await resolveWebappUser(req);
-    if (!sub) return res.json({ role: null });
-
-    if (sub.role === "admin") {
-      const groups = await Group.find()
-        .sort({ name: 1 })
-        .select("name profRu shiftStart");
-      return res.json({
-        role: "admin",
-        groups: groups.map((g) => ({
-          id: String(g._id),
-          name: g.name,
-          profRu: g.profRu || "",
-          shiftStart: g.shiftStart || "09:30",
-        })),
-      });
-    }
-
-    if (sub.role === "curator" && sub.curatorId) {
-      const cur = await Curator.findById(sub.curatorId).populate(
-        "groups",
-        "name profRu shiftStart",
-      );
-      if (!cur) return res.json({ role: null });
-      return res.json({
-        role: "curator",
-        curatorName: cur.fullName || cur.username || "",
-        groups: cur.groups.map((g) => ({
-          id: String(g._id),
-          name: g.name,
-          profRu: g.profRu || "",
-          shiftStart: g.shiftStart || "09:30",
-        })),
-      });
-    }
-
-    if (sub.role === "parent" && sub.linkedInns?.length) {
-      const children = await Promise.all(
-        sub.linkedInns.map(async (inn) => {
-          const stu = await Student.findOne({ inn }).populate(
-            "group",
-            "name profRu",
-          );
-          if (!stu) return null;
-          return {
-            inn,
-            fio: stu.fio || "",
-            groupId: String(stu.group?._id || ""),
-            groupName: stu.group?.name || "",
-            profRu: stu.group?.profRu || "",
-          };
-        }),
-      );
-      return res.json({ role: "parent", children: children.filter(Boolean) });
-    }
-
-    return res.json({ role: null });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+require("./webapp")(app, {
+  Group,
+  Student,
+  TgSub,
+  Curator,
+  SummaryRecord,
+  ensureGroupSummarySubjects,
+  formatMonthLabel,
+  notifyParents: (...a) => notifyParents(...a),
+  getTodayKey,
+  getBot: () => bot,
+  mdv2,
 });
 
-// Посещаемость сегодня для куратора
-app.get("/api/webapp/attendance/today", async (req, res) => {
-  try {
-    const sub = await resolveWebappUser(req);
-    if (!sub) return res.status(401).json({ error: "Unauthorized" });
-    const gid = req.query.gid;
-    if (sub.role === "curator") {
-      const cur = await Curator.findById(sub.curatorId);
-      const gids = cur?.groups?.map(String) || [];
-      if (!gids.includes(gid))
-        return res.status(403).json({ error: "No access" });
-    }
-    const tdk = getTodayKey();
-    const g = await Group.findById(gid);
-    const [sH, sM] = (g?.shiftStart || "09:30").split(":").map(Number),
-      stm = sH * 60 + sM;
-    const students = await Student.find({ group: gid })
-      .sort({ fio: 1 })
-      .select("fio inn skudDaily attendance");
-    let present = 0,
-      absent = 0,
-      late = 0;
-    const list = students.map((stu) => {
-      const skud = stu.skudDaily?.find((r) => r.date === tdk),
-        att = stu.attendance?.find((a) => a.date === tdk);
-      let here = false,
-        isLate = false,
-        time = "";
-      if (skud) {
-        here = skud.present;
-        if (skud.firstIn) {
-          const dt = new Date(skud.firstIn);
-          if (!isNaN(dt)) {
-            const tm = dt.getUTCHours() * 60 + dt.getUTCMinutes() + 360;
-            const h = Math.floor(tm / 60) % 24,
-              m = tm % 60;
-            time = `${pad2(h)}:${pad2(m)}`;
-            isLate = h * 60 + m > stm;
-          }
-        }
-      } else if (att) {
-        here = att.present;
-      }
-      if (here && isLate) {
-        present++;
-        late++;
-      } else if (here) {
-        present++;
-      } else {
-        absent++;
-      }
-      return {
-        fio: stu.fio,
-        status: here ? (isLate ? "late" : "present") : "absent",
-        time,
-      };
-    });
-    res.json({ present, absent, late, students: list });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+const reports = createReports({ Group, Student, Curator, TgSub, getTodayKey });
+reports.registerReportRoutes(app, {
+  requireAdmin,
+  canAccessGroup,
+  contentDisposition,
+  getBot: () => bot,
 });
+reports.scheduleReports(bot);
 
-// Посещаемость группы за месяц
-app.get("/api/webapp/attendance/month", async (req, res) => {
-  try {
-    const sub = await resolveWebappUser(req);
-    if (!sub) return res.status(401).json({ error: "Unauthorized" });
-    const { gid, month } = req.query;
-    if (sub.role === "curator") {
-      const cur = await Curator.findById(sub.curatorId);
-      const gids = cur?.groups?.map(String) || [];
-      if (!gids.includes(gid))
-        return res.status(403).json({ error: "No access" });
-    }
-    const [yr, mn] = (month || "").split("-").map(Number);
-    if (!yr || !mn) return res.status(400).json({ error: "Invalid month" });
-    const dim = new Date(yr, mn, 0).getDate();
-    const days = [];
-    for (let d = 1; d <= dim; d++) days.push(`${yr}-${pad2(mn)}-${pad2(d)}`);
-    const g = await Group.findById(gid);
-    const [sH, sM] = (g?.shiftStart || "09:30").split(":").map(Number);
-    const stm = sH * 60 + sM;
-    const students = await Student.find({ group: gid })
-      .sort({ fio: 1 })
-      .select("fio skudDaily attendance");
-    const result = students.map((stu) => {
-      const statuses = {};
-      for (const day of days) {
-        const skud = stu.skudDaily?.find((r) => r.date === day);
-        const att = stu.attendance?.find((a) => a.date === day);
-        let status = "a";
-        if (skud?.present) {
-          if (skud.firstIn) {
-            const dt = new Date(skud.firstIn);
-            if (!isNaN(dt)) {
-              const tm = dt.getUTCHours() * 60 + dt.getUTCMinutes() + 360;
-              const h = Math.floor(tm / 60) % 24,
-                m = tm % 60;
-              status = h * 60 + m > stm ? "l" : "p";
-            } else {
-              status = "p";
-            }
-          } else {
-            status = "p";
-          }
-        } else if (att?.present) {
-          status = "p";
-        }
-        statuses[day] = status;
-      }
-      return { fio: stu.fio, statuses };
-    });
-    res.json({ days, students: result });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Предметы группы
-app.get("/api/webapp/subjects", async (req, res) => {
-  try {
-    const g = await Group.findById(req.query.gid);
-    if (!g) return res.status(404).json({ error: "Group not found" });
-    const subjects = await ensureGroupSummarySubjects(g);
-    res.json({ subjects });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Студенты группы
-app.get("/api/webapp/students", async (req, res) => {
-  try {
-    const stus = await Student.find({ group: req.query.gid })
-      .sort({ fio: 1 })
-      .select("fio inn lyceumId birthDate");
-    res.json({
-      students: stus.map((s) => ({
-        id: String(s._id),
-        fio: s.fio,
-        inn: s.inn || "",
-        lyceumId: s.lyceumId || "",
-        birthDate: s.birthDate || "",
-      })),
-    });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Оценки группы за месяц
-app.get("/api/webapp/grades", async (req, res) => {
-  try {
-    const { gid, month } = req.query;
-    const g = await Group.findById(gid);
-    const subjects = await ensureGroupSummarySubjects(g);
-    const records = await SummaryRecord.find({ group: gid, month }).lean();
-    // grades: {studentId: {subjectKey: value}}
-    const grades = {};
-    records.forEach((r) => {
-      const sid = String(r.student);
-      grades[sid] = {};
-      const raw = r.grades;
-      if (raw instanceof Map)
-        raw.forEach((v, k) => {
-          if (v) grades[sid][k] = v;
-        });
-      else if (raw)
-        Object.entries(raw).forEach(([k, v]) => {
-          if (v && !k.startsWith("$")) grades[sid][k] = v;
-        });
-    });
-    res.json({ grades, subjects });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Сохранить оценки одного студента
-app.post("/api/webapp/grades/set", async (req, res) => {
-  try {
-    const sub = await resolveWebappUser(req);
-    if (!sub || (sub.role !== "curator" && sub.role !== "admin"))
-      return res.status(403).json({ error: "Forbidden" });
-    const { gid, studentId, month, grades } = req.body;
-    // Verify curator has access
-    if (sub.role === "curator") {
-      const cur = await Curator.findById(sub.curatorId);
-      if (!cur?.groups?.map(String).includes(gid))
-        return res.status(403).json({ error: "No access" });
-    }
-    await SummaryRecord.findOneAndUpdate(
-      { group: gid, student: studentId, month },
-      { group: gid, student: studentId, month, grades },
-      { upsert: true, new: true },
-    );
-    // Notify parents
-    const stu = await Student.findById(studentId).select("fio inn");
-    if (stu?.inn) {
-      const entries = Object.entries(grades || {}).filter(([, v]) => v);
-      if (entries.length) {
-        const g = await Group.findById(gid);
-        const subjects = await ensureGroupSummarySubjects(g);
-        const subj = subjects.find((s) => s.key === entries[0][0]);
-        notifyParents(
-          stu.inn,
-          `📊 *Новые оценки\!*
-👤 ${stu.fio}
-📅 ${formatMonthLabel(month)}`,
-        ).catch(() => {});
-      }
-    }
-    res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Привязать ребёнка (родитель)
-app.post("/api/webapp/parent/link", async (req, res) => {
-  try {
-    const { inn, chatId } = req.body;
-    const clean = String(inn || "").replace(/\D/g, "");
-    if (clean.length < 12)
-      return res.status(400).json({ error: "ИНН минимум 12 цифр" });
-    const stu = await Student.findOne({ inn: clean }).populate("group");
-    if (!stu)
-      return res.status(404).json({ error: "Студент с таким ИНН не найден" });
-    await TgSub.findOneAndUpdate(
-      { chatId: String(chatId) },
-      {
-        chatId: String(chatId),
-        role: "parent",
-        $addToSet: { linkedInns: clean },
-      },
-      { upsert: true, new: true },
-    );
-    res.json({
-      ok: true,
-      fio: stu.fio,
-      groupName: stu.group?.name || "",
-      groupId: String(stu.group?._id || ""),
-    });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Оценки ребёнка (родитель)
-app.get("/api/webapp/parent/grades", async (req, res) => {
-  try {
-    const { inn, month } = req.query;
-    const stu = await Student.findOne({ inn }).select("_id group");
-    if (!stu) return res.status(404).json({ error: "Не найдено" });
-    const g = await Group.findById(stu.group);
-    const subjects = await ensureGroupSummarySubjects(g);
-    const record = await SummaryRecord.findOne({
-      group: stu.group,
-      student: stu._id,
-      month,
-    }).lean();
-    const grades = {};
-    if (record?.grades instanceof Map)
-      record.grades.forEach((v, k) => {
-        grades[k] = v;
-      });
-    else if (record?.grades)
-      Object.entries(record.grades).forEach(([k, v]) => {
-        if (!k.startsWith("$")) grades[k] = v;
-      });
-    res.json({ grades, subjects });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Посещаемость ребёнка за месяц (родитель)
-app.get("/api/webapp/parent/attendance", async (req, res) => {
-  try {
-    const { inn, month } = req.query;
-    const stu = await Student.findOne({ inn })
-      .populate("group", "shiftStart")
-      .select("fio skudDaily attendance group");
-    if (!stu) return res.status(404).json({ error: "Не найдено" });
-    const [yr, mn] = (month || "").split("-").map(Number);
-    if (!yr || !mn) return res.status(400).json({ error: "Invalid month" });
-    const dim = new Date(yr, mn, 0).getDate();
-    const days = [];
-    for (let d = 1; d <= dim; d++) days.push(`${yr}-${pad2(mn)}-${pad2(d)}`);
-    const [sH, sM] = (stu.group?.shiftStart || "09:30").split(":").map(Number);
-    const stm = sH * 60 + sM;
-    const attMap = {};
-    for (const day of days) {
-      const skud = stu.skudDaily?.find((r) => r.date === day);
-      const att = stu.attendance?.find((a) => a.date === day);
-      let status = "a",
-        time = null;
-      if (skud?.present) {
-        if (skud.firstIn) {
-          const dt = new Date(skud.firstIn);
-          if (!isNaN(dt)) {
-            const tm = dt.getUTCHours() * 60 + dt.getUTCMinutes() + 360;
-            const h = Math.floor(tm / 60) % 24,
-              m = tm % 60;
-            time = `${pad2(h)}:${pad2(m)}`;
-            status = h * 60 + m > stm ? "l" : "p";
-          } else {
-            status = "p";
-          }
-        } else {
-          status = "p";
-        }
-      } else if (att?.present) {
-        status = "p";
-      }
-      attMap[day] = { status, time };
-    }
-    res.json({ fio: stu.fio, attMap });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Глобальная статистика сегодня (только admin)
-app.get("/api/webapp/stats", async (req, res) => {
-  try {
-    const sub = await resolveWebappUser(req);
-    if (!sub || sub.role !== "admin")
-      return res.status(403).json({ error: "Admin only" });
-    const tdk = getTodayKey();
-    const allGroups = await Group.find().sort({ name: 1 });
-    let totalAll = 0,
-      presentAll = 0,
-      absentAll = 0,
-      lateAll = 0;
-    const groups = await Promise.all(
-      allGroups.map(async (g) => {
-        const [sH, sM] = (g.shiftStart || "09:30").split(":").map(Number);
-        const stm = sH * 60 + sM;
-        const students = await Student.find({ group: g._id }).select(
-          "skudDaily attendance",
-        );
-        let present = 0,
-          absent = 0,
-          late = 0;
-        for (const stu of students) {
-          const skud = stu.skudDaily?.find((r) => r.date === tdk);
-          const att = stu.attendance?.find((a) => a.date === tdk);
-          let here = false,
-            isLate = false;
-          if (skud) {
-            here = skud.present;
-            if (skud.firstIn) {
-              const dt = new Date(skud.firstIn);
-              if (!isNaN(dt)) {
-                const tm = dt.getUTCHours() * 60 + dt.getUTCMinutes() + 360;
-                const h = Math.floor(tm / 60) % 24,
-                  m = tm % 60;
-                isLate = h * 60 + m > stm;
-              }
-            }
-          } else if (att) {
-            here = att.present;
-          }
-          if (here && isLate) {
-            present++;
-            late++;
-          } else if (here) {
-            present++;
-          } else {
-            absent++;
-          }
-        }
-        totalAll += students.length;
-        presentAll += present;
-        absentAll += absent;
-        lateAll += late;
-        return {
-          id: String(g._id),
-          name: g.name,
-          present,
-          absent,
-          late,
-          total: students.length,
-        };
-      }),
-    );
-    res.json({
-      total: totalAll,
-      present: presentAll,
-      absent: absentAll,
-      late: lateAll,
-      groups,
-    });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Подать Mini App через бота — обработка кнопки
-app.get("/api/webapp/open", (req, res) => {
-  res.sendFile(require("path").join(__dirname, "public", "miniapp.html"));
-});
-
-app.listen(3000, () => console.log("Server running on http://localhost:3000"));
+const PORT = Number(process.env.PORT) || 3000;
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
