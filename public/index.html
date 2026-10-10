@@ -1460,93 +1460,51 @@
       <div id="section-curators" class="section">
         <p class="page-title">Доступ кураторов</p>
         <p class="page-sub">
-          Назначайте куратору одну или несколько групп и выдавайте отдельный
-          вход в систему
+          Создавайте входы кураторам, меняйте их группы, логин и пароль
         </p>
         <div class="row g-3">
           <div class="col-12 col-md-5">
-            <div class="card-st">
+            <div class="card-st" id="cur-form-card">
+              <div class="d-flex justify-content-between align-items-center mb-3 gap-2">
+                <h6 class="fw-bold m-0" id="cur-form-title" style="font-size: 14px">➕ Новый куратор</h6>
+                <button class="btn btn-sm btn-light" id="cur-cancel" style="display: none" onclick="resetCuratorForm()">Отмена</button>
+              </div>
               <div class="mb-3">
-                <div
-                  class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2"
-                >
-                  <label class="form-label fw-bold small m-0"
-                    >Группы куратора</label
-                  >
+                <label class="form-label fw-bold small" for="cur-fullname">ФИО куратора</label>
+                <input id="cur-fullname" class="form-control" placeholder="Например: Иванова А.А." autocomplete="off" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold small" for="cur-username">Логин</label>
+                <input id="cur-username" class="form-control" placeholder="латиница, например ivanova_it21" autocomplete="off" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold small" for="cur-password" id="cur-password-label">Пароль</label>
+                <div class="input-group">
+                  <input id="cur-password" class="form-control" type="password" placeholder="минимум 6 символов" autocomplete="new-password" />
+                  <button class="btn btn-outline-secondary" type="button" title="Показать/скрыть" onclick="toggleCurPass()">👁</button>
+                  <button class="btn btn-outline-primary" type="button" title="Сгенерировать пароль" onclick="genCurPass()">🎲</button>
+                </div>
+                <div class="small text-muted mt-1" id="cur-password-hint">Сгенерируйте или придумайте пароль.</div>
+              </div>
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-2">
+                  <label class="form-label fw-bold small m-0">Группы куратора</label>
                   <div class="d-flex gap-2">
-                    <button
-                      class="btn btn-sm btn-outline-primary"
-                      type="button"
-                      onclick="toggleCuratorGroups(true)"
-                    >
-                      Выбрать все
-                    </button>
-                    <button
-                      class="btn btn-sm btn-outline-secondary"
-                      type="button"
-                      onclick="toggleCuratorGroups(false)"
-                    >
-                      Очистить
-                    </button>
+                    <input id="cur-group-filter" class="form-control form-control-sm" style="width: 120px" placeholder="Поиск" oninput="filterCuratorGroups()" />
+                    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="toggleCuratorGroups(false)">Снять все</button>
                   </div>
                 </div>
-                <div id="cur-group-meta" class="small text-muted mb-2">
-                  Выбрано 0 групп
-                </div>
+                <div id="cur-group-meta" class="small text-muted mb-2">Выбрано 0 групп</div>
                 <div
                   id="cur-group-list"
                   class="border rounded-4 p-2"
-                  style="
-                    max-height: 320px;
-                    overflow: auto;
-                    background: linear-gradient(
-                      180deg,
-                      #ffffff 0%,
-                      #f8fbff 100%
-                    );
-                    display: grid;
-                    gap: 8px;
-                  "
+                  style="max-height: 300px; overflow: auto; display: grid; gap: 6px; background: #f8fbff"
                 ></div>
-                <div class="small text-muted mt-2">
-                  Можно выбрать несколько групп.
-                </div>
               </div>
-              <div class="mb-3">
-                <label class="form-label fw-bold small">ФИО куратора</label
-                ><input
-                  id="cur-fullname"
-                  class="form-control"
-                  placeholder="Например: Иванова А.А."
-                />
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-bold small">Логин</label
-                ><input
-                  id="cur-username"
-                  class="form-control"
-                  placeholder="Например: web10_curator"
-                />
-              </div>
-              <div class="mb-4">
-                <label class="form-label fw-bold small">Пароль</label
-                ><input
-                  id="cur-password"
-                  class="form-control"
-                  type="password"
-                  placeholder="Введите пароль"
-                />
-              </div>
-              <button
-                class="btn btn-primary w-100 fw-bold py-2"
-                style="border-radius: 12px"
-                onclick="saveCuratorAccess()"
-              >
-                🔐 Сохранить доступ
+              <button class="btn btn-primary w-100 fw-bold py-2" style="border-radius: 12px" id="cur-save" onclick="saveCuratorAccess()">
+                🔐 Создать доступ
               </button>
-              <div class="small text-muted mt-2">
-                Куратор после входа попадёт на страницу «Сводная ведомость».
-              </div>
+              <div id="cur-creds" class="mt-3" style="display: none"></div>
             </div>
           </div>
           <div class="col-12 col-md-7">
@@ -1578,8 +1536,7 @@
                   <thead class="table-light">
                     <tr>
                       <th>Куратор</th>
-                      <th>Логин</th>
-                      <th>Группа</th>
+                      <th>Группы</th>
                       <th class="text-end">Действия</th>
                     </tr>
                   </thead>
@@ -2358,102 +2315,219 @@
       }
 
       /* ── Curators ── */
+      let curatorList = [],
+        editingCuratorId = null;
+      const escC = (v) =>
+        String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+      async function curApi(url, method = "GET", body) {
+        const res = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: body ? JSON.stringify(body) : undefined,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Ошибка");
+        return data;
+      }
       async function loadCuratorsSection() {
-        const [groupsRes, curatorsRes] = await Promise.all([
-          fetch("/api/admin/groups-list"),
-          fetch("/api/admin/curators"),
-        ]);
-        curatorGroups = await groupsRes.json();
-        const curators = await curatorsRes.json();
-        document.getElementById("cur-group-list").innerHTML =
-          curatorGroups.length
-            ? curatorGroups
-                .map(
-                  (g) =>
-                    `<label class="d-flex align-items-center justify-content-between gap-3 px-3 py-2 rounded-4 mb-2 curator-group-option" style="cursor:pointer;background:#ffffff;border:1px solid #dbe7f5;box-shadow:0 6px 18px rgba(15,23,42,.04)"><div><div class="fw-bold text-dark">${g.name}</div><div class="small text-muted">Доступ к данным группы</div></div><input type="checkbox" class="form-check-input m-0 curator-group-check" value="${g._id}" onchange="updateCuratorGroupSelectionInfo()"></label>`,
-                )
-                .join("")
-            : `<div class="text-muted small px-2 py-2">Группы не найдены</div>`;
-        updateCuratorGroupSelectionInfo();
-        document.getElementById("curators-body").innerHTML = curators.length
-          ? curators
+        try {
+          const [groups, curators] = await Promise.all([
+            curApi("/api/admin/groups-list"),
+            curApi("/api/admin/curators"),
+          ]);
+          curatorGroups = groups.filter((g) => !g.kind || g.kind === "students");
+          curatorList = curators;
+        } catch (e) {
+          return toast(e.message, "error");
+        }
+        renderCuratorGroupList(editingCuratorId ? curatorList.find((c) => c._id === editingCuratorId)?.groupIds || [] : []);
+        renderCuratorTable();
+      }
+      function renderCuratorGroupList(checked) {
+        const busy = {};
+        curatorList.forEach((c) => {
+          if (c._id === editingCuratorId) return;
+          c.groupIds.forEach((g) => (busy[g] = (busy[g] || []).concat(c.fullName || c.username)));
+        });
+        document.getElementById("cur-group-list").innerHTML = curatorGroups.length
+          ? curatorGroups
               .map(
-                (c) =>
-                  `<tr><td><div class="fw-bold">${c.fullName || "—"}</div></td><td><code>${c.username}</code></td><td>${(c.groupNames || []).length ? c.groupNames.map((name) => `<span class="badge bg-primary-subtle text-primary border border-primary-subtle me-1 mb-1">${name}</span>`).join("") : "—"}</td><td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="deleteCurator('${c._id}')">Удалить</button></td></tr>`,
+                (g) =>
+                  `<label class="d-flex align-items-center justify-content-between gap-3 px-3 py-2 rounded-3 curator-group-option" data-name="${escC(g.name.toLowerCase())}" style="cursor:pointer;background:#fff;border:1px solid #dbe7f5"><div><div class="fw-bold text-dark">${escC(g.name)}</div><div class="small text-muted">${busy[g._id] ? "Уже у: " + escC(busy[g._id].join(", ")) : escC(g.profRu || "Куратор не назначен")}</div></div><input type="checkbox" class="form-check-input m-0 curator-group-check" value="${g._id}" ${checked.includes(g._id) ? "checked" : ""} onchange="updateCuratorGroupSelectionInfo()"></label>`,
               )
               .join("")
-          : `<tr><td colspan="4" class="text-center text-muted py-4">Доступы ещё не созданы</td></tr>`;
-      }
-      function updateCuratorGroupSelectionInfo() {
-        const selected = document.querySelectorAll(
-          ".curator-group-check:checked",
-        ).length;
-        const total = document.querySelectorAll(".curator-group-check").length;
-        const meta = document.getElementById("cur-group-meta");
-        if (meta)
-          meta.textContent = total
-            ? `Выбрано ${selected} из ${total} групп`
-            : "Группы пока не добавлены";
-      }
-      function toggleCuratorGroups(selectAll) {
-        document.querySelectorAll(".curator-group-check").forEach((input) => {
-          input.checked = selectAll;
-        });
+          : `<div class="text-muted small px-2 py-2">Группы не найдены</div>`;
+        filterCuratorGroups();
         updateCuratorGroupSelectionInfo();
       }
+      function filterCuratorGroups() {
+        const q = (document.getElementById("cur-group-filter")?.value || "").trim().toLowerCase();
+        document.querySelectorAll(".curator-group-option").forEach((el) => {
+          el.style.display = !q || el.dataset.name.includes(q) || el.querySelector("input").checked ? "" : "none";
+        });
+      }
+      function renderCuratorTable() {
+        document.getElementById("curators-body").innerHTML = curatorList.length
+          ? curatorList
+              .map(
+                (c) => `<tr${c._id === editingCuratorId ? ' class="table-primary"' : ""}>
+                  <td><div class="fw-bold">${escC(c.fullName || "—")}</div><div class="small"><code>${escC(c.username)}</code>${c.telegram ? ' <span class="badge bg-info-subtle text-info border border-info-subtle">Telegram</span>' : ""}</div></td>
+                  <td>${
+                    c.groupNames.length
+                      ? c.groupNames
+                          .map(
+                            (name, i) =>
+                              `<span class="badge bg-primary-subtle text-primary border border-primary-subtle me-1 mb-1">${escC(name)} <button type="button" class="btn-close" style="font-size:8px;vertical-align:middle" aria-label="Убрать группу ${escC(name)}" title="Убрать группу" onclick="removeCuratorGroup('${c._id}','${c.groupIds[i]}')"></button></span>`,
+                          )
+                          .join("")
+                      : '<span class="badge bg-warning-subtle text-warning border border-warning-subtle">нет групп — вход закрыт</span>'
+                  }</td>
+                  <td class="text-end" style="white-space:nowrap">
+                    <button class="btn btn-sm btn-outline-primary" onclick="editCurator('${c._id}')">Изменить</button>
+                    <button class="btn btn-sm btn-outline-warning" title="Выйти на всех устройствах и отвязать Telegram" onclick="logoutCurator('${c._id}')">🚪</button>
+                    <button class="btn btn-sm btn-outline-danger" title="Удалить доступ" onclick="deleteCurator('${c._id}')">🗑</button>
+                  </td></tr>`,
+              )
+              .join("")
+          : `<tr><td colspan="3" class="text-center text-muted py-4">Доступы ещё не созданы</td></tr>`;
+      }
+      function updateCuratorGroupSelectionInfo() {
+        const n = document.querySelectorAll(".curator-group-check:checked").length;
+        document.getElementById("cur-group-meta").textContent = n
+          ? `Выбрано групп: ${n}`
+          : editingCuratorId
+            ? "Группы не выбраны — куратор не сможет войти"
+            : "Выберите одну или несколько групп";
+      }
+      function toggleCuratorGroups(selectAll) {
+        document.querySelectorAll(".curator-group-check").forEach((input) => (input.checked = selectAll));
+        updateCuratorGroupSelectionInfo();
+        filterCuratorGroups();
+      }
+      function toggleCurPass() {
+        const i = document.getElementById("cur-password");
+        i.type = i.type === "password" ? "text" : "password";
+      }
+      function genCurPass() {
+        const abc = "abcdefghjkmnpqrstuvwxyz23456789";
+        const arr = new Uint32Array(10);
+        crypto.getRandomValues(arr);
+        const p = [...arr].map((n) => abc[n % abc.length]).join("");
+        const i = document.getElementById("cur-password");
+        i.value = p;
+        i.type = "text";
+      }
+      function resetCuratorForm() {
+        editingCuratorId = null;
+        ["cur-fullname", "cur-username", "cur-password", "cur-group-filter"].forEach((id) => (document.getElementById(id).value = ""));
+        document.getElementById("cur-password").type = "password";
+        document.getElementById("cur-form-title").textContent = "➕ Новый куратор";
+        document.getElementById("cur-save").textContent = "🔐 Создать доступ";
+        document.getElementById("cur-cancel").style.display = "none";
+        document.getElementById("cur-password-label").textContent = "Пароль";
+        document.getElementById("cur-password-hint").textContent = "Сгенерируйте или придумайте пароль.";
+        renderCuratorGroupList([]);
+        renderCuratorTable();
+      }
+      function editCurator(id) {
+        const c = curatorList.find((x) => x._id === id);
+        if (!c) return;
+        editingCuratorId = id;
+        document.getElementById("cur-fullname").value = c.fullName || "";
+        document.getElementById("cur-username").value = c.username;
+        document.getElementById("cur-password").value = "";
+        document.getElementById("cur-form-title").textContent = "✏️ " + (c.fullName || c.username);
+        document.getElementById("cur-save").textContent = "💾 Сохранить изменения";
+        document.getElementById("cur-cancel").style.display = "";
+        document.getElementById("cur-password-label").textContent = "Новый пароль";
+        document.getElementById("cur-password-hint").textContent =
+          "Оставьте пустым, чтобы не менять. После смены логина или пароля куратору нужно войти заново.";
+        document.getElementById("cur-creds").style.display = "none";
+        renderCuratorGroupList(c.groupIds);
+        renderCuratorTable();
+        document.getElementById("cur-form-card").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      function showCuratorCreds(username, password) {
+        const box = document.getElementById("cur-creds");
+        const text = `Вход в систему ПЛ №3\nСайт: ${location.origin}/login\nЛогин: ${username}\nПароль: ${password}`;
+        box.innerHTML = `<div class="alert alert-success small mb-0"><div class="fw-bold mb-1">Передайте куратору:</div><pre class="mb-2" style="white-space:pre-wrap;font-size:12px">${escC(text)}</pre><button class="btn btn-sm btn-success" id="cur-copy">📋 Скопировать</button></div>`;
+        box.style.display = "";
+        document.getElementById("cur-copy").onclick = async () => {
+          try {
+            await navigator.clipboard.writeText(text);
+            toast("Скопировано");
+          } catch {
+            toast("Не удалось скопировать", "error");
+          }
+        };
+      }
       async function saveCuratorAccess() {
-        const groupIds = [
-          ...document.querySelectorAll(".curator-group-check:checked"),
-        ].map((input) => input.value);
+        const groupIds = [...document.querySelectorAll(".curator-group-check:checked")].map((i) => i.value);
         const fullName = document.getElementById("cur-fullname").value.trim();
         const username = document.getElementById("cur-username").value.trim();
-        const password = document.getElementById("cur-password").value.trim();
-        if (!groupIds.length || !username || !password) {
-          toast("Выберите группы, логин и пароль", "error");
-          return;
-        }
+        const password = document.getElementById("cur-password").value;
+        if (!username) return toast("Укажите логин", "error");
+        if (!editingCuratorId && (!password || !groupIds.length)) return toast("Нужны пароль и хотя бы одна группа", "error");
         showLoader();
         try {
-          const res = await fetch("/api/admin/curators", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ groupIds, fullName, username, password }),
-          });
-          const data = await res.json();
-          if (!res.ok) {
-            toast(data.error || "Не удалось сохранить доступ", "error");
-            return;
+          if (editingCuratorId) {
+            const body = { fullName, username, groupIds };
+            if (password) body.password = password;
+            const r = await curApi(`/api/admin/curators/${editingCuratorId}`, "PUT", body);
+            toast(r.loggedOut ? "Сохранено. Куратору нужно войти заново" : "Изменения сохранены");
+            const creds = password ? [username, password] : null;
+            resetCuratorForm();
+            if (creds) showCuratorCreds(...creds);
+          } else {
+            await curApi("/api/admin/curators", "POST", { fullName, username, password, groupIds });
+            toast("Доступ создан");
+            resetCuratorForm();
+            showCuratorCreds(username, password);
           }
-          document.getElementById("cur-fullname").value = "";
-          document.getElementById("cur-username").value = "";
-          document.getElementById("cur-password").value = "";
-          toggleCuratorGroups(false);
-          toast("Доступ куратора сохранён");
-          loadCuratorsSection();
+          await loadCuratorsSection();
         } catch (e) {
-          toast("Ошибка соединения", "error");
+          toast(e.message, "error");
         } finally {
           hideLoader();
         }
       }
+      async function removeCuratorGroup(id, gid) {
+        const c = curatorList.find((x) => x._id === id);
+        if (!c) return;
+        try {
+          await curApi(`/api/admin/curators/${id}`, "PUT", { groupIds: c.groupIds.filter((g) => g !== gid) });
+          toast("Группа убрана");
+          await loadCuratorsSection();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      }
+      function logoutCurator(id) {
+        showConfirm(
+          "Выйти на всех устройствах?",
+          "Куратор выйдет с сайта во всех браузерах, Telegram-бот будет отвязан. Логин и пароль не меняются.",
+          async () => {
+            try {
+              const r = await curApi(`/api/admin/curators/${id}/logout`, "POST");
+              toast(r.telegramUnlinked ? `Сеансы завершены, Telegram отвязан (${r.telegramUnlinked})` : "Сеансы завершены");
+              await loadCuratorsSection();
+            } catch (e) {
+              toast(e.message, "error");
+            }
+          },
+          "🚪",
+          "Выйти везде",
+          "btn-warning",
+        );
+      }
       async function cleanupCurators() {
         showLoader();
         try {
-          const res = await fetch("/api/admin/curators/cleanup", {
-            method: "DELETE",
-          });
-          const data = await res.json();
-          if (res.ok) {
-            toast(
-              data.deleted > 0
-                ? `🧹 Удалено дублей: ${data.deleted}`
-                : "Дублей не найдено",
-              "success",
-            );
-            loadCuratorsSection();
-          } else toast(data.error || "Ошибка", "error");
+          const data = await curApi("/api/admin/curators/cleanup", "DELETE");
+          toast(data.deleted > 0 ? `🧹 Удалено дублей: ${data.deleted}` : "Дублей не найдено", "success");
+          loadCuratorsSection();
         } catch (e) {
-          toast("Ошибка соединения", "error");
+          toast(e.message, "error");
         } finally {
           hideLoader();
         }
@@ -2461,17 +2535,19 @@
       function deleteCurator(id) {
         showConfirm(
           "Удалить доступ куратора?",
-          "Куратор больше не сможет входить в сводную ведомость.",
+          "Куратор больше не сможет входить на сайт и в бот.",
           async () => {
             showLoader();
-            const res = await fetch(`/api/admin/curators/${id}`, {
-              method: "DELETE",
-            });
-            hideLoader();
-            if (res.ok) {
+            try {
+              await curApi(`/api/admin/curators/${id}`, "DELETE");
               toast("Доступ удалён");
+              if (editingCuratorId === id) resetCuratorForm();
               loadCuratorsSection();
-            } else toast("Не удалось удалить доступ", "error");
+            } catch (e) {
+              toast(e.message, "error");
+            } finally {
+              hideLoader();
+            }
           },
           "🔐",
           "Удалить",

@@ -96,7 +96,12 @@ function safeEq(a, b) {
   return crypto.timingSafeEqual(h(a), h(b));
 }
 
+// Проверенная сессия запроса (см. refreshSession ниже) имеет приоритет над cookie
 function getSession(req) {
+  if (req._sess !== undefined) return req._sess;
+  return readSessionCookie(req);
+}
+function readSessionCookie(req) {
   const raw = getCookie(req, AUTH_COOKIE);
   if (!raw) return null;
   try {
@@ -178,6 +183,47 @@ function requireGroupAccess(param = "id") {
   };
 }
 
+// Сессии кураторов сверяются с базой: изменения групп действуют сразу,
+// а после смены логина/пароля, «выйти везде» или удаления куратора старый вход перестаёт работать.
+const curatorCache = new Map(); // id → { at, doc }
+const CURATOR_CACHE_MS = 15 * 1000;
+function forgetCuratorCache(id) {
+  if (id) curatorCache.delete(String(id));
+  else curatorCache.clear();
+}
+async function loadCuratorCached(id) {
+  const hit = curatorCache.get(String(id));
+  if (hit && Date.now() - hit.at < CURATOR_CACHE_MS) return hit.doc;
+  const doc = mongoose.Types.ObjectId.isValid(id)
+    ? await Curator.findById(id).populate("groups", "name").lean()
+    : null;
+  curatorCache.set(String(id), { at: Date.now(), doc });
+  return doc;
+}
+app.use(async (req, res, next) => {
+  const s = readSessionCookie(req);
+  if (!s || s.role !== "curator") return next();
+  try {
+    const cur = await loadCuratorCached(s.curatorId);
+    if (!cur || (cur.sessionVer || 0) !== (s.v || 0) || cur.username !== s.username) {
+      req._sess = null;
+      res.clearCookie(AUTH_COOKIE);
+      return next();
+    }
+    const groups = (cur.groups || []).filter(Boolean);
+    req._sess = {
+      ...s,
+      groupIds: groups.map((g) => String(g._id)),
+      groupId: groups[0] ? String(groups[0]._id) : null,
+      groupNames: groups.map((g) => g.name),
+      groupName: groups[0]?.name || "",
+    };
+  } catch (e) {
+    // база недоступна — пускаем по cookie, как раньше
+  }
+  next();
+});
+
 app.get("/login", (req, res) => {
   const s = getSession(req);
   if (s?.role === "admin") return res.redirect("/");
@@ -235,6 +281,7 @@ app.post("/login", (req, res) => {
       }));
       setAuthCookie(res, {
         role: "curator",
+        v: curator.sessionVer || 0,
         username: curator.username,
         curatorId: String(curator._id),
         groupIds: groups.map((g) => g.id),
@@ -454,6 +501,8 @@ const Curator = mongoose.model(
       passwordHash: String,
       fullName: String,
       groups: [{ type: mongoose.Schema.Types.ObjectId, ref: "Group" }],
+      // растёт при смене логина/пароля или «выйти везде» — старые входы перестают действовать
+      sessionVer: { type: Number, default: 0 },
     },
     { timestamps: true, autoIndex: false },
   ),
@@ -486,6 +535,7 @@ let notifyParents = async () => {};
 let notifyAdmins = async () => {};
 let notifyCuratorsOfGroup = async () => {};
 let notifyAll = async () => {};
+let forgetBotCurator = () => {};
 
 async function notifyTg(message) {
   try {
@@ -1156,126 +1206,20 @@ app.put(
   },
 );
 
-app.get("/api/admin/curators", requireAdmin, async (req, res) => {
-  try {
-    const curators = await Curator.find()
-      .populate("groups", "name")
-      .sort({ createdAt: -1 });
-    res.json(
-      curators.map((c) => ({
-        _id: c._id,
-        username: c.username,
-        fullName: c.fullName || "",
-        groupIds: c.groups?.map((g) => String(g._id)) || [],
-        groupNames: c.groups?.map((g) => g.name) || [],
-        createdAt: c.createdAt,
-      })),
-    );
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-app.post("/api/admin/curators", requireAdmin, async (req, res) => {
-  try {
-    const username = String(req.body.username || "").trim();
-    const password = String(req.body.password || "").trim();
-    const fullName = String(req.body.fullName || "").trim();
-    const rawCurId = req.body.curatorId;
-    const curatorId =
-      rawCurId &&
-      String(rawCurId) !== "undefined" &&
-      String(rawCurId) !== "null"
-        ? String(rawCurId).trim()
-        : "";
-    const groupIds = (
-      Array.isArray(req.body.groupIds) ? req.body.groupIds : [req.body.groupId]
-    )
-      .map((id) => String(id || "").trim())
-      .filter(Boolean);
-
-    if (!username || !password || !groupIds.length)
-      return res
-        .status(400)
-        .json({ error: "Логин, пароль и группа обязательны" });
-
-    const groups = await Group.find({ _id: { $in: groupIds } }).select("name");
-    if (!groups.length)
-      return res.status(404).json({ error: "Группы не найдены" });
-
-    const groupObjectIds = groups.map((g) => g._id);
-    const passwordHash = hashPassword(password);
-
-    let finalDoc;
-
-    if (curatorId && mongoose.Types.ObjectId.isValid(curatorId)) {
-      // ── Редактирование по ID ──
-      finalDoc = await Curator.findByIdAndUpdate(
-        curatorId,
-        { $set: { username, passwordHash, fullName, groups: groupObjectIds } },
-        { new: true, runValidators: false },
-      );
-      if (!finalDoc)
-        return res.status(404).json({ error: "Куратор не найден" });
-    } else {
-      // ── Создание или обновление по username ──
-      // Используем нативный драйвер чтобы избежать unique index errors от mongoose
-      const col = Curator.collection;
-      await col.updateOne(
-        { username }, // фильтр
-        {
-          $set: {
-            username,
-            passwordHash,
-            fullName,
-            groups: groupObjectIds,
-            updatedAt: new Date(),
-          },
-          $setOnInsert: { createdAt: new Date() },
-        },
-        { upsert: true }, // создать если нет, обновить если есть
-      );
-      finalDoc = await Curator.findOne({ username });
-    }
-
-    res.json({
-      ok: true,
-      curator: {
-        _id: finalDoc._id,
-        username: finalDoc.username,
-        fullName: finalDoc.fullName || "",
-        groupIds: groups.map((g) => String(g._id)),
-        groupNames: groups.map((g) => g.name),
-      },
-    });
-  } catch (e) {
-    console.error("curator error:", e.code, e.message);
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Очистить дублирующихся кураторов (оставить последнего по дате)
-app.delete("/api/admin/curators/cleanup", requireAdmin, async (req, res) => {
-  try {
-    const all = await Curator.find().sort({ createdAt: 1 });
-    const seen = new Map();
-    const toDelete = [];
-    for (const c of all) {
-      if (seen.has(c.username)) toDelete.push(c._id);
-      else seen.set(c.username, c._id);
-    }
-    if (toDelete.length) await Curator.deleteMany({ _id: { $in: toDelete } });
-    res.json({ ok: true, deleted: toDelete.length });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-app.delete("/api/admin/curators/:id", requireAdmin, async (req, res) => {
-  try {
-    await Curator.findByIdAndDelete(req.params.id);
-    res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+/* === ДОСТУП КУРАТОРОВ (curators.js) === */
+require("./curators")(app, {
+  Curator,
+  Group,
+  TgSub,
+  hashPassword,
+  adminLogin: ADMIN_LOGIN,
+  requireAdmin,
+  onChange: (id) => {
+    forgetCuratorCache(id);
+    try {
+      forgetBotCurator?.(String(id));
+    } catch {}
+  },
 });
 
 app.get(
@@ -1764,13 +1708,15 @@ app.get("/api/admin/curator-link/:id", requireAdmin, async (req, res) => {
     if (!cur) return res.status(404).json({ error: "Куратор не найден" });
     const curId = String(cur._id);
     // HMAC подпись — защита от подбора
+    if (!process.env.ADMIN_TG_SECRET || !process.env.BOT_USERNAME)
+      return res.status(500).json({ error: "Не заданы ADMIN_TG_SECRET или BOT_USERNAME в настройках сервера" });
     const hmac = require("crypto")
-      .createHmac("sha256", requireEnv("ADMIN_TG_SECRET"))
+      .createHmac("sha256", process.env.ADMIN_TG_SECRET)
       .update(curId)
       .digest("hex")
       .slice(0, 8);
     const token = `${curId}_${hmac}`;
-    const botUser = requireEnv("BOT_USERNAME");
+    const botUser = process.env.BOT_USERNAME;
     const link = `https://t.me/${botUser}?start=curator_${token}`;
     res.json({
       ok: true,
@@ -2298,6 +2244,7 @@ notifyAll = _notifyAll;
 notifyParents = _notifyParents;
 notifyAdmins = _notifyAdmins;
 notifyCuratorsOfGroup = _notifyCurators;
+forgetBotCurator = _botExports.forgetCurator;
 
 /* ================================================================
    TELEGRAM MINI APP API — /api/webapp/* (webapp.js)
