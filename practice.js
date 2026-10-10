@@ -103,7 +103,7 @@ const DEFAULT_SETTINGS = {
   directorGen: "Белялова Ш.А.", // в родительном падеже: «в лице директора … »
   lyceumAddress: "ул. Раззакова, 62",
   lyceumPhone: "0312 62-49-12",
-  city: "г. Кант",
+  city: "г. Бишкек",
   hoursByCourse: { 1: 6, 2: 8, 3: 8 },
   tbDefault: "Инструктаж по ТБ и ППМ при работе с электрооборудованием",
   phrases: {
