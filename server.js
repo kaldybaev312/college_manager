@@ -877,9 +877,9 @@ app.get("/summary.html", requireAuth, (req, res) =>
 app.get("/skud-register.html", requireAuth, requireAdmin, (req, res) =>
   res.sendFile(path.join(__dirname, "public", "skud-register.html")),
 );
-app.get(["/practice", "/practice.html"], requireAuth, (req, res) =>
-  res.sendFile(path.join(__dirname, "public", "practice.html")),
-);
+// Производственная практика (страницы /practice и /p, API /api/practice и /api/p).
+// Подключаем до express.static, чтобы /practice.html открывался только после входа.
+require("./practice")(app, { Student, Group, Curator, getSession, getTodayKey });
 app.use("/api/admin", requireAuth);
 app.use(express.static("public"));
 require("./skud-register")(app, {

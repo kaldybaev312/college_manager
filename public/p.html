@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Дневник практики ПЛ №3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ink:#1F3A93; --ink-soft:#E8EDF9; --text:#262A33; --muted:#667085; --line:#DCE2EC;
+  --bg:#F2F4F8; --card:#FFFFFF;
+  --ok:#2E7D4F; --ok-bg:#E3F1E8; --warn:#8A5A12; --warn-bg:#FBF0DC; --bad:#B42318; --bad-bg:#FBE9E7;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 var(--sans)}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px}
+header.top{background:var(--card);border-bottom:1px solid var(--line)}
+header.top .wrap{padding-block:12px}
+.brand{font-weight:600;color:var(--ink);font-size:16px}
+main{padding-block:16px 60px}
+h2{font-size:19px;margin:0;text-wrap:balance}
+h3{font-size:16px;margin:0}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.between{justify-content:space-between}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+label.f{display:block;font-size:13px}
+label.f>span{display:block;margin-bottom:4px;color:var(--muted)}
+input,select,textarea{width:100%;font:15px var(--sans);color:var(--text);background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+textarea{resize:vertical}
+:focus-visible{outline:2px solid #8FA8E8;outline-offset:1px}
+.btn{border:1px solid var(--ink);background:var(--ink);color:#fff;font:500 14px var(--sans);padding:9px 14px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.btn.sm{padding:6px 11px;font-size:13px}
+.btn.ghost{background:#fff;color:var(--ink);border-color:var(--line)}
+.btn.ok{background:var(--ok);border-color:var(--ok)}
+.btn.warn{background:#fff;color:var(--bad);border-color:#EBC0BA}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.linkbtn{border:0;background:none;padding:0;color:var(--ink);font:inherit;cursor:pointer;text-align:left}
+.chip{display:inline-block;font-size:12px;font-weight:500;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.st-draft{color:#5B6475;background:#EEF0F3}.st-sent{color:var(--warn);background:var(--warn-bg)}
+.st-ok{color:var(--ok);background:var(--ok-bg)}.st-back{color:var(--bad);background:var(--bad-bg)}
+.bar{height:8px;border-radius:9px;background:#E4E8F0;flex:1}
+.bar>i{display:block;height:8px;border-radius:9px;background:var(--ink)}
+.bar.full>i{background:var(--ok)}
+.num{font-variant-numeric:tabular-nums}
+.alert{border-left:3px solid var(--warn);background:var(--warn-bg);padding:8px 12px;border-radius:6px;font-size:14px}
+.alert.bad{border-color:var(--bad);background:var(--bad-bg)}
+.alert.good{border-color:var(--ok);background:var(--ok-bg)}
+.note{background:var(--ink-soft);padding:10px 12px;border-radius:8px;font-size:14px}
+.media{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.media figure{margin:0;position:relative;width:96px;height:96px;border-radius:8px;overflow:hidden;background:#E9ECF2}
+.media.big figure{width:150px;height:120px}
+.media img,.media video{width:100%;height:100%;object-fit:cover;display:block}
+.media figure button{position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;line-height:22px;font-size:16px}
+.upl{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);border:1px dashed #AFC0E6;border-radius:8px;padding:6px 11px;cursor:pointer;background:#fff}
+.grades{display:flex;gap:6px}
+.grades button{width:40px;height:40px;border-radius:8px;border:1px solid var(--line);background:#fff;font:600 15px var(--sans);cursor:pointer;color:var(--text)}
+.grades button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.pill{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 11px;font:13px var(--sans);cursor:pointer;color:var(--text)}
+.pill[aria-pressed="true"]{border-color:var(--ink);background:var(--ink-soft);color:var(--ink)}
+.slist button.item{width:100%;display:flex;align-items:center;gap:8px;border:0;border-top:1px solid var(--line);padding:12px 14px;background:transparent;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.slist button.item:first-child{border-top:0}
+.slist button.item[aria-current="true"]{background:#F2F5FC}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1E2433;color:#fff;padding:10px 16px;border-radius:9px;font-size:14px;z-index:99;max-width:calc(100% - 32px)}
+.toast.err{background:var(--bad)}
+details summary{cursor:pointer;color:var(--ink);font-size:14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="root"><p class="wrap" style="padding-block:20px">Загрузка…</p></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
+<script>
+const html = htm.bind(React.createElement);
+const { useState, useEffect } = React;
+const [, , KIND, TOKEN] = location.pathname.split("/"); // /p/s/<код> или /p/r/<код>
+
+/* ---------- API ---------- */
+async function api(path, opts = {}) {
+  const o = { headers: { Accept: "application/json" }, ...opts };
+  if (opts.body && !(opts.body instanceof FormData)) { o.body = JSON.stringify(opts.body); o.headers["Content-Type"] = "application/json"; }
+  const r = await fetch(path, o);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || (r.status === 413 ? "Файл слишком большой" : `Ошибка ${r.status}`));
+  return j;
+}
+async function download(path) {
+  const r = await fetch(path);
+  if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || `Ошибка ${r.status}`); }
+  const m = /filename\*=UTF-8''([^;]+)/.exec(r.headers.get("Content-Disposition") || "");
+  const url = URL.createObjectURL(await r.blob());
+  const a = document.createElement("a"); a.href = url; a.download = m ? decodeURIComponent(m[1]) : "document.docx"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+let tt;
+function toast(text, err) {
+  let el = document.getElementById("toast"); if (!el) { el = document.createElement("div"); el.id = "toast"; document.body.appendChild(el); }
+  el.className = "toast" + (err ? " err" : ""); el.textContent = text; el.hidden = false; clearTimeout(tt); tt = setTimeout(() => (el.hidden = true), err ? 5000 : 2500);
+}
+const run = (fn, okText) => async (...a) => { try { const r = await fn(...a); if (okText) toast(okText); return r; } catch (e) { toast(e.message, true); } };
+function compressImage(file, max = 1600) {
+  return new Promise((res) => {
+    const img = new Image(); const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement("canvas");
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob((b) => { URL.revokeObjectURL(url); res(b ? new File([b], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" }) : file); }, "image/jpeg", 0.82);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); res(file); }; img.src = url;
+  });
+}
+
+/* ---------- утилиты ---------- */
+const fmt = (d) => { if (!d) return ""; const [y, m, dd] = d.split("-"); return `${dd}.${m}.${y}`; };
+const WD = ["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
+const wd = (d) => WD[new Date(d + "T00:00").getDay()];
+const short = (fio = "") => { const [f, i, o] = fio.trim().split(/\s+/); return `${f || ""} ${i ? i[0] + "." : ""}${o ? o[0] + "." : ""}`.trim(); };
+const STATUS = { draft: ["Не заполнено", "st-draft"], sent: ["На проверке", "st-sent"], ok: ["Подтверждено", "st-ok"], back: ["На доработку", "st-back"], future: ["Ещё не наступил", "st-draft"] };
+const GW = { 2: "неудовл.", 3: "удовл.", 4: "хорошо", 5: "отлично" };
+
+const Btn = ({ kind = "", sm, children, ...rest }) => html`<button className=${`btn ${kind} ${sm ? "sm" : ""}`} ...${rest}>${children}</button>`;
+const Chip = ({ k, extra }) => { const [t, c] = STATUS[k] || STATUS.draft; return html`<span className=${"chip " + c}>${t}${extra || ""}</span>`; };
+const Field = ({ label, children }) => html`<label className="f"><span>${label}</span>${children}</label>`;
+const Progress = ({ v, t }) => { const pct = t ? Math.round((v / t) * 100) : 0; return html`<div className="row" style=${{ flexWrap: "nowrap" }}><div className=${"bar" + (pct === 100 ? " full" : "")}><i style=${{ width: pct + "%" }}></i></div><span className="small muted num">${v}/${t}</span></div>`; };
+const Grades = ({ value, onChange, list = [5, 4, 3, 2] }) => html`<div className="grades">${list.map((g) => html`<button key=${g} aria-pressed=${value === g} onClick=${() => onChange(g)}>${g}</button>`)}</div>`;
+const mediaUrl = (m) => `/api/p/media/${m.fileId}?t=${encodeURIComponent(TOKEN)}`;
+function Media({ list, onRemove, big }) {
+  if (!list?.length) return null;
+  return html`<div className=${"media" + (big ? " big" : "")}>${list.map((m) => html`<figure key=${m.fileId} title=${m.name}>
+    ${m.type === "video" ? html`<video src=${mediaUrl(m)} controls preload="metadata" playsInline></video>` : html`<a href=${mediaUrl(m)} target="_blank" rel="noopener"><img src=${mediaUrl(m)} alt=${m.name || "фото"} loading="lazy" /></a>`}
+    ${onRemove && html`<button aria-label="Удалить файл" onClick=${() => onRemove(m)}>×</button>`}</figure>`)}</div>`;
+}
+function Header({ sub }) {
+  return html`<header className="top"><div className="wrap"><div className="brand">Производственная практика · ПЛ №3</div>${sub && html`<div className="small muted">${sub}</div>`}</div></header>`;
+}
+
+/* =================== ВХОД ПО ИНН =================== */
+function Login() {
+  const [inn, setInn] = useState(""); const [year, setYear] = useState(""); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
+  let saved = null; try { saved = localStorage.getItem("pl3-practice-token"); } catch (e) {}
+  const go = async (e) => {
+    e.preventDefault(); setErr(""); setBusy(true);
+    try { const r = await api("/api/p/login", { method: "POST", body: { inn, year } }); location.href = "/p/s/" + r.token; }
+    catch (x) { setErr(x.message); setBusy(false); }
+  };
+  return html`<${React.Fragment}><${Header} /><main className="wrap"><form className="card stack" onSubmit=${go}>
+    <h2>Вход в дневник практики</h2>
+    <p className="small muted" style=${{ margin: 0 }}>Обычно мастер п/о присылает личную ссылку. Если её нет — войдите по ИНН.</p>
+    ${saved && html`<a className="btn ghost" style=${{ textAlign: "center", textDecoration: "none" }} href=${"/p/s/" + saved}>Открыть мой дневник</a>`}
+    <${Field} label="ИНН (14 цифр)"><input id="inn" inputMode="numeric" autoComplete="off" value=${inn} onInput=${(e) => setInn(e.target.value)} /><//>
+    <${Field} label="Год рождения"><input id="year" inputMode="numeric" maxLength="4" placeholder="2008" value=${year} onInput=${(e) => setYear(e.target.value)} /><//>
+    ${err && html`<div className="alert bad">${err}</div>`}
+    <${Btn} disabled=${busy}>${busy ? "Проверяю…" : "Войти"}<//>
+  </form></main><//>`;
+}
+
+/* =================== СТУДЕНТ =================== */
+function DayRow({ d, e, today, onChange }) {
+  const [text, setText] = useState(e?.text || "");
+  const [dirty, setDirty] = useState(false); // пока студент печатает, ответы сервера (например, после загрузки фото) не затирают текст
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (!dirty) setText(e?.text || ""); }, [e?.text, e?.status]);
+  const future = d.date > today;
+  const st = future ? "future" : e?.status || "draft";
+  const locked = future || st === "ok" || st === "sent";
+  const base = `/api/p/s/${TOKEN}/entries/${d.date}`;
+  const save = (send) => run(async () => { const r = await api(base, { method: "PUT", body: { text, send } }); setDirty(false); onChange(r); }, send ? "Отправлено руководителю" : "Сохранено")();
+  const addFiles = async (files) => {
+    setBusy(true);
+    for (const f of files) {
+      try {
+        const isVid = f.type.startsWith("video/"); if (!isVid && !f.type.startsWith("image/")) { toast("Можно только фото или видео", true); continue; }
+        if (isVid && f.size > 30e6) { toast("Видео больше 30 МБ — снимите короче", true); continue; }
+        const fd = new FormData(); fd.append("file", isVid ? f : await compressImage(f));
+        onChange(await api(base + "/media", { method: "POST", body: fd }));
+      } catch (x) { toast(x.message, true); }
+    }
+    setBusy(false);
+  };
+  return html`<div className="card">
+    <div className="row between"><b className="num">${fmt(d.date)} <span className="muted" style=${{ fontWeight: 400 }}>${wd(d.date)}, ${d.hours} ч</span></b><${Chip} k=${st} extra=${st === "ok" && e?.grade ? ", оценка " + e.grade : ""} /></div>
+    ${st === "back" && e?.comment && html`<div className="alert bad" style=${{ marginTop: 8 }}>Руководитель: ${e.comment}</div>`}
+    ${locked ? (e?.text && html`<p style=${{ margin: "8px 0 0", whiteSpace: "pre-wrap" }}>${e.text}</p>`)
+      : html`<textarea id=${"t-" + d.date} rows="3" style=${{ marginTop: 8 }} value=${text} onInput=${(x) => { setText(x.target.value); setDirty(true); }} placeholder="Что выполняли в этот день"></textarea>`}
+    <${Media} list=${e?.media} onRemove=${locked ? null : run(async (m) => onChange(await api(`${base}/media/${m.fileId}`, { method: "DELETE" })))} />
+    ${!locked && html`<div className="row" style=${{ marginTop: 10 }}>
+      <label className="upl"><input type="file" accept="image/*,video/*" multiple hidden onChange=${(x) => { addFiles([...x.target.files]); x.target.value = ""; }} />${busy ? "Загружаю…" : "Фото или видео (необязательно)"}</label>
+      <span style=${{ flex: 1 }}></span>
+      <${Btn} sm kind="ghost" onClick=${() => save(false)}>Сохранить<//>
+      <${Btn} sm disabled=${!text.trim()} onClick=${() => save(true)}>Отправить руководителю<//></div>`}
+  </div>`;
+}
+function StudentPage() {
+  const [d, setD] = useState(null); const [err, setErr] = useState("");
+  const load = () => api(`/api/p/s/${TOKEN}`).then((x) => { setD(x); try { localStorage.setItem("pl3-practice-token", TOKEN); } catch (e) {} }).catch((e) => setErr(e.message));
+  useEffect(() => { load(); }, []);
+  if (err) return html`<${React.Fragment}><${Header} /><main className="wrap"><div className="alert bad">${err}</div><p className="small"><a href="/p">Войти по ИНН</a></p></main><//>`;
+  if (!d) return html`<p className="wrap" style=${{ paddingBlock: 20 }}>Загрузка…</p>`;
+  const p = d.practice; const E = Object.fromEntries(d.entries.map((e) => [e.date, e]));
+  const ok = p.days.filter((x) => E[x.date]?.status === "ok").length;
+  const ready = ok === p.days.length && d.characteristic;
+  const upd = (e) => setD({ ...d, entries: [...d.entries.filter((x) => x.date !== e.date), e] });
+  const backs = p.days.filter((x) => E[x.date]?.status === "back").length;
+  return html`<${React.Fragment}><${Header} sub=${`${d.student.fio}, группа ${p.group}`} />
+  <main className="wrap stack">
+    ${!d.org ? html`<div className="alert">Мастер п/о ещё не направил вас в организацию. Дневник откроется после распределения.</div>` : html`
+    <div className="card stack" style=${{ gap: 10 }}>
+      <div><b>${d.org.name}</b><div className="small muted">${d.org.address ? d.org.address + ". " : ""}Руководитель: ${d.org.supName}, ${d.org.supPos}${d.org.supPhone ? ", " + d.org.supPhone : ""}</div>
+        <div className="small muted">${fmt(p.start)}–${fmt(p.end)}, ${p.hoursTotal} ч. Мастер п/о: ${p.master?.name || "—"}${p.master?.phone ? ", " + p.master.phone : ""}</div></div>
+      <${Progress} v=${ok} t=${p.days.length} />
+      ${backs > 0 && html`<div className="alert bad">Руководитель вернул записей на доработку: ${backs}. Исправьте и отправьте снова.</div>`}
+      ${ready ? html`<div className="alert good">Практика закрыта. Скачайте документы, распечатайте и отнесите руководителю на подпись и печать.</div>`
+        : html`<div className="small muted">Документы откроются для печати, когда все дни подтверждены (${ok}/${p.days.length}) и руководитель заполнит характеристику${d.characteristic ? " — она готова" : ""}.</div>`}
+      <div className="row"><${Btn} sm disabled=${!ready} onClick=${run(() => download(`/api/p/s/${TOKEN}/diary.docx`))}>Скачать дневник<//><${Btn} sm disabled=${!ready} onClick=${run(() => download(`/api/p/s/${TOKEN}/characteristic.docx`))}>Скачать характеристику<//></div>
+    </div>
+    ${p.days.map((x) => html`<${DayRow} key=${x.date} d=${x} e=${E[x.date]} today=${d.today} onChange=${upd} />`)}`}
+  </main><//>`;
+}
+
+/* =================== РУКОВОДИТЕЛЬ ПРАКТИКИ =================== */
+function ReviewRow({ d, e, onDone }) {
+  const [grade, setGrade] = useState(5); const [comment, setComment] = useState(""); const [back, setBack] = useState(false);
+  const act = (body, msg) => run(async () => onDone(await api(`/api/p/r/${TOKEN}/entries/${e._id}`, { method: "PUT", body })), msg)();
+  return html`<div className="card">
+    <b className="num">${fmt(d.date)} <span className="muted" style=${{ fontWeight: 400 }}>${wd(d.date)}, ${d.hours} ч</span></b>
+    <p style=${{ margin: "6px 0", whiteSpace: "pre-wrap" }}>${e.text}</p>
+    <${Media} list=${e.media} big />
+    <div className="row" style=${{ marginTop: 10 }}><span className="small muted">Оценка</span><${Grades} value=${grade} onChange=${setGrade} /><${Btn} kind="ok" onClick=${() => act({ action: "ok", grade }, "Подтверждено")}>Подтвердить<//></div>
+    ${!back ? html`<button className="linkbtn small" style=${{ marginTop: 8 }} onClick=${() => setBack(true)}>Вернуть на доработку</button>`
+      : html`<div className="row" style=${{ marginTop: 8, flexWrap: "nowrap" }}><input id=${"c-" + e._id} value=${comment} placeholder="Что исправить" onInput=${(x) => setComment(x.target.value)} />
+        <${Btn} sm kind="warn" disabled=${!comment.trim()} onClick=${() => act({ action: "back", comment }, "Возвращено студенту")}>Вернуть<//></div>`}
+  </div>`;
+}
+function CharForm({ s, S, avg, onSaved }) {
+  const init = () => ({ disc: 5, skill: 5, tb: 5, q: [], works: "", extra: "", rank: "", grade: Math.round(avg) || 5, ...(s.characteristic || {}) });
+  const [c, setC] = useState(init);
+  useEffect(() => setC(init()), [s.id]);
+  const lvl = (k, label) => html`<div className="stack" style=${{ gap: 4 }}><div className="row between"><span className="small">${label}</span><${Grades} list=${[5, 4, 3]} value=${c[k]} onChange=${(v) => setC({ ...c, [k]: v })} /></div><div className="small muted">${S.phrases?.[k]?.[c[k]] || ""}</div></div>`;
+  const save = run(async () => { onSaved(await api(`/api/p/r/${TOKEN}/characteristic/${s.id}`, { method: "PUT", body: c })); }, "Характеристика сохранена");
+  return html`<div className="stack">
+    <p className="small muted" style=${{ margin: 0 }}>Отметьте уровень по каждому пункту — текст соберётся сам. Средняя оценка по дневнику: ${avg ? avg.toFixed(1) : "—"}.</p>
+    ${lvl("disc", "Отношение к работе, дисциплина")}${lvl("skill", "Профессиональные умения")}${lvl("tb", "Техника безопасности")}
+    <div><div className="small muted" style=${{ marginBottom: 6 }}>Личные качества</div><div className="row">${(S.qualities || []).map((x) => html`<button key=${x} className="pill" aria-pressed=${c.q.includes(x)} onClick=${() => setC({ ...c, q: c.q.includes(x) ? c.q.filter((y) => y !== x) : [...c.q, x] })}>${x}</button>`)}</div></div>
+    <${Field} label="Какие работы освоил(а) — необязательно"><input id="works" value=${c.works} onInput=${(e) => setC({ ...c, works: e.target.value })} /><//>
+    <${Field} label="Дополнительно — необязательно"><textarea id="extra" rows="2" value=${c.extra} onInput=${(e) => setC({ ...c, extra: e.target.value })}></textarea><//>
+    <${Field} label="Рекомендуемый разряд"><select id="rank" value=${c.rank} onChange=${(e) => setC({ ...c, rank: e.target.value })}><option value="">не указывать</option>${(S.ranks || []).map((r) => html`<option key=${r} value=${r}>${r}</option>`)}</select><//>
+    <div className="row between"><span className="small">Итоговая оценка за практику</span><${Grades} value=${c.grade} onChange=${(v) => setC({ ...c, grade: v })} /></div>
+    <div className="row"><${Btn} kind="ok" onClick=${save}>Сохранить характеристику<//>
+      <${Btn} kind="ghost" disabled=${!s.characteristic} onClick=${run(() => download(`/api/p/r/${TOKEN}/students/${s.id}/characteristic.docx`))}>Скачать (Word)<//></div>
+    ${s.characteristic?.done && html`<div className="alert good">Сохранено. Студент сможет распечатать характеристику и принести её вам на подпись.</div>`}
+  </div>`;
+}
+function SupervisorPage() {
+  const [d, setD] = useState(null); const [err, setErr] = useState(""); const [sid, setSid] = useState(null); const [tab, setTab] = useState("diary");
+  useEffect(() => { api(`/api/p/r/${TOKEN}`).then(setD).catch((e) => setErr(e.message)); }, []);
+  if (err) return html`<${React.Fragment}><${Header} /><main className="wrap"><div className="alert bad">${err}</div></main><//>`;
+  if (!d) return html`<p className="wrap" style=${{ paddingBlock: 20 }}>Загрузка…</p>`;
+  const p = d.practice; const s = d.students.find((x) => String(x.id) === String(sid));
+  const updEntry = (e) => setD({ ...d, students: d.students.map((x) => (String(x.id) === String(e.student) ? { ...x, entries: x.entries.map((y) => (y._id === e._id ? e : y)) } : x)) });
+  const updChar = (c) => setD({ ...d, students: d.students.map((x) => (String(x.id) === String(c.student) ? { ...x, characteristic: c } : x)) });
+  const totalPending = d.students.reduce((a, x) => a + x.entries.filter((e) => e.status === "sent").length, 0);
+  return html`<${React.Fragment}><${Header} sub=${`${d.org.supName} — ${d.org.name}`} />
+  <main className="wrap stack">
+    <div className="note">Практиканты группы ${p.group}, ${fmt(p.start)}–${fmt(p.end)}. ${totalPending ? `Ждут проверки записей: ${totalPending}.` : "Новых записей нет."} Мастер п/о: ${p.master?.name || "—"}${p.master?.phone ? ", " + p.master.phone : ""}.</div>
+    <div className="card slist" style=${{ padding: 0 }}>${d.students.map((x) => {
+      const pend = x.entries.filter((e) => e.status === "sent").length; const ok = x.entries.filter((e) => e.status === "ok").length;
+      return html`<button key=${x.id} className="item" aria-current=${String(x.id) === String(sid)} onClick=${() => { setSid(String(x.id) === String(sid) ? null : x.id); setTab(pend || x.characteristic ? "diary" : "diary"); }}>
+        <span style=${{ flex: 1, fontWeight: 500 }}>${x.fio}</span>
+        ${pend > 0 && html`<span className="chip st-sent">${pend} на проверке</span>`}
+        ${x.characteristic?.done && html`<span className="chip st-ok">характеристика</span>`}
+        <span className="small muted num">${ok}/${p.days.length}</span></button>`; })}</div>
+    ${s && (() => {
+      const E = Object.fromEntries(s.entries.map((e) => [e.date, e]));
+      const pend = p.days.filter((x) => E[x.date]?.status === "sent");
+      const done = p.days.filter((x) => E[x.date]?.status === "ok");
+      const g = done.map((x) => E[x.date].grade).filter(Boolean); const avg = g.length ? g.reduce((a, b) => a + b, 0) / g.length : 0;
+      return html`<div className="stack">
+        <div className="row between"><h2>${s.fio}</h2>
+          <div className="row"><${Btn} sm kind=${tab === "diary" ? "" : "ghost"} onClick=${() => setTab("diary")}>Дневник<//><${Btn} sm kind=${tab === "char" ? "" : "ghost"} onClick=${() => setTab("char")}>Характеристика<//></div></div>
+        ${tab === "diary" ? html`<div className="stack">
+          ${pend.length ? pend.map((x) => html`<${ReviewRow} key=${E[x.date]._id} d=${x} e=${E[x.date]} onDone=${updEntry} />`) : html`<div className="card small muted">Новых записей нет. Подтверждено дней: ${done.length} из ${p.days.length}.</div>`}
+          ${done.length > 0 && html`<details className="card"><summary>Подтверждённые дни (${done.length})</summary><div className="stack" style=${{ marginTop: 10 }}>${done.map((x) => html`<div key=${x.date} className="small"><b className="num">${fmt(x.date)}</b> — оценка ${E[x.date].grade} (${GW[E[x.date].grade] || ""})<div style=${{ whiteSpace: "pre-wrap" }}>${E[x.date].text}</div><${Media} list=${E[x.date].media} /></div>`)}</div></details>`}
+          <div><${Btn} sm kind="ghost" onClick=${run(() => download(`/api/p/r/${TOKEN}/students/${s.id}/diary.docx`))}>Скачать дневник (Word)<//></div>
+        </div>` : html`<div className="card"><${CharForm} s=${s} S=${d.settings} avg=${avg} onSaved=${updChar} /></div>`}
+      </div>`;
+    })()}
+  </main><//>`;
+}
+
+const Page = KIND === "s" && TOKEN ? StudentPage : KIND === "r" && TOKEN ? SupervisorPage : Login;
+ReactDOM.createRoot(document.getElementById("root")).render(html`<${Page} />`);
+</script>
+</body>
+</html>
