@@ -1373,7 +1373,7 @@
         const table = document.getElementById("j-table"); table.style.display = "table";
         let h = `<tr><th style="min-width:150px;text-align:left;position:sticky;left:0;background:#1e293b">ФИО студента</th>`;
         const [y, m] = month.split("-");
-        for (let d = 1; d <= data.daysInMonth; d++) { const do2 = new Date(Date.UTC(y, m - 1, d)); const iw = do2.getUTCDay() === 0 || do2.getUTCDay() === 6; h += `<th ${iw ? 'style="background:#7f1d1d"' : ''}>${d}</th>`; }
+        for (let d = 1; d <= data.daysInMonth; d++) { const do2 = new Date(Date.UTC(y, m - 1, d)); const iw = do2.getUTCDay() === 0 || (do2.getUTCDay() === 6 && !data.saturday); h += `<th ${iw ? 'style="background:#7f1d1d"' : ''}>${d}</th>`; }
         h += `<th>П</th><th>О</th><th>Н</th></tr>`;
         document.getElementById("j-thead").innerHTML = h;
         let b = "";

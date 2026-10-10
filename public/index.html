@@ -1416,6 +1416,13 @@
                   Опоздания считаются от этого времени.
                 </div>
               </div>
+              <div class="form-check form-switch mb-4">
+                <input class="form-check-input" type="checkbox" role="switch" id="gs-saturday" />
+                <label class="form-check-label fw-bold small" for="gs-saturday">Учебная суббота</label>
+                <div class="small text-muted">
+                  Суббота считается учебным днём: пропуски в субботу попадают в журнал и отчёты.
+                </div>
+              </div>
               <button
                 class="btn btn-primary w-100 fw-bold py-2"
                 style="border-radius: 12px"
@@ -2228,7 +2235,7 @@
         const [y, m] = month.split("-");
         for (let d = 1; d <= data.daysInMonth; d++) {
           const dateObj = new Date(Date.UTC(y, m - 1, d));
-          const isWknd = dateObj.getUTCDay() === 0 || dateObj.getUTCDay() === 6;
+          const isWknd = dateObj.getUTCDay() === 0 || (dateObj.getUTCDay() === 6 && !data.saturday);
           headHtml += `<th class="${isWknd ? "weekend-header" : ""}">${d}</th>`;
         }
         headHtml += `</tr>`;
@@ -2307,7 +2314,7 @@
         document.getElementById("gs-body").innerHTML = gsGroups
           .map(
             (g) =>
-              `<tr><td class="fw-bold">${g.name}</td><td>${g.profRu ? `<span class="bp">${g.profRu}</span>` : `<span class="bp no">Не задана</span>`}</td><td class="d-none d-sm-table-cell" style="font-size:12px;color:var(--muted)">${g.duration || "—"}</td><td><button class="btn btn-outline-primary" style="font-size:11px;padding:2px 8px;border-radius:6px" onclick="gsQuickSelect('${g._id}')">Изменить</button></td></tr>`,
+              `<tr><td class="fw-bold">${g.name}</td><td>${g.profRu ? `<span class="bp">${g.profRu}</span>` : `<span class="bp no">Не задана</span>`}</td><td class="d-none d-sm-table-cell" style="font-size:12px;color:var(--muted)">${g.duration || "—"}${g.saturday ? ' · <span class="bp">сб учебная</span>' : ""}</td><td><button class="btn btn-outline-primary" style="font-size:11px;padding:2px 8px;border-radius:6px" onclick="gsQuickSelect('${g._id}')">Изменить</button></td></tr>`,
           )
           .join("");
       }
@@ -2325,6 +2332,7 @@
           const p = gsProfessions.find((p) => p.ru === g.profRu);
           document.getElementById("gs-prof").value = p ? p.id : "";
           document.getElementById("gs-shift").value = g.shiftStart || "09:30";
+          document.getElementById("gs-saturday").checked = !!g.saturday;
         }
       }
       async function saveGroupSettings() {
@@ -2337,12 +2345,16 @@
           body: JSON.stringify({
             profId: document.getElementById("gs-prof").value,
             shiftStart: document.getElementById("gs-shift").value,
+            saturday: document.getElementById("gs-saturday").checked,
           }),
         });
         hideLoader();
-        res.ok
-          ? toast("Настройки сохранены!")
-          : toast("Ошибка сохранения", "error");
+        if (res.ok) {
+          const g = gsGroups.find((x) => x._id === gid);
+          if (g) g.saturday = document.getElementById("gs-saturday").checked;
+          renderGsTable();
+          toast("Настройки сохранены!");
+        } else toast("Ошибка сохранения", "error");
       }
 
       /* ── Curators ── */

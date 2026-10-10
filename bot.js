@@ -562,7 +562,7 @@ _Перешлите нужную ссылку куратору — он нажи
         const row=[i+1,stu.fio]; let p=0,a=0,l=0;
         for (let d=1;d<=dim;d++) {
           const dk=`${yr}-${pad2(mn)}-${pad2(d)}`;
-          const iw=new Date(Date.UTC(yr,mn-1,d)).getUTCDay()%6===0;
+          const iw=require("./attendance-utils").isWeekend(dk,!!g?.saturday);
           const skud=stu.skudDaily?.find(r=>r.date===dk),att=stu.attendance?.find(a=>a.date===dk);
           let here=false,late=false;
           if(skud){here=skud.present;if(skud.firstIn){const dt=new Date(skud.firstIn);if(!isNaN(dt)){const tm=dt.getUTCHours()*60+dt.getUTCMinutes()+360;late=Math.floor(tm/60)%24*60+tm%60>stm;}}}
@@ -1271,7 +1271,7 @@ _Все оценки студента тоже будут удалены_`,
       let p=0,a=0,l=0; const missed=[];
       for(let d=1;d<=dim;d++){
         const dk=`${yr}-${pad2(mn)}-${pad2(d)}`;
-        const iw=new Date(Date.UTC(yr,mn-1,d)).getUTCDay()%6===0;
+        const iw=require("./attendance-utils").isWeekend(dk,!!g?.saturday);
         if(iw||dk>tdk) continue;
         const skud=stu.skudDaily?.find(r=>r.date===dk),att=stu.attendance?.find(a=>a.date===dk);
         let here=false,late=false;

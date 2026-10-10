@@ -858,7 +858,7 @@ function renderAttTodayList(data,targetId){
 async function loadAttMonth(month){
   const gid=curGid(); if(!gid) return;
   document.getElementById('att-content').innerHTML='<div class="loading"><div class="spinner"></div></div>';
-  try { const d=await api(`attendance/month?gid=${gid}&month=${month}`); renderAttCalendar(d.days,d.students,month,'att-content'); }
+  try { const d=await api(`attendance/month?gid=${gid}&month=${month}`); S.attSat=!!d.saturday; renderAttCalendar(d.days,d.students,month,'att-content'); }
   catch(e){ document.getElementById('att-content').innerHTML=errHtml(e.message); }
 }
 function renderAttCalendar(days,stuData,month,targetId){
@@ -869,7 +869,7 @@ function renderAttCalendar(days,stuData,month,targetId){
   const agg={};
   days.forEach(day=>{
     const dow=new Date(day+'T00:00:00Z').getUTCDay();
-    if(dow===0||dow===6){agg[day]='weekend';return;}
+    if(dow===0||(dow===6&&!S.attSat)){agg[day]='weekend';return;}
     if(day>today){agg[day]='future';return;}
     let p=0,l=0; (stuData||[]).forEach(s=>{const st=s.statuses?.[day]||'a'; if(st==='p')p++; else if(st==='l')l++;});
     agg[day]=l?'late':p?'present':'absent';
@@ -891,7 +891,7 @@ function renderAttCalendar(days,stuData,month,targetId){
   if(stuData?.length){
     html+=`<div class="card"><div class="card-header">👥 По студентам</div><div class="card-body" style="padding:0 14px;overflow-x:auto">
     <div class="gv-wrap"><table class="gv-table"><tr><th class="fio-col">Студент</th>`;
-    const workDays=days.filter(d=>{const w=new Date(d+'T00:00:00Z').getUTCDay();return w!==0&&w!==6;});
+    const workDays=days.filter(d=>{const w=new Date(d+'T00:00:00Z').getUTCDay();return w!==0&&(w!==6||S.attSat);});
     workDays.forEach(d=>html+=`<th>${+d.slice(-2)}</th>`);
     html+='</tr>';
     stuData.forEach(s=>{
@@ -1159,7 +1159,7 @@ function renderParentAttCalendar(attMap,month,targetId){
     const day=`${yr}-${String(mn).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const dow=new Date(day+'T00:00:00Z').getUTCDay();
     let cls;
-    if(dow===0||dow===6) cls='weekend';
+    if(dow===0||(dow===6&&!S.paData?.saturday)) cls='weekend';
     else if(day>today) cls='future';
     else {
       const st=(attMap[day]?.status||attMap[day]||'a');
@@ -1197,7 +1197,7 @@ function renderParentAttDayList(attMap,month,targetId){
   for(let d=1;d<=dim;d++){
     const day=`${yr}-${String(mn).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const dow=new Date(day+'T00:00:00Z').getUTCDay();
-    if(dow===0||dow===6) continue; // пропускаем выходные
+    if(dow===0||(dow===6&&!S.paData?.saturday)) continue; // пропускаем выходные
     if(day>today) break;           // будущее не показываем
     const raw=attMap[day];
     const st=typeof raw==='object'?raw.status:(raw||'a');

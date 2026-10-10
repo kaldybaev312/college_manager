@@ -21,7 +21,7 @@ const registerWebapp = require("../webapp");
 const { verifyInitData } = registerWebapp;
 
 const { Schema } = fake;
-const Group = fake.model("Group", new Schema({ name: String, shiftStart: { type: String, default: "08:00" }, kind: { type: String, default: "students" } }));
+const Group = fake.model("Group", new Schema({ name: String, shiftStart: { type: String, default: "08:00" }, kind: { type: String, default: "students" }, saturday: { type: Boolean, default: false } }));
 const Student = fake.model("Student", new Schema({ fio: String, inn: String, group: Schema.Types.ObjectId, attendance: [], skudDaily: [] }));
 const TgSub = fake.model("TgSub", new Schema({ chatId: String, name: String, role: String, linkedInns: [], curatorId: String }));
 const Curator = fake.model("Curator", new Schema({ username: String, groups: [] }));
@@ -202,6 +202,20 @@ async function t(name, fn) {
     assert.deepEqual([b.present, b.excused, b.unexcused, b.pct], [1, 2, 2, 20]);
     assert.deepEqual(b.cells.slice(0, 5), ["П", "Б", "Б", "Д", "Н"]);
     assert.equal(rep.totals.pct, 60);
+  });
+  await t("учебная суббота: суббота входит в учебные дни только у своей группы", async () => {
+    assert.equal(att.isWeekend("2026-10-10"), true);
+    assert.equal(att.isWeekend("2026-10-10", true), false);
+    assert.equal(att.isWeekend("2026-10-11", true), true);
+    const gS = await Group.create({ name: "ПК-31", shiftStart: "08:30", saturday: true });
+    await Student.create({ fio: "Суббота Студент", inn: "444444444444", group: gS._id, skudDaily: [day("2026-10-05", "08:00")] });
+    const range = resolvePeriod("week", "2026-10-07");
+    const rs = await reports.buildGroupReport(await Group.findById(gS._id).lean(), range);
+    assert.equal(rs.workdays, 6);
+    assert.equal(rs.rows[0].cells[5], "Н");
+    const ra = await reports.buildGroupReport(await Group.findById(gA._id).lean(), range);
+    assert.equal(ra.workdays, 5);
+    assert.equal(ra.rows[0].cells[5], "");
   });
   await t("Excel по группе открывается и содержит студентов", async () => {
     const rep = await reports.buildGroupReport(await Group.findById(gA._id).lean(), resolvePeriod("month", "2026-10"));
