@@ -171,6 +171,7 @@ function model(name, schema) {
       });
       return arr ? out : out[0];
     },
+    insertMany: async (list) => M.create(list),
     updateOne: (q, u) => new Query(() => {
       const d = store.find((x) => match(x, q)); if (!d) return { matchedCount: 0, modifiedCount: 0 };
       applyUpdate(d, u); if (ts) d.updatedAt = new Date(); return { matchedCount: 1, modifiedCount: 1 };

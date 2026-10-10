@@ -2304,6 +2304,20 @@ app.post("/api/admin/absent-alerts/run", requireAdmin, async (req, res) => {
   }
 });
 
+// Учёт сотрудников: преподаватели по расписанию Kundoluk, мастера — присутствие (staff-attendance.js)
+const staffAttendance = require("./staff-attendance").createStaffAttendance({
+  Group,
+  Student,
+  TgSub,
+  getTodayKey,
+  getBishkekMinutes: () => {
+    const d = getBishkekNow();
+    return d.getHours() * 60 + d.getMinutes();
+  },
+});
+staffAttendance.registerRoutes(app, { requireAdmin, requireAuth, safeEq, contentDisposition });
+staffAttendance.schedule(bot);
+
 // Еженедельный бэкап базы в Telegram администраторам (backup.js)
 const backup = require("./backup").createBackup({ getDb: () => mongoose.connection.db, TgSub, getTodayKey });
 backup.schedule(bot);
