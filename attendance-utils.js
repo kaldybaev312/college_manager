@@ -39,9 +39,10 @@ const parseKey = (dk) => {
 };
 // строгая проверка: 2026-02-30 и 2026-13-01 не проходят
 const isValidKey = (dk) => /^\d{4}-\d{2}-\d{2}$/.test(String(dk || "")) && dateKey(parseKey(dk)) === dk;
-const isWeekend = (dk) => {
+// Выходной: воскресенье всегда, суббота — если у группы нет учебной субботы
+const isWeekend = (dk, saturday = false) => {
   const wd = parseKey(dk).getUTCDay();
-  return wd === 0 || wd === 6;
+  return wd === 0 || (wd === 6 && !saturday);
 };
 function addDays(dk, n) {
   const d = parseKey(dk);

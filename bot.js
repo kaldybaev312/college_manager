@@ -11,7 +11,7 @@ const crypto      = require("crypto");
 
 module.exports = function createBot(models, helpers, buildSummaryDocx) {
   const { Group, Student, TgSub, Curator, SummaryRecord } = models;
-  const { pad2, getBishkekNow, getTodayKey, ensureGroupSummarySubjects, getSummaryDocumentData, getSkudEvents } = helpers;
+  const { pad2, getBishkekNow, getTodayKey, ensureGroupSummarySubjects, getSummaryDocumentData, getSkudEvents, weeklyCards } = helpers;
 
   const TG_TOKEN     = process.env.TG_TOKEN;
   if (!TG_TOKEN) throw new Error("❌ TG_TOKEN не задан в .env!");
@@ -106,6 +106,7 @@ module.exports = function createBot(models, helpers, buildSummaryDocx) {
   const KB_PAR = { reply_markup:{ keyboard:[
     [{text:"📊 Оценки ребёнка"},    {text:"🗓 Посещаемость"}],
     [{text:"👨‍👩‍👧 Мои дети"},          {text:"➕ Привязать ребёнка"}],
+    [{text:"🖼 Итог недели"}],
     [{text:"📱 Мини-приложение", web_app:{url: process.env.RENDER_EXTERNAL_URL ? process.env.RENDER_EXTERNAL_URL+"/api/webapp/open" : "https://pl3service.onrender.com/api/webapp/open"}}],
   ], resize_keyboard:true }};
 
@@ -352,7 +353,7 @@ module.exports = function createBot(models, helpers, buildSummaryDocx) {
     // Кнопки меню всегда работают — даже если есть активный step
     // Это исправляет проблему когда родитель нажимает кнопку меню
     // но step:"link_inn" ещё активен из предыдущего действия
-    const PARENT_BTNS = ["📊 Оценки ребёнка","🗓 Посещаемость","👨‍👩‍👧 Мои дети","➕ Привязать ребёнка"];
+    const PARENT_BTNS = ["📊 Оценки ребёнка","🗓 Посещаемость","👨‍👩‍👧 Мои дети","➕ Привязать ребёнка","🖼 Итог недели"];
     const CURATOR_BTNS = ["📅 Посещаемость сегодня","🔍 Найти студента","⏰ Опоздания сегодня",
       "📥 Посещаемость Excel","📝 Заполнить ведомость","📚 Предметы группы",
       "📤 Отправить ведомость","📋 Оценки группы","👥 Список студентов"];
@@ -562,7 +563,7 @@ _Перешлите нужную ссылку куратору — он нажи
         const row=[i+1,stu.fio]; let p=0,a=0,l=0;
         for (let d=1;d<=dim;d++) {
           const dk=`${yr}-${pad2(mn)}-${pad2(d)}`;
-          const iw=new Date(Date.UTC(yr,mn-1,d)).getUTCDay()%6===0;
+          const iw=require("./attendance-utils").isWeekend(dk,!!g?.saturday);
           const skud=stu.skudDaily?.find(r=>r.date===dk),att=stu.attendance?.find(a=>a.date===dk);
           let here=false,late=false;
           if(skud){here=skud.present;if(skud.firstIn){const dt=new Date(skud.firstIn);if(!isNaN(dt)){const tm=dt.getUTCHours()*60+dt.getUTCMinutes()+360;late=Math.floor(tm/60)%24*60+tm%60>stm;}}}
@@ -1245,9 +1246,25 @@ _Все оценки студента тоже будут удалены_`,
       case "🗓 Посещаемость":        return parAtt(cid, s);
       case "👨‍👩‍👧 Мои дети":           return parKids(cid, s);
       case "➕ Привязать ребёнка":  set(cid,{step:"link_inn"}); return send(cid,"Введите *ИНН ребёнка* \\(12–14 цифр\\):",KB_X);
+      case "🖼 Итог недели":         return parWeekCard(cid, s);
       default: await send(cid,"Используйте кнопки меню 👇",KB_PAR);
     }
   }
+
+  /* ── Родитель: итог недели картинкой ── */
+  async function parWeekCard(cid, s) {
+    const inns = s.inns || [];
+    if (!inns.length) { await send(cid,"Нет привязанных детей\\. Нажмите *Привязать ребёнка*\\.",KB_PAR); return; }
+    if (!weeklyCards) { await send(cid,"Функция недоступна\\.",KB_PAR); return; }
+    for (const inn of inns) {
+      try {
+        const c = await weeklyCards.cardFor({ inn });
+        if (!c) continue;
+        await bot.sendPhoto(cid, c.png, { caption: weeklyCards.caption(c.data), ...KB_PAR }, { filename: "itog-nedeli.png", contentType: "image/png" });
+      } catch (e) { console.error("week card:", e.message); await send(cid, `❌ Ошибка: ${ev(e.message)}`, KB_PAR); }
+    }
+  }
+
 
   async function parKids(cid, s) {
     const inns=s.inns||[];
@@ -1271,7 +1288,7 @@ _Все оценки студента тоже будут удалены_`,
       let p=0,a=0,l=0; const missed=[];
       for(let d=1;d<=dim;d++){
         const dk=`${yr}-${pad2(mn)}-${pad2(d)}`;
-        const iw=new Date(Date.UTC(yr,mn-1,d)).getUTCDay()%6===0;
+        const iw=require("./attendance-utils").isWeekend(dk,!!g?.saturday);
         if(iw||dk>tdk) continue;
         const skud=stu.skudDaily?.find(r=>r.date===dk),att=stu.attendance?.find(a=>a.date===dk);
         let here=false,late=false;
@@ -1439,5 +1456,10 @@ _Все оценки студента тоже будут удалены_`,
   console.log("   Bot username:", BOT_USERNAME);
   if (SECRET_FROM_ENV) console.log("   Вход админа: /admin <ADMIN_TG_SECRET из .env>");
   else console.warn("⚠️ ADMIN_TG_SECRET не задан: на этот запуск создан временный секрет: /admin " + ADMIN_SECRET);
-  return { bot, notifyAll, notifyParents, notifyAdmins, notifyCurators: notifyCuratorsOfGroup };
+  // Забыть кэш роли куратора: после изменения групп, логина или удаления бот перечитает данные из базы
+  function forgetCurator(curatorId) {
+    for (const [k, v] of SESS) if (v?.curatorId === String(curatorId)) SESS.delete(k);
+  }
+
+  return { bot, notifyAll, notifyParents, notifyAdmins, notifyCurators: notifyCuratorsOfGroup, forgetCurator };
 };

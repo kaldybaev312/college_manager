@@ -18,10 +18,11 @@ const att = require("../attendance-utils");
 const absence = require("../absence");
 const { createReports, resolvePeriod, previousPeriod } = require("../reports");
 const registerWebapp = require("../webapp");
+const { createWeeklyCards } = require("../weekly-card");
 const { verifyInitData } = registerWebapp;
 
 const { Schema } = fake;
-const Group = fake.model("Group", new Schema({ name: String, shiftStart: { type: String, default: "08:00" }, kind: { type: String, default: "students" } }));
+const Group = fake.model("Group", new Schema({ name: String, shiftStart: { type: String, default: "08:00" }, kind: { type: String, default: "students" }, saturday: { type: Boolean, default: false } }));
 const Student = fake.model("Student", new Schema({ fio: String, inn: String, group: Schema.Types.ObjectId, attendance: [], skudDaily: [] }));
 const TgSub = fake.model("TgSub", new Schema({ chatId: String, name: String, role: String, linkedInns: [], curatorId: String }));
 const Curator = fake.model("Curator", new Schema({ username: String, groups: [] }));
@@ -98,6 +99,8 @@ async function t(name, fn) {
   });
 
   // ── Мини-приложение по HTTP ──
+  const subjectsStub = async () => [{ key: "math", label: "Математика", section: "theory" }];
+  const weeklyCards = createWeeklyCards({ Group, Student, TgSub, SummaryRecord, ensureGroupSummarySubjects: subjectsStub, getTodayKey });
   const app = express();
   app.use(express.json());
   const sent = [];
@@ -117,6 +120,7 @@ async function t(name, fn) {
     getTodayKey,
     getBot: () => fakeBot,
     mdv2: (v) => v,
+    weeklyCards,
   });
   const reports = createReports({ Group, Student, Curator, TgSub, getTodayKey });
   const srv = app.listen(0);
@@ -203,6 +207,20 @@ async function t(name, fn) {
     assert.deepEqual(b.cells.slice(0, 5), ["П", "Б", "Б", "Д", "Н"]);
     assert.equal(rep.totals.pct, 60);
   });
+  await t("учебная суббота: суббота входит в учебные дни только у своей группы", async () => {
+    assert.equal(att.isWeekend("2026-10-10"), true);
+    assert.equal(att.isWeekend("2026-10-10", true), false);
+    assert.equal(att.isWeekend("2026-10-11", true), true);
+    const gS = await Group.create({ name: "ПК-31", shiftStart: "08:30", saturday: true });
+    await Student.create({ fio: "Суббота Студент", inn: "444444444444", group: gS._id, skudDaily: [day("2026-10-05", "08:00")] });
+    const range = resolvePeriod("week", "2026-10-07");
+    const rs = await reports.buildGroupReport(await Group.findById(gS._id).lean(), range);
+    assert.equal(rs.workdays, 6);
+    assert.equal(rs.rows[0].cells[5], "Н");
+    const ra = await reports.buildGroupReport(await Group.findById(gA._id).lean(), range);
+    assert.equal(ra.workdays, 5);
+    assert.equal(ra.rows[0].cells[5], "");
+  });
   await t("Excel по группе открывается и содержит студентов", async () => {
     const rep = await reports.buildGroupReport(await Group.findById(gA._id).lean(), resolvePeriod("month", "2026-10"));
     const wb = xlsx.read(reports.groupWorkbook(rep));
@@ -221,6 +239,41 @@ async function t(name, fn) {
     const wb = xlsx.read(toAdm.buf);
     assert.ok(wb.SheetNames.includes("Итог") && wb.SheetNames.includes("ИТ-21"));
     assert.ok(!wb.SheetNames.includes("Учителя"));
+  });
+
+  console.log("Итог недели:");
+  await t("данные карточки: дни, опоздания, причины, оценки", async () => {
+    await SummaryRecord.create({ group: String(gA._id), student: String(s2._id), month: "2026-10", grades: { math: "5" } });
+    const c = await weeklyCards.cardFor({ inn: "222222222222" }, "2026-10-07");
+    assert.deepEqual(c.data.cells.map((x) => x.st), ["p", "e", "e", "e", "a"]);
+    assert.deepEqual([c.data.present, c.data.excused, c.data.absent], [1, 2, 2]);
+    assert.deepEqual(c.data.grades, [{ label: "Математика", value: "5" }]);
+    assert.equal(c.png.slice(1, 4).toString(), "PNG");
+  });
+  await t("родитель получает картинку только своего ребёнка", async () => {
+    const ok = await fetch(base + "/api/webapp/parent/week-card?inn=222222222222", { headers: { "x-tg-init-data": initData(600) } });
+    assert.equal(ok.status, 200);
+    assert.equal(ok.headers.get("content-type"), "image/png");
+    assert.equal((await call(600, "GET", "/api/webapp/parent/week-card?inn=111111111111")).status, 403);
+  });
+  await t("рассылка родителям (пятница)", async () => {
+    sent.length = 0;
+    fakeBot.sendPhoto = async (chatId, buf, opts) => sent.push({ chatId, photo: true, caption: opts.caption });
+    const r = await weeklyCards.sendAll(fakeBot, { onlySaturday: false });
+    assert.equal(r.sent, 1);
+    assert.ok(sent[0].chatId === "600" && /Бекова/.test(sent[0].caption));
+  });
+
+  console.log("Геолокация практики:");
+  await t("расстояние, координаты из ссылок, решение по радиусу", () => {
+    const g = require("../practice")._geo;
+    assert.deepEqual(g.readPoint({ text: "https://2gis.kg/bishkek/geo/74.5698,42.8746" }), { lat: 42.8746, lng: 74.5698 });
+    assert.deepEqual(g.readPoint({ text: "https://maps.google.com/?q=42.8746,74.5698" }), { lat: 42.8746, lng: 74.5698 });
+    assert.equal(g.readPoint({ text: "нет координат" }), null);
+    const org = { lat: 42.8746, lng: 74.5698, radius: 300 };
+    assert.equal(g.judgeCheckIn(org, { lat: 42.876, lng: 74.5698 }, 20).ok, true);
+    assert.equal(g.judgeCheckIn(org, { lat: 42.8846, lng: 74.5698 }, 20).ok, false);
+    assert.equal(g.judgeCheckIn(org, { lat: 42.8780, lng: 74.5698 }, 100).ok, true); // 378 м, но погрешность 100 м
   });
 
   console.log(`\nИтог: ${passed} прошло, ${failed} упало`);

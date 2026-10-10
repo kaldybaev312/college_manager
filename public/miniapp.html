@@ -255,7 +255,7 @@ body{
   border-top:1px solid var(--border);
   max-height:0;overflow:hidden;transition:max-height .2s ease;
 }
-.child-actions.open{max-height:110px}
+.child-actions.open{max-height:160px}
 .child-action-btn.wide{grid-column:1/-1;border-top:1px solid var(--border);border-right:none}
 .child-action-btn{
   padding:12px;border:none;background:none;
@@ -345,6 +345,11 @@ body{
 <body>
 
 <div id="toast" class="toast"></div>
+
+<div id="week-sheet" class="sheet-bg" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="sheet"><h3>🖼 Итог недели</h3><div id="wc-box" style="margin-top:10px"></div>
+    <button class="btn-main" style="margin-top:12px" onclick="document.getElementById('week-sheet').classList.remove('open')">Закрыть</button></div>
+</div>
 
 <div id="reason-sheet" class="sheet-bg" onclick="if(event.target===this)closeReasonSheet()">
   <div class="sheet">
@@ -858,7 +863,7 @@ function renderAttTodayList(data,targetId){
 async function loadAttMonth(month){
   const gid=curGid(); if(!gid) return;
   document.getElementById('att-content').innerHTML='<div class="loading"><div class="spinner"></div></div>';
-  try { const d=await api(`attendance/month?gid=${gid}&month=${month}`); renderAttCalendar(d.days,d.students,month,'att-content'); }
+  try { const d=await api(`attendance/month?gid=${gid}&month=${month}`); S.attSat=!!d.saturday; renderAttCalendar(d.days,d.students,month,'att-content'); }
   catch(e){ document.getElementById('att-content').innerHTML=errHtml(e.message); }
 }
 function renderAttCalendar(days,stuData,month,targetId){
@@ -869,7 +874,7 @@ function renderAttCalendar(days,stuData,month,targetId){
   const agg={};
   days.forEach(day=>{
     const dow=new Date(day+'T00:00:00Z').getUTCDay();
-    if(dow===0||dow===6){agg[day]='weekend';return;}
+    if(dow===0||(dow===6&&!S.attSat)){agg[day]='weekend';return;}
     if(day>today){agg[day]='future';return;}
     let p=0,l=0; (stuData||[]).forEach(s=>{const st=s.statuses?.[day]||'a'; if(st==='p')p++; else if(st==='l')l++;});
     agg[day]=l?'late':p?'present':'absent';
@@ -891,7 +896,7 @@ function renderAttCalendar(days,stuData,month,targetId){
   if(stuData?.length){
     html+=`<div class="card"><div class="card-header">👥 По студентам</div><div class="card-body" style="padding:0 14px;overflow-x:auto">
     <div class="gv-wrap"><table class="gv-table"><tr><th class="fio-col">Студент</th>`;
-    const workDays=days.filter(d=>{const w=new Date(d+'T00:00:00Z').getUTCDay();return w!==0&&w!==6;});
+    const workDays=days.filter(d=>{const w=new Date(d+'T00:00:00Z').getUTCDay();return w!==0&&(w!==6||S.attSat);});
     workDays.forEach(d=>html+=`<th>${+d.slice(-2)}</th>`);
     html+='</tr>';
     stuData.forEach(s=>{
@@ -1059,6 +1064,7 @@ function renderChildrenList(){
       <div class="child-actions" id="child-act-${i}">
         <button class="child-action-btn" onclick="openPgrades(${i})">📊 Оценки</button>
         <button class="child-action-btn" onclick="openPatt(${i})">🗓 Посещаемость</button>
+        <button class="child-action-btn wide" onclick="openWeekCard(${i})">🖼 Итог недели</button>
         <button class="child-action-btn wide" onclick="S.curChildIdx=${i};openReasonSheet({inn:'${c.inn}',fio:'${esc(c.fio).replace(/'/g,'&#39;')}'})">📝 Сообщить об отсутствии</button>
       </div>
     </div>
@@ -1159,7 +1165,7 @@ function renderParentAttCalendar(attMap,month,targetId){
     const day=`${yr}-${String(mn).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const dow=new Date(day+'T00:00:00Z').getUTCDay();
     let cls;
-    if(dow===0||dow===6) cls='weekend';
+    if(dow===0||(dow===6&&!S.paData?.saturday)) cls='weekend';
     else if(day>today) cls='future';
     else {
       const st=(attMap[day]?.status||attMap[day]||'a');
@@ -1197,7 +1203,7 @@ function renderParentAttDayList(attMap,month,targetId){
   for(let d=1;d<=dim;d++){
     const day=`${yr}-${String(mn).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const dow=new Date(day+'T00:00:00Z').getUTCDay();
-    if(dow===0||dow===6) continue; // пропускаем выходные
+    if(dow===0||(dow===6&&!S.paData?.saturday)) continue; // пропускаем выходные
     if(day>today) break;           // будущее не показываем
     const raw=attMap[day];
     const st=typeof raw==='object'?raw.status:(raw||'a');
@@ -1326,6 +1332,19 @@ function openReasonSheet(ctx){
   document.getElementById('rs-del').style.display=ctx.reasonId?'block':'none';
   document.getElementById('rs-hint').textContent=isParent?'Куратор получит уведомление и подтвердит причину.':'';
   document.getElementById('reason-sheet').classList.add('open');
+}
+async function openWeekCard(idx){
+  const c=S.children[idx]; if(!c) return;
+  const box=document.getElementById('wc-box');
+  box.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  document.getElementById('week-sheet').classList.add('open');
+  try{
+    const r=await fetch('/api/webapp/parent/week-card?inn='+encodeURIComponent(c.inn),{headers:{'x-tg-init-data':TG_INIT_DATA}});
+    if(!r.ok){ let m='Ошибка'; try{m=(await r.json()).error;}catch{} throw new Error(m); }
+    const url=URL.createObjectURL(await r.blob());
+    box.innerHTML=`<img src="${url}" alt="Итог недели: ${esc(c.fio)}" style="width:100%;border-radius:12px;display:block">
+      <div class="stu-meta" style="margin-top:8px">Нажмите и удерживайте картинку, чтобы сохранить или переслать. Каждую пятницу она приходит в бот автоматически.</div>`;
+  }catch(e){ box.innerHTML=errHtml(e.message); }
 }
 function closeReasonSheet(){ document.getElementById('reason-sheet').classList.remove('open'); }
 async function saveReason(){

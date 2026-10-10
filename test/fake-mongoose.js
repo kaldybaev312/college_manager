@@ -6,6 +6,7 @@ const newId = () => crypto.randomBytes(12).toString("hex");
 
 class Schema {
   constructor(def, opts = {}) { this.def = def; this.opts = opts; }
+  index() { return this; }
 }
 Schema.Types = { ObjectId: "ObjectId", Mixed: "Mixed" };
 
@@ -119,10 +120,25 @@ function model(name, schema) {
     skip(n) { this.o.skip = n; return this; }
     select(s) { this.o.sel = s; return this; }
     lean() { this.o.lean = true; return this; }
-    populate() { return this; } // связи в тестах не раскрываются
-    then(a, b) { return Promise.resolve().then(() => this.run(this.o)).then(a, b); }
+    populate(path) { (this.o.pop ||= []).push(path); return this; }
+    then(a, b) { return Promise.resolve().then(() => this.run(this.o)).then((r) => populateAll(r, this.o.pop)).then(a, b); }
     catch(b) { return this.then(undefined, b); }
   }
+  // Раскрыть ссылки (ref) для указанных полей: только то, что нужно тестам
+  const refOf = (path) => { const f = def[path]; const x = Array.isArray(f) ? f[0] : f; return x && typeof x === "object" ? x.ref : null; };
+  const populateAll = (r, paths) => {
+    if (!paths || r == null) return r;
+    const one = (d) => {
+      if (!d || typeof d !== "object") return d;
+      for (const p of paths) {
+        const ref = refOf(p); const M2 = ref && models[ref]; if (!M2) continue;
+        const find = (id) => { const x = M2._store.find((y) => String(y._id) === String(id)); return x ? clone(x) : null; };
+        d[p] = Array.isArray(d[p]) ? d[p].map(find).filter(Boolean) : d[p] != null ? find(d[p]) : d[p];
+      }
+      return d;
+    };
+    return Array.isArray(r) ? r.map(one) : one(r);
+  };
   const finish = (list, o) => {
     let r = list;
     if (o.sort) r = [...r].sort(sorter(o.sort));
@@ -192,6 +208,7 @@ function model(name, schema) {
     }),
   };
   M.findByIdAndUpdate = (id, u, opt) => M.findOneAndUpdate({ _id: id }, u, opt);
+  M.findByIdAndDelete = (id) => new Query(() => { const i = store.findIndex((x) => String(x._id) === String(id)); return i >= 0 ? wrap(store.splice(i, 1)[0]) : null; });
   models[name] = M;
   return M;
 }

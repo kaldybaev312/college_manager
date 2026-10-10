@@ -34,6 +34,8 @@ const OrgSchema = new Schema({
   tbDate: String, // YYYY-MM-DD
   contract: { type: String, enum: ["draft", "printed", "returned"], default: "draft" },
   token: String,
+  // место организации для отметки прихода по геолокации
+  geo: { lat: Number, lng: Number, radius: { type: Number, default: 300 }, setBy: String, setAt: Date },
 });
 const PracticeSchema = new Schema(
   {
@@ -64,6 +66,8 @@ const DiaryEntrySchema = new Schema(
     grade: Number,
     comment: String,
     media: [{ _id: false, fileId: OID, type: { type: String }, name: String, size: Number }],
+    // отметка прихода: время, точка, расстояние до организации, в радиусе ли
+    checkIn: { at: Date, time: String, lat: Number, lng: Number, acc: Number, dist: Number, ok: Boolean },
   },
   { timestamps: true },
 );
@@ -192,6 +196,33 @@ function buildDays(start, end, hours, sat) {
   const out = []; const d = new Date(start + "T00:00:00Z"); const e = new Date(end + "T00:00:00Z");
   while (d <= e && out.length < 250) { const g = d.getUTCDay(); if (g !== 0 && (sat || g !== 6)) out.push({ date: iso(d), hours }); d.setUTCDate(d.getUTCDate() + 1); }
   return out;
+}
+/* ---------- геолокация ---------- */
+const GEO_MAX_ACC = 1000; // м: хуже — просим включить GPS
+const GEO_ACC_BONUS = 150; // м: допуск на погрешность телефона
+function distanceM(a, b) {
+  const R = 6371000, rad = (x) => (x * Math.PI) / 180;
+  const dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return Math.round(2 * R * Math.asin(Math.sqrt(h)));
+}
+// Точка из тела запроса: {lat,lng} или текст "42.87, 74.59" / ссылка на карту
+function readPoint(b = {}) {
+  let lat = Number(b.lat), lng = Number(b.lng);
+  if ((!isFinite(lat) || !isFinite(lng)) && b.text) {
+    const m = String(b.text).match(/(-?\d{1,2}\.\d{3,})[,\s/]+(-?\d{1,3}\.\d{3,})/);
+    if (m) { lat = Number(m[1]); lng = Number(m[2]); }
+    // 2GIS пишет «долгота,широта»: для Кыргызстана широта ~39–43, долгота ~69–80
+    if (Math.abs(lat) > 60 && Math.abs(lng) <= 60) [lat, lng] = [lng, lat];
+  }
+  if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180 || (lat === 0 && lng === 0)) return null;
+  return { lat: Math.round(lat * 1e6) / 1e6, lng: Math.round(lng * 1e6) / 1e6 };
+}
+// Решение по отметке прихода
+function judgeCheckIn(orgGeo, point, acc) {
+  const dist = distanceM(orgGeo, point);
+  const radius = Number(orgGeo.radius) || 300;
+  return { dist, ok: dist <= radius + Math.min(Number(acc) || 0, GEO_ACC_BONUS) };
 }
 const sumHours = (p) => p.days.reduce((a, d) => a + Number(d.hours || 0), 0);
 const orgById = (p, id) => (id ? p.orgs.find((o) => String(o._id) === String(id)) : null);
@@ -436,6 +467,33 @@ module.exports = function practiceModule(app, { Student, Group, Curator, getSess
     p.orgs = p.orgs.filter((o) => String(o._id) !== req.params.oid); await p.save(); res.json(practiceJSON(p, await statsFor([p._id])));
   }));
 
+  /* место организации (мастер п/о) */
+  app.put("/api/practice/practices/:id/orgs/:oid/geo", staff, wrap(async (req, res) => {
+    const p = await loadPractice(req, res); if (!p) return; const o = orgById(p, req.params.oid);
+    if (!o) return res.status(404).json({ error: "Организация не найдена" });
+    const b = req.body || {};
+    if (b.clear) o.geo = undefined;
+    else {
+      const pt = readPoint(b); if (!pt) return res.status(400).json({ error: "Не удалось прочитать координаты. Пример: 42.8746, 74.5698" });
+      const radius = Math.min(Math.max(Number(b.radius) || o.geo?.radius || 300, 50), 2000);
+      o.geo = { ...pt, radius, setBy: req.auth.username, setAt: new Date() };
+    }
+    p.markModified("orgs"); await p.save(); res.json(practiceJSON(p, await statsFor([p._id])));
+  }));
+  /* кто где сегодня: карта для мастера */
+  app.get("/api/practice/practices/:id/checkins", staff, wrap(async (req, res) => {
+    const p = await loadPractice(req, res); if (!p) return;
+    const date = isDate(req.query.date) ? req.query.date : getTodayKey();
+    const entries = await DiaryEntry.find({ practice: p._id, date }).select("student checkIn").lean();
+    const byStudent = Object.fromEntries(entries.map((e) => [String(e.student), e.checkIn || null]));
+    res.json({
+      date,
+      isPracticeDay: p.days.some((d) => d.date === date),
+      orgs: p.orgs.map((o) => ({ id: o._id, name: o.name, address: o.address, geo: o.geo && isFinite(o.geo.lat) ? { lat: o.geo.lat, lng: o.geo.lng, radius: o.geo.radius || 300 } : null })),
+      students: p.students.map((s) => ({ id: s.student, fio: s.fio, orgId: s.org, checkIn: byStudent[String(s.student)] || null })),
+    });
+  }));
+
   /* документы для сотрудников */
   async function docOr400(res, name, data, filename) {
     let buf; try { buf = renderDocx(await loadTemplate(name), data); }
@@ -475,7 +533,7 @@ module.exports = function practiceModule(app, { Student, Group, Curator, getSess
   function publicPractice(p) {
     return { id: p._id, group: p.groupName, course: p.course, profession: p.profession, start: p.start, end: p.end, days: p.days, hoursTotal: sumHours(p), master: { name: p.master?.name, phone: p.master?.phone } };
   }
-  const publicOrg = (o) => (o ? { id: o._id, name: o.name, address: o.address, supName: o.supName, supPos: o.supPos, supPhone: o.supPhone } : null);
+  const publicOrg = (o) => (o ? { id: o._id, name: o.name, address: o.address, supName: o.supName, supPos: o.supPos, supPhone: o.supPhone, hasGeo: !!(o.geo && isFinite(o.geo.lat)), radius: o.geo?.radius || 300 } : null);
 
   app.post("/api/p/login", wrap(async (req, res) => {
     const inn = String(req.body?.inn || "").replace(/\D/g, "");
@@ -532,6 +590,30 @@ module.exports = function practiceModule(app, { Student, Group, Curator, getSess
     if (r.e.media.length !== before) await mediaBucket().delete(new mongoose.Types.ObjectId(req.params.fid)).catch(() => {});
     await r.e.save(); res.json(r.e);
   }));
+  /* отметка прихода по геолокации */
+  app.post("/api/p/s/:t/checkin", wrap(async (req, res) => {
+    const x = await byStudentToken(req.params.t); if (!x) return res.status(404).json({ error: "Ссылка недействительна" });
+    if (!x.org) return res.status(400).json({ error: "Мастер п/о ещё не направил вас в организацию" });
+    const date = getTodayKey();
+    if (!x.p.days.some((d) => d.date === date)) return res.status(400).json({ error: "Сегодня нет практики по графику" });
+    if (!(x.org.geo && isFinite(x.org.geo.lat))) return res.status(400).json({ error: "Место организации ещё не отмечено. Попросите руководителя практики нажать «Отметить место организации» в своей ссылке." });
+    const pt = readPoint(req.body || {}); if (!pt) return res.status(400).json({ error: "Не удалось определить местоположение" });
+    const acc = Math.round(Number(req.body?.acc) || 0);
+    if (acc > GEO_MAX_ACC) return res.status(400).json({ error: `Слишком неточное местоположение (±${acc} м). Включите GPS и попробуйте на улице или у окна.` });
+    const prev = await DiaryEntry.findOne({ practice: x.p._id, student: x.row.student, date }).select("checkIn").lean();
+    if (prev?.checkIn?.ok) return res.json({ checkIn: prev.checkIn, already: true });
+    const { dist, ok } = judgeCheckIn(x.org.geo, pt, acc);
+    const now = new Date();
+    const t = new Date(now.getTime() + 6 * 3600 * 1000); // Бишкек
+    const checkIn = { at: now, time: `${String(t.getUTCHours()).padStart(2, "0")}:${String(t.getUTCMinutes()).padStart(2, "0")}`, ...pt, acc, dist, ok };
+    const e = await DiaryEntry.findOneAndUpdate(
+      { practice: x.p._id, student: x.row.student, date },
+      { $set: { checkIn }, $setOnInsert: { text: "", status: "draft", media: [] } },
+      { upsert: true, new: true },
+    ).lean();
+    res.status(ok ? 200 : 422).json(ok ? { checkIn: e.checkIn } : { checkIn: e.checkIn, error: `Вы в ${dist} м от организации — это дальше допустимых ${x.org.geo.radius || 300} м. Подойдите ближе и отметьтесь снова.` });
+  }));
+
   app.get("/api/p/s/:t/diary.docx", wrap(async (req, res) => {
     const x = await byStudentToken(req.params.t); if (!x) return res.status(404).json({ error: "Ссылка недействительна" });
     const entries = await DiaryEntry.find({ practice: x.p._id, student: x.row.student }).lean();
@@ -561,6 +643,17 @@ module.exports = function practiceModule(app, { Student, Group, Curator, getSess
       students: x.students.map((s) => ({ id: s.student, fio: s.fio, entries: entries.filter((e) => String(e.student) === String(s.student)), characteristic: chars.find((c) => String(c.student) === String(s.student)) || null })),
     });
   }));
+  // руководитель на месте отмечает точку организации своим телефоном
+  app.put("/api/p/r/:t/geo", wrap(async (req, res) => {
+    const x = await bySupToken(req.params.t); if (!x) return res.status(404).json({ error: "Ссылка недействительна" });
+    const pt = readPoint(req.body || {}); if (!pt) return res.status(400).json({ error: "Не удалось определить местоположение" });
+    const acc = Math.round(Number(req.body?.acc) || 0);
+    if (acc > 300) return res.status(400).json({ error: `Неточное местоположение (±${acc} м). Включите GPS и повторите.` });
+    x.org.geo = { ...pt, radius: x.org.geo?.radius || 300, setBy: "руководитель: " + (x.org.supName || ""), setAt: new Date() };
+    x.p.markModified("orgs"); await x.p.save();
+    res.json({ ok: true, org: publicOrg(x.org) });
+  }));
+
   app.put("/api/p/r/:t/entries/:eid", wrap(async (req, res) => {
     const x = await bySupToken(req.params.t); if (!x) return res.status(404).json({ error: "Ссылка недействительна" });
     if (!mongoose.isValidObjectId(req.params.eid)) return res.status(404).json({ error: "Запись не найдена" });
@@ -624,3 +717,5 @@ module.exports = function practiceModule(app, { Student, Group, Curator, getSess
 
   console.log("✅ Модуль практики подключён: /practice, /p");
 };
+
+module.exports._geo = { distanceM, readPoint, judgeCheckIn };
