@@ -34,6 +34,7 @@
   --ap-bg:#dcfce7; --ap-fg:#15803d;
   --al-bg:#fef3c7; --al-fg:#d97706;
   --aa-bg:#fee2e2; --aa-fg:#dc2626;
+  --ae-bg:#e0e7ff;
   --aw-bg:var(--tg-secondary);
 }
 
@@ -254,7 +255,8 @@ body{
   border-top:1px solid var(--border);
   max-height:0;overflow:hidden;transition:max-height .2s ease;
 }
-.child-actions.open{max-height:60px}
+.child-actions.open{max-height:110px}
+.child-action-btn.wide{grid-column:1/-1;border-top:1px solid var(--border);border-right:none}
 .child-action-btn{
   padding:12px;border:none;background:none;
   font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;
@@ -320,11 +322,47 @@ body{
 .toast.show{transform:translateX(-50%) translateY(0)}
 .toast.ok{background:rgba(22,163,74,.92)}
 .toast.err{background:rgba(239,68,68,.92)}
+
+/* ── ПРИЧИНА ОТСУТСТВИЯ ── */
+.att-day.excused{background:var(--ae-bg);color:var(--accent)}
+.att-day-badge.excused{background:var(--ae-bg);color:var(--accent);font-size:11px}
+.reason-chip{display:inline-block;margin-top:4px;padding:3px 8px;border-radius:8px;background:var(--ae-bg);color:var(--accent);font-size:11px;font-weight:800}
+.reason-chip.pending{background:var(--al-bg);color:var(--al-fg)}
+.reason-actions{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.mini-btn{border:1px solid var(--border);background:var(--card);color:var(--accent);border-radius:8px;padding:5px 10px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;cursor:pointer}
+.mini-btn.ok{background:var(--accent);color:#fff;border-color:var(--accent)}
+.sheet-bg{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:9000;display:none;align-items:flex-end}
+.sheet-bg.open{display:flex}
+.sheet{width:100%;background:var(--card);color:var(--tg-text);border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto}
+.sheet h3{margin:0 0 2px;font-size:17px;font-weight:900}
+.sheet label{display:block;font-size:12px;font-weight:800;color:var(--tg-hint);margin:12px 0 4px}
+.sheet select,.sheet input,.sheet textarea{width:100%;box-sizing:border-box;border:2px solid var(--border);border-radius:10px;padding:10px 12px;font-family:'Nunito',sans-serif;font-size:15px;background:var(--card);color:var(--tg-text);outline:none}
+.sheet textarea{min-height:64px;resize:vertical}
+.sheet .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sheet .btn-del{width:100%;margin-top:8px;border:none;background:none;color:var(--danger);font-weight:800;font-size:14px;padding:10px;cursor:pointer}
 </style>
 </head>
 <body>
 
 <div id="toast" class="toast"></div>
+
+<div id="reason-sheet" class="sheet-bg" onclick="if(event.target===this)closeReasonSheet()">
+  <div class="sheet">
+    <h3 id="rs-title">Причина отсутствия</h3>
+    <div class="stu-meta" id="rs-fio"></div>
+    <label for="rs-type">Причина</label>
+    <select id="rs-type"></select>
+    <div class="row2">
+      <div><label for="rs-from">С</label><input type="date" id="rs-from"></div>
+      <div><label for="rs-to">По</label><input type="date" id="rs-to"></div>
+    </div>
+    <label for="rs-comment">Комментарий</label>
+    <textarea id="rs-comment" maxlength="300" placeholder="Например: справка будет в понедельник"></textarea>
+    <div class="stu-meta" id="rs-hint" style="margin:8px 0"></div>
+    <button class="btn-main" onclick="saveReason()">Сохранить</button>
+    <button class="btn-del" id="rs-del" onclick="deleteReason()">Удалить причину</button>
+  </div>
+</div>
 
 <!-- sc-load -->
 <div id="sc-load" class="screen active">
@@ -561,6 +599,7 @@ function applyTheme() {
     r.style.setProperty('--g2-bg','rgba(239,68,68,.22)');  r.style.setProperty('--g2-fg','#f87171');
     r.style.setProperty('--ap-bg','rgba(34,197,94,.2)');   r.style.setProperty('--ap-fg','#4ade80');
     r.style.setProperty('--al-bg','rgba(245,158,11,.2)');  r.style.setProperty('--al-fg','#fbbf24');
+    r.style.setProperty('--ae-bg','rgba(99,102,241,.18)');
     r.style.setProperty('--aa-bg','rgba(239,68,68,.16)');  r.style.setProperty('--aa-fg','#f87171');
     r.style.setProperty('--aw-bg','rgba(255,255,255,.05)');
   } else {
@@ -570,6 +609,7 @@ function applyTheme() {
     r.style.setProperty('--g2-bg','#fee2e2'); r.style.setProperty('--g2-fg','#dc2626');
     r.style.setProperty('--ap-bg','#dcfce7'); r.style.setProperty('--ap-fg','#15803d');
     r.style.setProperty('--al-bg','#fef3c7'); r.style.setProperty('--al-fg','#d97706');
+    r.style.setProperty('--ae-bg','#e0e7ff');
     r.style.setProperty('--aa-bg','#fee2e2'); r.style.setProperty('--aa-fg','#dc2626');
     r.style.setProperty('--aw-bg','var(--tg-secondary)');
   }
@@ -580,9 +620,10 @@ tg?.onEvent?.('themeChanged', applyTheme);
 /* ═══════════════════════════════════════
    STATE
 ═══════════════════════════════════════ */
-const TG_CHAT_ID = tg?.initDataUnsafe?.user?.id
-  ? String(tg.initDataUnsafe.user.id)
-  : (new URLSearchParams(location.search).get('chatId') || 'demo');
+// Сервер узнаёт пользователя только по подписанному initData от Telegram.
+// Вне Telegram (initData пустой) показываем демо-режим.
+const TG_INIT_DATA = tg?.initData || '';
+const TG_CHAT_ID = TG_INIT_DATA && tg?.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id) : 'demo';
 
 const S = {
   role:null, chatId:TG_CHAT_ID,
@@ -645,7 +686,7 @@ function toast(msg,type=''){
 ═══════════════════════════════════════ */
 async function api(path, opts={}) {
   const r = await fetch('/api/webapp/'+path, {
-    headers:{'Content-Type':'application/json','x-tg-chat-id':S.chatId,...(opts.headers||{})},
+    headers:{'Content-Type':'application/json','x-tg-init-data':TG_INIT_DATA,...(opts.headers||{})},
     ...opts,
   });
   if(!r.ok){ let m; try{m=(await r.json()).error;}catch{m=r.statusText;} throw new Error(m||'Ошибка'); }
@@ -683,6 +724,7 @@ async function init() {
   try {
     const d = await api('me');
     S.role = d.role;
+    S.absenceTypes = d.absenceTypes || {};
     if(d.role==='curator'){
       S.groups=d.groups||[]; renderGroupTabs(); go('sc-cur',{replace:true});
     } else if(d.role==='parent'){
@@ -793,13 +835,23 @@ function renderAttTodayList(data,targetId){
   <div class="card"><div class="card-header">👥 Список (${total})</div><div class="card-body" style="padding:0 14px">`;
   if(!students.length) html+='<div class="empty"><div class="empty-text">Нет данных</div></div>';
   else students.forEach(s=>{
-    const ico=s.status==='present'?'✅':s.status==='late'?'⏰':'❌';
-    html+=`<div class="stu-row">
+    const ico=s.status==='present'?'✅':s.status==='late'?'⏰':s.reason?'🩺':'❌';
+    let extra='';
+    if(s.status==='absent'){
+      if(s.reason){
+        extra=`<div class="reason-chip ${s.reason.confirmed?'':'pending'}">${esc(s.reason.label)}${s.reason.confirmed?'':' · ждёт подтверждения'}${s.reason.comment?' — '+esc(s.reason.comment):''}</div>
+        <div class="reason-actions">${s.reason.confirmed?'':`<button class="mini-btn ok" onclick="confirmReason('${s.reason.id}')">✓ Подтвердить</button>`}<button class="mini-btn" onclick="editReason('${s.id}','${s.reason.id}')">Изменить</button></div>`;
+      } else {
+        extra=`<div class="reason-actions"><button class="mini-btn" onclick="openReasonSheet({studentId:'${s.id}',fio:'${esc(s.fio).replace(/'/g,'&#39;')}',date:'${data.date||''}'})">＋ Причина отсутствия</button></div>`;
+      }
+    }
+    html+=`<div class="stu-row" style="flex-wrap:wrap">
       <div class="stu-avatar" style="background:${avatarColor(s.fio)}">${initials(s.fio)}</div>
-      <div style="flex:1"><div class="stu-name">${s.fio}</div>${s.time?`<div class="stu-meta">Вход: ${s.time}</div>`:''}</div>
+      <div style="flex:1;min-width:0"><div class="stu-name">${esc(s.fio)}</div>${s.time?`<div class="stu-meta">Вход: ${s.time}</div>`:''}${extra}</div>
       <div class="stu-status">${ico}</div>
     </div>`;
   });
+  S.lastToday=data;
   html+='</div></div>';
   document.getElementById(targetId).innerHTML=html;
 }
@@ -833,7 +885,8 @@ function renderAttCalendar(days,stuData,month,targetId){
     <div class="att-leg"><div class="att-leg-dot" style="background:var(--ap-bg)"></div>Пришли</div>
     <div class="att-leg"><div class="att-leg-dot" style="background:var(--al-bg)"></div>Опоздали</div>
     <div class="att-leg"><div class="att-leg-dot" style="background:var(--aa-bg)"></div>Отсутств.</div>
-  </div></div></div>`;
+  </div>
+  <div class="stu-meta" style="margin-top:6px">В таблице: Б — болезнь, С — семейные, Л — по направлению лицея, Д — другая причина, ? — ждёт подтверждения</div></div></div>`;
   // По студентам
   if(stuData?.length){
     html+=`<div class="card"><div class="card-header">👥 По студентам</div><div class="card-body" style="padding:0 14px;overflow-x:auto">
@@ -842,12 +895,13 @@ function renderAttCalendar(days,stuData,month,targetId){
     workDays.forEach(d=>html+=`<th>${+d.slice(-2)}</th>`);
     html+='</tr>';
     stuData.forEach(s=>{
-      html+=`<tr><td class="fio-col" title="${s.fio}">${s.fio.split(' ')[0]}</td>`;
+      html+=`<tr><td class="fio-col" title="${esc(s.fio)}">${esc(s.fio.split(' ')[0])}</td>`;
       workDays.forEach(day=>{
         const st=s.statuses?.[day]||'a';
-        const ico=day>today?'·':st==='p'?'✓':st==='l'?'!':'✗';
-        const col=day>today?'var(--border)':st==='p'?'var(--ap-fg)':st==='l'?'var(--al-fg)':'var(--aa-fg)';
-        html+=`<td style="color:${col};font-size:9px;font-weight:900">${ico}</td>`;
+        const rc=s.reasons?.[day];
+        const ico=day>today?'·':st==='p'?'✓':st==='l'?'!':st==='e'&&rc?esc(rc.code):'✗';
+        const col=day>today?'var(--border)':st==='p'?'var(--ap-fg)':st==='l'?'var(--al-fg)':st==='e'?'var(--accent)':'var(--aa-fg)';
+        html+=`<td style="color:${col};font-size:9px;font-weight:900" ${rc?`title="${esc(rc.label)}"`:''}>${ico}</td>`;
       });
       html+='</tr>';
     });
@@ -1005,6 +1059,7 @@ function renderChildrenList(){
       <div class="child-actions" id="child-act-${i}">
         <button class="child-action-btn" onclick="openPgrades(${i})">📊 Оценки</button>
         <button class="child-action-btn" onclick="openPatt(${i})">🗓 Посещаемость</button>
+        <button class="child-action-btn wide" onclick="S.curChildIdx=${i};openReasonSheet({inn:'${c.inn}',fio:'${esc(c.fio).replace(/'/g,'&#39;')}'})">📝 Сообщить об отсутствии</button>
       </div>
     </div>
   `).join('');
@@ -1094,7 +1149,7 @@ function renderParentAttCalendar(attMap,month,targetId){
   const dim=new Date(yr,mn,0).getDate();
   const today=new Date().toISOString().slice(0,10);
   const offset=(new Date(Date.UTC(yr,mn-1,1)).getUTCDay()+6)%7;
-  let present=0,absent=0,late=0;
+  let present=0,absent=0,late=0,excused=0;
   const W=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
   let html=`<div class="card"><div class="card-header">📅 ${fmtMonth(month)}</div><div class="card-body">
   <div class="att-grid">`;
@@ -1108,9 +1163,10 @@ function renderParentAttCalendar(attMap,month,targetId){
     else if(day>today) cls='future';
     else {
       const st=(attMap[day]?.status||attMap[day]||'a');
-      cls=st==='p'?'present':st==='l'?'late':'absent';
+      cls=st==='p'?'present':st==='l'?'late':st==='e'?'excused':'absent';
       if(cls==='present') present++;
       else if(cls==='late'){present++;late++;}
+      else if(cls==='excused') excused++;
       else absent++;
     }
     html+=`<div class="att-day ${cls}">${d}</div>`;
@@ -1120,13 +1176,15 @@ function renderParentAttCalendar(attMap,month,targetId){
     <div class="att-leg"><div class="att-leg-dot" style="background:var(--ap-bg)"></div>Присутствовал</div>
     <div class="att-leg"><div class="att-leg-dot" style="background:var(--al-bg)"></div>Опоздал</div>
     <div class="att-leg"><div class="att-leg-dot" style="background:var(--aa-bg)"></div>Отсутствовал</div>
+    <div class="att-leg"><div class="att-leg-dot" style="background:var(--ae-bg)"></div>По причине</div>
   </div>
   </div></div>
   <div class="stats-row">
     <div class="stat-box"><div class="stat-val" style="color:var(--success)">${present}</div><div class="stat-lbl">Дней пришёл</div></div>
-    <div class="stat-box"><div class="stat-val" style="color:var(--danger)">${absent}</div><div class="stat-lbl">Отсутств.</div></div>
-    <div class="stat-box"><div class="stat-val" style="color:var(--warning)">${late}</div><div class="stat-lbl">Опоздал</div></div>
-  </div>`;
+    <div class="stat-box"><div class="stat-val" style="color:var(--danger)">${absent}</div><div class="stat-lbl">Без причины</div></div>
+    <div class="stat-box"><div class="stat-val" style="color:var(--accent)">${excused}</div><div class="stat-lbl">По причине</div></div>
+  </div>
+  <button class="btn-main" style="margin-top:4px" onclick="openReasonSheet({inn:curChild().inn,fio:curChild().fio})">📝 Сообщить об отсутствии</button>`;
   document.getElementById(targetId).innerHTML=html;
 }
 
@@ -1144,18 +1202,19 @@ function renderParentAttDayList(attMap,month,targetId){
     const raw=attMap[day];
     const st=typeof raw==='object'?raw.status:(raw||'a');
     const time=typeof raw==='object'?raw.time:null;
-    rows.push({day,st,time});
+    const reason=typeof raw==='object'?raw.reason:null;
+    rows.push({day,st,time,reason});
   }
   if(!rows.length){ document.getElementById(targetId).innerHTML='<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Нет данных</div></div>'; return; }
   const DAYS=['воскр.','пн','вт','ср','чт','пт','сб'];
   let html=`<div class="card"><div class="card-body" style="padding:0 14px"><div class="att-day-list">`;
-  rows.slice().reverse().forEach(({day,st,time})=>{
-    const label=st==='p'?'Пришёл':st==='l'?'Опоздал':'Отсутствовал';
+  rows.slice().reverse().forEach(({day,st,time,reason})=>{
+    const label=st==='p'?'Пришёл':st==='l'?'Опоздал':reason?`${esc(reason.label)}${reason.confirmed?'':' (ждёт подтверждения)'}`:'Отсутствовал';
     const[y,m,d]=day.split('-').map(Number);
     const dow=new Date(Date.UTC(y,m-1,d)).getUTCDay();
     const dateStr=`${d} ${['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'][m-1]}, ${DAYS[dow]}`;
     html+=`<div class="att-day-row">
-      <div class="att-day-badge ${st==='p'?'present':st==='l'?'late':'absent'}">${st==='p'?'✓':st==='l'?'!':'✗'}</div>
+      <div class="att-day-badge ${st==='p'?'present':st==='l'?'late':st==='e'?'excused':'absent'}">${st==='p'?'✓':st==='l'?'!':st==='e'?esc(reason?.code||'•'):'✗'}</div>
       <div style="flex:1">
         <div class="att-day-date">${dateStr}</div>
         <div class="att-day-sub">${label}</div>
@@ -1234,7 +1293,7 @@ async function submitInn(){
   if(inn.length<12){ errEl.textContent='Минимум 12 цифр'; errEl.style.display='block'; return; }
   errEl.style.display='none';
   try {
-    const r=await api('parent/link',{method:'POST',body:JSON.stringify({inn,chatId:S.chatId})});
+    const r=await api('parent/link',{method:'POST',body:JSON.stringify({inn})});
     const me=await api('me');
     S.role='parent'; S.children=me.children||[{inn,fio:r.fio,groupName:r.groupName,profRu:''}];
     inp.value=''; toast('✅ Привязан: '+r.fio,'ok'); go('sc-par',{replace:true});
@@ -1244,7 +1303,62 @@ async function submitInn(){
 /* ═══════════════════════════════════════
    ВСПОМОГАТЕЛЬНЫЕ
 ═══════════════════════════════════════ */
-function errHtml(msg){ return `<div class="empty"><div class="empty-icon">😕</div><div class="empty-text">${msg||'Ошибка'}</div></div>`; }
+function errHtml(msg){ return `<div class="empty"><div class="empty-icon">😕</div><div class="empty-text">${esc(msg||'Ошибка')}</div></div>`; }
+function esc(v){ return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ═══════════════════════════════════════
+   ПРИЧИНА ОТСУТСТВИЯ
+═══════════════════════════════════════ */
+const REASON_DEFAULT={sick:{label:'Болезнь'},family:{label:'Семейные обстоятельства'},official:{label:'По направлению лицея'},other:{label:'Другая причина'}};
+function todayKey(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+// ctx: {studentId,fio,date} для куратора или {inn,fio} для родителя; reasonId — редактирование
+function openReasonSheet(ctx){
+  S.reasonCtx=ctx;
+  const types=Object.keys(S.absenceTypes||{}).length?S.absenceTypes:REASON_DEFAULT;
+  const isParent=!!ctx.inn;
+  const d=ctx.date||todayKey();
+  document.getElementById('rs-title').textContent=(ctx.reasonId?'Изменить причину':'Причина отсутствия');
+  document.getElementById('rs-fio').textContent=ctx.fio||'';
+  document.getElementById('rs-type').innerHTML=Object.entries(types).filter(([k])=>!(isParent&&k==='official')).map(([k,v])=>`<option value="${k}" ${ctx.type===k?'selected':''}>${esc(v.label)}</option>`).join('');
+  document.getElementById('rs-from').value=ctx.dateFrom||d;
+  document.getElementById('rs-to').value=ctx.dateTo||d;
+  document.getElementById('rs-comment').value=ctx.comment||'';
+  document.getElementById('rs-del').style.display=ctx.reasonId?'block':'none';
+  document.getElementById('rs-hint').textContent=isParent?'Куратор получит уведомление и подтвердит причину.':'';
+  document.getElementById('reason-sheet').classList.add('open');
+}
+function closeReasonSheet(){ document.getElementById('reason-sheet').classList.remove('open'); }
+async function saveReason(){
+  const c=S.reasonCtx||{};
+  const body={type:document.getElementById('rs-type').value,dateFrom:document.getElementById('rs-from').value,dateTo:document.getElementById('rs-to').value,comment:document.getElementById('rs-comment').value.trim()};
+  if(!body.dateFrom||!body.dateTo){ toast('Укажите даты','err'); return; }
+  if(S.chatId==='demo'){ closeReasonSheet(); toast('Демо: причина сохранена','ok'); return; }
+  try{
+    if(c.reasonId) await api('absences/'+c.reasonId,{method:'PUT',body:JSON.stringify(body)});
+    else await api('absences',{method:'POST',body:JSON.stringify(c.inn?{...body,inn:c.inn}:{...body,studentId:c.studentId})});
+    closeReasonSheet(); toast(c.inn?'✅ Отправлено куратору':'✅ Причина сохранена','ok');
+    refreshAfterReason();
+  }catch(e){ toast(e.message,'err'); }
+}
+async function deleteReason(){
+  const c=S.reasonCtx||{}; if(!c.reasonId) return;
+  try{ await api('absences/'+c.reasonId,{method:'DELETE'}); closeReasonSheet(); toast('Причина удалена','ok'); refreshAfterReason(); }
+  catch(e){ toast(e.message,'err'); }
+}
+async function confirmReason(id){
+  try{ await api('absences/'+id,{method:'PUT',body:JSON.stringify({})}); toast('✅ Подтверждено','ok'); refreshAfterReason(); }
+  catch(e){ toast(e.message,'err'); }
+}
+function editReason(studentId,reasonId){
+  const s=(S.lastToday?.students||[]).find(x=>x.id===studentId); if(!s?.reason) return;
+  const r=s.reason;
+  openReasonSheet({studentId,fio:s.fio,reasonId,type:r.type,dateFrom:r.dateFrom,dateTo:r.dateTo,comment:r.comment});
+}
+function refreshAfterReason(){
+  const active=document.querySelector('.screen.active')?.id;
+  if(active==='sc-att'){ if(S.attTab===0) loadAttToday(); else loadAttMonth(S.attMonth); }
+  else if(active==='sc-patt'){ loadParentAttendance(); }
+}
 
 /* ═══════════════════════════════════════
    ХУКИ ЭКРАНОВ

@@ -932,6 +932,11 @@
             <button class="btn btn-success fw-bold" onclick="downloadJournal()" title="Excel">📥</button>
           </div>
         </div>
+        <div class="mt-3 pt-3 border-top">
+          <div class="small fw-bold text-muted mb-2">Отчёты по посещаемости (Excel). Недельный приходит в Telegram по понедельникам, месячный — 1-го числа</div>
+          <div id="reports-ui"></div>
+        </div>
+        <div class="small text-muted mt-2">Нажмите на «Н», чтобы указать причину отсутствия. «?» — причину сообщил родитель, её нужно подтвердить.</div>
       </div>
       <div class="card-st" style="overflow:auto">
         <div id="j-hint" class="text-center text-muted py-5 small">Выберите группу и месяц</div>
@@ -960,6 +965,7 @@
 
   </main>
 
+  <script src="/absence-ui.js"></script>
   <script>
     /* ==========================================
        STATE
@@ -1375,16 +1381,19 @@
           b += `<tr><td style="text-align:left;font-weight:700;position:sticky;left:0;background:#fff;white-space:nowrap">${esc(row.fio)}</td>`;
           row.days.forEach(day => {
             const wc = day.isWeekend ? "style='background:#fef2f2'" : "";
-            if (!day.present) b += `<td ${wc} style="color:#cbd5e1">-</td>`;
+            if (day.absent) b += AbsenceUI.cell(row, day);
+            else if (!day.present) b += `<td ${wc} style="color:#cbd5e1">-</td>`;
             else if (day.late) b += `<td style="background:#f59e0b;color:#fff" title="${day.time}">О</td>`;
             else b += `<td style="background:#22c55e;color:#fff" title="${day.time}">П</td>`;
           });
           b += `<td style="font-weight:700;color:var(--success)">${row.stats.presences}</td>`;
           b += `<td style="font-weight:700;color:var(--warning)">${row.stats.lates}</td>`;
-          b += `<td style="font-weight:700;color:var(--danger)">${row.stats.absences}</td>`;
+          b += `<td style="font-weight:700;color:var(--danger)" title="${row.stats.excused ? "Ещё по уважительной: " + row.stats.excused : ""}">${row.stats.absences}${row.stats.excused ? `<small style="color:#4338ca"> +${row.stats.excused}у</small>` : ""}</td>`;
           b += `</tr>`;
         });
-        document.getElementById("j-tbody").innerHTML = b;
+        const jBody = document.getElementById("j-tbody");
+        jBody.innerHTML = b;
+        AbsenceUI.bind(jBody, data, loadJournal);
       } catch (e) { toast("Ошибка", "error"); }
       finally { hideLoader(); }
     }
@@ -1400,6 +1409,11 @@
       document.getElementById("j-month").value = m;
       document.getElementById("f-month").value = m;
       await loadSession();
+      ReportsUI.mount(document.getElementById("reports-ui"), {
+        getGid: () => document.getElementById("j-group").value,
+        getMonth: () => document.getElementById("j-month").value,
+        admin: false,
+      });
     };
   </script>
 </body>

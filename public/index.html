@@ -1173,12 +1173,13 @@
             <p class="page-title">Журнал посещаемости</p>
             <p class="page-sub">Данные СКУД по группе за выбранный месяц</p>
           </div>
-          <a
-            href="/journal.html"
-            target="_blank"
+          <button
             class="btn btn-outline-primary btn-sm fw-bold"
-            >🔗 Публичная ссылка</a
+            onclick="openJournalShareLink()"
+            title="Ссылка только для просмотра журнала. Сменить ссылку: поменять SESSION_SECRET"
           >
+            🔗 Ссылка для просмотра
+          </button>
         </div>
         <div class="card-st mb-3">
           <div class="row g-2 align-items-end">
@@ -1204,6 +1205,15 @@
                 📥 Excel
               </button>
             </div>
+          </div>
+          <div class="mt-3 pt-3 border-top">
+            <div class="small fw-bold text-muted mb-2">
+              Отчёты по посещаемости (Excel). Авторассылка в Telegram: пн 08:00 — за неделю, 1-го числа — за месяц
+            </div>
+            <div id="reports-ui"></div>
+          </div>
+          <div class="small text-muted mt-2">
+            В журнале нажмите на «Н», чтобы указать причину отсутствия: Б — болезнь, С — семейные, Л — по направлению лицея, Д — другая, ? — ждёт подтверждения
           </div>
         </div>
         <div class="stats-dashboard" id="matrix-stats" style="display: none">
@@ -1655,6 +1665,7 @@
     </div>
     <!-- /main-content -->
 
+    <script src="/absence-ui.js"></script>
     <script>
       let activeGroupId = null,
         professions = [],
@@ -2224,10 +2235,11 @@
         document.getElementById("journal-head").innerHTML = headHtml;
         let bodyHtml = "";
         data.matrix.forEach((row) => {
-          let tr = `<tr><td class="fio-col"><div>${row.fio}</div><div class="student-stats"><span class="s-present">П:${row.stats.presences}</span><span class="s-late">О:${row.stats.lates}</span><span class="s-absent">Н:${row.stats.absences}</span></div></td>`;
+          let tr = `<tr><td class="fio-col"><div>${esc(row.fio)}</div><div class="student-stats"><span class="s-present">П:${row.stats.presences}</span><span class="s-late">О:${row.stats.lates}</span><span class="s-absent">Н:${row.stats.absences}</span>${row.stats.excused ? `<span class="s-present" style="color:#4338ca">У:${row.stats.excused}</span>` : ""}</div></td>`;
           row.days.forEach((day) => {
             const wClass = day.isWeekend ? "weekend-cell" : "";
-            if (!day.present)
+            if (day.absent) tr += AbsenceUI.cell(row, day);
+            else if (!day.present)
               tr += `<td class="${wClass}" style="color:#cbd5e1">-</td>`;
             else if (day.late)
               tr += `<td class="late ${wClass}" title="${day.time}">О<span class="cell-time">${day.time}</span></td>`;
@@ -2237,7 +2249,22 @@
           tr += `</tr>`;
           bodyHtml += tr;
         });
-        document.getElementById("journal-body").innerHTML = bodyHtml;
+        const jBody = document.getElementById("journal-body");
+        jBody.innerHTML = bodyHtml;
+        AbsenceUI.bind(jBody, data, loadJournal);
+      }
+      async function openJournalShareLink() {
+        try {
+          const r = await fetch("/api/admin/journal-link").then((x) => x.json());
+          const url = location.origin + r.url;
+          try {
+            await navigator.clipboard.writeText(url);
+            toast("Ссылка скопирована", "success");
+          } catch {}
+          window.open(url, "_blank");
+        } catch {
+          toast("Не удалось получить ссылку", "error");
+        }
       }
       function downloadFoodReport() {
         const gid = document.getElementById("f-group-select").value,
@@ -2578,6 +2605,14 @@
         document.getElementById("vd-month-manual").value = cm;
         loadStats();
       };
+      function esc(v) {
+        return String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+      }
+      ReportsUI.mount(document.getElementById("reports-ui"), {
+        getGid: () => document.getElementById("j-group-select").value,
+        getMonth: () => document.getElementById("j-month").value,
+        admin: true,
+      });
     </script>
   </body>
 </html>

@@ -64,12 +64,16 @@ function match(doc, q) {
 }
 
 function applyUpdate(doc, upd, inserting) {
-  const ops = { $set: {}, $setOnInsert: {}, $inc: {}, $unset: {} };
+  const ops = { $set: {}, $setOnInsert: {}, $inc: {}, $unset: {}, $addToSet: {} };
   for (const [k, v] of Object.entries(upd || {})) { if (k in ops) Object.assign(ops[k], v); else ops.$set[k] = v; }
   Object.assign(doc, clone(ops.$set));
   if (inserting) Object.assign(doc, clone(ops.$setOnInsert));
   for (const [k, v] of Object.entries(ops.$inc)) doc[k] = (doc[k] || 0) + v;
   for (const k of Object.keys(ops.$unset)) delete doc[k];
+  for (const [k, v] of Object.entries(ops.$addToSet)) {
+    doc[k] = Array.isArray(doc[k]) ? doc[k] : [];
+    if (!doc[k].some((x) => String(x) === String(v))) doc[k].push(clone(v));
+  }
 }
 
 function sorter(sort) {
@@ -115,6 +119,7 @@ function model(name, schema) {
     skip(n) { this.o.skip = n; return this; }
     select(s) { this.o.sel = s; return this; }
     lean() { this.o.lean = true; return this; }
+    populate() { return this; } // связи в тестах не раскрываются
     then(a, b) { return Promise.resolve().then(() => this.run(this.o)).then(a, b); }
     catch(b) { return this.then(undefined, b); }
   }
@@ -158,6 +163,11 @@ function model(name, schema) {
       const l = store.filter((x) => match(x, q));
       for (const d of l) { applyUpdate(d, u); if (ts) d.updatedAt = new Date(); }
       return { matchedCount: l.length, modifiedCount: l.length };
+    }),
+    deleteOne: (q) => new Query(() => {
+      const i = store.findIndex((x) => match(x, q));
+      if (i >= 0) store.splice(i, 1);
+      return { deletedCount: i >= 0 ? 1 : 0 };
     }),
     deleteMany: (q) => new Query(() => {
       let n = 0;
