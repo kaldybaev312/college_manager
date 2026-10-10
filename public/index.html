@@ -900,7 +900,7 @@
 </style>
 <img src="/icons/icon-192.png" alt="">
 <div class="t">Профессиональный лицей №3</div>
-<div class="s">г. Кант</div>
+<div class="s">г. Бишкек</div>
 <div class="b"><i></i></div>
 </div>
 <script src="/pwa.js"></script>
@@ -1481,6 +1481,37 @@
                   <tbody id="gs-body"></tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </div>
+        <div class="row g-3 mt-1">
+          <div class="col-12 col-md-6">
+            <div class="card-st h-100">
+              <h6 class="fw-bold" style="font-size: 14px">❗ «Не пришёл» — уведомления</h6>
+              <div class="small text-muted mb-3">
+                Через час после начала занятий группы родителю приходит сообщение, если ребёнка нет
+                и причина не указана, а куратору — список. Не тревожим студентов на практике, с указанной
+                причиной и группы, где сегодня не пришёл никто.
+              </div>
+              <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-outline-primary btn-sm fw-bold" onclick="absentAlerts(false)">👀 Кто получит сейчас</button>
+                <button class="btn btn-outline-danger btn-sm fw-bold" onclick="absentAlerts(true)">Отправить сейчас</button>
+              </div>
+              <div id="aa-result" class="small mt-2"></div>
+            </div>
+          </div>
+          <div class="col-12 col-md-6">
+            <div class="card-st h-100">
+              <h6 class="fw-bold" style="font-size: 14px">💾 Бэкап базы</h6>
+              <div class="small text-muted mb-3">
+                Каждое воскресенье в 03:00 копия базы приходит администраторам в Telegram.
+                Задайте BACKUP_PASSWORD в настройках сервера, чтобы файл был зашифрован.
+              </div>
+              <div class="d-flex gap-2 flex-wrap">
+                <a class="btn btn-outline-primary btn-sm fw-bold" href="/api/admin/backup">⬇️ Скачать сейчас</a>
+                <button class="btn btn-outline-secondary btn-sm fw-bold" onclick="sendBackupNow()">✈️ Отправить в Telegram</button>
+              </div>
+              <div id="bk-result" class="small mt-2"></div>
             </div>
           </div>
         </div>
@@ -2342,6 +2373,38 @@
           renderGsTable();
           toast("Настройки сохранены!");
         } else toast("Ошибка сохранения", "error");
+      }
+
+      /* ── «Не пришёл» и бэкап ── */
+      async function absentAlerts(send) {
+        const box = document.getElementById("aa-result");
+        if (send && !confirm("Отправить уведомления «не пришёл» родителям и кураторам сейчас? Группы, по которым сегодня уже отправляли, пропускаются.")) return;
+        box.textContent = "Проверяю…";
+        try {
+          const r = await fetch(`/api/admin/absent-alerts/run${send ? "?send=1" : ""}`, { method: "POST" }).then((x) => x.json());
+          if (r.error) throw new Error(r.error);
+          const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+          const pv = (r.preview || []).filter((p) => p.absent.length);
+          box.innerHTML = send
+            ? `Отправлено: родителям ${r.parents}, кураторам ${r.curators}.`
+            : pv.length
+              ? pv.map((p) => `<div><b>${esc(p.group)}</b>: ${p.absent.map(esc).join(", ")}</div>`).join("")
+              : "Сейчас уведомлять некого.";
+          if (r.skipped?.length) box.innerHTML += `<div class="text-muted mt-1">Пропущены: ${r.skipped.map((x) => esc(x.group) + " — " + esc(x.why)).join("; ")}</div>`;
+        } catch (e) {
+          box.textContent = "Ошибка: " + e.message;
+        }
+      }
+      async function sendBackupNow() {
+        const box = document.getElementById("bk-result");
+        box.textContent = "Собираю бэкап…";
+        try {
+          const r = await fetch("/api/admin/backup/send-now", { method: "POST" }).then((x) => x.json());
+          if (r.error) throw new Error(r.error);
+          box.textContent = r.tooBig ? "Файл больше 50 МБ — скачайте его кнопкой «Скачать сейчас»." : `Отправлено администраторам: ${r.sent} (${(r.size / 1024 / 1024).toFixed(2)} МБ).`;
+        } catch (e) {
+          box.textContent = "Ошибка: " + e.message;
+        }
       }
 
       /* ── Curators ── */
