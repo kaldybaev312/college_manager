@@ -1,520 +1,342 @@
 <!doctype html>
 <html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Регистрация в СКУД | ПЛ №3</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      :root {
-        --accent: #4f46e5;
-        --accent-light: #eef2ff;
-        --bg: #f1f5f9;
-        --card: #fff;
-        --border: #e2e8f0;
-        --text: #0f172a;
-        --muted: #64748b;
-        --ok: #16a34a;
-        --warn: #d97706;
-        --bad: #dc2626;
-      }
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-      body {
-        background: var(--bg);
-        color: var(--text);
-        font-family: "Golos Text", "Segoe UI", sans-serif;
-        min-height: 100vh;
-      }
-      header {
-        background: #0f172a;
-        color: #fff;
-        padding: 14px 20px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-      }
-      header a {
-        color: #cbd5e1;
-        text-decoration: none;
-        font-size: 14px;
-      }
-      header h1 {
-        font-size: 18px;
-        font-weight: 700;
-      }
-      main {
-        max-width: 860px;
-        margin: 0 auto;
-        padding: 20px 16px 60px;
-      }
-      .bar {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-bottom: 16px;
-      }
-      select,
-      input[type="text"] {
-        font: inherit;
-        padding: 10px 12px;
-        border: 2px solid var(--border);
-        border-radius: 10px;
-        background: #fff;
-        min-width: 0;
-      }
-      input[type="text"] {
-        flex: 1;
-        min-width: 180px;
-      }
-      select:focus,
-      input:focus {
-        outline: none;
-        border-color: var(--accent);
-      }
-      .list {
-        display: grid;
-        gap: 8px;
-      }
-      .row {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 12px 14px;
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 6px 12px;
-        align-items: center;
-      }
-      .row h3 {
-        font-size: 15px;
-        font-weight: 600;
-      }
-      .meta {
-        color: var(--muted);
-        font-size: 13px;
-      }
-      .chip {
-        font-size: 12px;
-        font-weight: 600;
-        padding: 3px 9px;
-        border-radius: 99px;
-        background: #e2e8f0;
-        color: #334155;
-        white-space: nowrap;
-      }
-      .chip.done {
-        background: #dcfce7;
-        color: var(--ok);
-      }
-      .chip.partial {
-        background: #fef3c7;
-        color: var(--warn);
-      }
-      .chip.failed {
-        background: #fee2e2;
-        color: var(--bad);
-      }
-      .chip.pending,
-      .chip.processing {
-        background: var(--accent-light);
-        color: var(--accent);
-      }
-      .side {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-      }
-      button {
-        font: inherit;
-        font-weight: 600;
-        font-size: 14px;
-        padding: 9px 14px;
-        border: 0;
-        border-radius: 10px;
-        background: var(--accent);
-        color: #fff;
-        cursor: pointer;
-      }
-      button.ghost {
-        background: #fff;
-        color: var(--accent);
-        border: 2px solid var(--accent-light);
-      }
-      button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-      button:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 2px;
-      }
-      .err {
-        grid-column: 1/-1;
-        font-size: 12px;
-        color: var(--bad);
-      }
-      .empty {
-        text-align: center;
-        color: var(--muted);
-        padding: 40px 0;
-      }
-      dialog {
-        border: 0;
-        border-radius: 16px;
-        padding: 20px;
-        width: min(400px, 94vw);
-        margin: auto;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
-      }
-      dialog::backdrop {
-        background: rgba(15, 23, 42, 0.5);
-      }
-      dialog h2 {
-        font-size: 17px;
-        margin-bottom: 2px;
-      }
-      dialog .meta {
-        margin-bottom: 14px;
-      }
-      .shot {
-        display: grid;
-        place-items: center;
-        height: 260px;
-        border: 2px dashed var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-        background: #f8fafc;
-        margin-bottom: 12px;
-        cursor: pointer;
-        color: var(--muted);
-        text-align: center;
-        padding: 10px;
-      }
-      .shot img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-      }
-      .shot.drag {
-        border-color: var(--accent);
-        background: var(--accent-light);
-        color: var(--accent);
-      }
-      .pick {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        margin-bottom: 12px;
-      }
-      .msg {
-        font-size: 13px;
-        min-height: 20px;
-        margin-bottom: 10px;
-      }
-      .msg.bad {
-        color: var(--bad);
-      }
-      .actions {
-        display: flex;
-        gap: 8px;
-        justify-content: flex-end;
-      }
-      .note {
-        font-size: 13px;
-        color: var(--muted);
-        margin-bottom: 14px;
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <a href="/">← Админка</a>
-      <h1>Регистрация в СКУД</h1>
-    </header>
-    <main>
-      <p class="note">
-        Выберите группу, сфотографируйте студента анфас. Фото уйдёт на терминалы
-        через локальный агент, обычно за несколько секунд.
-      </p>
-      <div class="bar">
-        <select id="group" aria-label="Группа">
-          <option value="">Группа…</option>
-        </select>
-        <input
-          type="text"
-          id="q"
-          placeholder="или поиск по ФИО"
-          aria-label="Поиск по ФИО"
-        />
-      </div>
-      <div class="list" id="list">
-        <div class="empty">Выберите группу или введите ФИО</div>
-      </div>
-    </main>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Регистрация в СКУД | ПЛ №3</title>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --accent:#4f46e5; --accent-light:#eef2ff; --bg:#f1f5f9; --card:#fff; --border:#e2e8f0; --text:#0f172a; --muted:#64748b; --ok:#16a34a; --warn:#d97706; --bad:#dc2626; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:"Golos Text","Segoe UI",sans-serif; min-height:100vh; }
+  header { background:#0f172a; color:#fff; padding:14px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  header a { color:#cbd5e1; text-decoration:none; font-size:14px; }
+  header a:hover { color:#fff; }
+  header h1 { font-size:18px; font-weight:700; margin-right:auto; }
+  main { max-width:900px; margin:0 auto; padding:20px 16px 60px; }
+  .bar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+  select, input[type=text], input[type=date] { font:inherit; padding:10px 12px; border:2px solid var(--border); border-radius:10px; background:#fff; min-width:0; }
+  input[type=text] { flex:1; min-width:180px; }
+  select:focus, input:focus { outline:none; border-color:var(--accent); }
+  .list { display:grid; gap:8px; }
+  .row { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; display:grid; grid-template-columns:1fr auto; gap:6px 12px; align-items:center; }
+  .row h3 { font-size:15px; font-weight:600; }
+  .meta { color:var(--muted); font-size:13px; }
+  .chip { font-size:12px; font-weight:600; padding:3px 9px; border-radius:99px; background:#e2e8f0; color:#334155; white-space:nowrap; }
+  .chip.done { background:#dcfce7; color:var(--ok); } .chip.partial { background:#fef3c7; color:var(--warn); }
+  .chip.failed, .chip.remove_failed { background:#fee2e2; color:var(--bad); }
+  .chip.pending, .chip.processing, .chip.removing { background:var(--accent-light); color:var(--accent); }
+  .chip.removed { background:#f1f5f9; color:var(--muted); }
+  .side { display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+  button { font:inherit; font-weight:600; font-size:14px; padding:9px 14px; border:0; border-radius:10px; background:var(--accent); color:#fff; cursor:pointer; }
+  button.ghost { background:#fff; color:var(--accent); border:2px solid var(--accent-light); }
+  button.danger { background:#fff; color:var(--bad); border:2px solid #fee2e2; }
+  button.sm { padding:6px 10px; font-size:13px; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  button:focus-visible, .shot:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .err { grid-column:1/-1; font-size:12px; color:var(--bad); }
+  .empty { text-align:center; color:var(--muted); padding:40px 0; }
+  .note { font-size:13px; color:var(--muted); margin-bottom:14px; }
+  .panel { background:var(--card); border:2px solid var(--accent-light); border-radius:14px; padding:12px 14px; margin-bottom:16px; }
+  .panel h2 { font-size:15px; margin-bottom:8px; }
+  .sub { display:grid; grid-template-columns:72px 1fr auto; gap:10px; align-items:center; padding:6px 0; border-top:1px solid var(--border); }
+  .sub img { width:72px; height:72px; object-fit:cover; border-radius:8px; background:#f1f5f9; }
+  dialog { border:0; border-radius:16px; padding:20px; width:min(440px,94vw); margin:auto; box-shadow:0 20px 50px rgba(0,0,0,.25); }
+  dialog.wide { width:min(640px,96vw); }
+  dialog::backdrop { background:rgba(15,23,42,.5); }
+  dialog h2 { font-size:17px; margin-bottom:2px; } dialog .meta { margin-bottom:14px; }
+  .shot { display:grid; place-items:center; height:260px; border:2px dashed var(--border); border-radius:12px; overflow:hidden; background:#f8fafc; margin-bottom:12px; cursor:pointer; color:var(--muted); text-align:center; padding:10px; }
+  .shot img { width:100%; height:100%; object-fit:contain; }
+  .shot.drag { border-color:var(--accent); background:var(--accent-light); color:var(--accent); }
+  .pick { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+  .msg { font-size:13px; min-height:20px; margin-bottom:10px; } .msg.bad { color:var(--bad); }
+  .issues { font-size:13px; margin-bottom:10px; display:grid; gap:4px; }
+  .issues .warn { color:var(--warn); } .issues .error { color:var(--bad); font-weight:600; }
+  .check { display:flex; gap:10px; align-items:flex-start; font-size:13px; color:#475569; margin-bottom:12px; line-height:1.4; }
+  .check input { width:18px; height:18px; margin-top:1px; flex:none; }
+  .field { display:grid; gap:4px; font-size:13px; font-weight:600; color:#475569; margin-bottom:12px; }
+  .actions { display:flex; gap:8px; justify-content:flex-end; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-bottom:12px; }
+  th, td { text-align:left; padding:5px 6px; border-bottom:1px solid var(--border); }
+  td.ok { color:var(--ok); } td.no { color:var(--bad); } td.wait { color:var(--warn); }
+  .qr { display:grid; place-items:center; gap:8px; text-align:center; margin-bottom:12px; }
+  .qr img { width:220px; height:220px; }
+  .qr input { width:100%; font-size:12px; }
+  .hide { display:none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Регистрация в СКУД</h1>
+  <a href="/skud-status.html">Сводка и терминалы</a>
+  <a href="/skud-staff.html" class="admin-only hide">Сотрудники и гости</a>
+  <a href="/">← Админка</a>
+</header>
+<main>
+  <p class="note">Выберите группу и добавьте фото студента: камерой, файлом, перетаскиванием или вставкой (Ctrl+V). Перед отправкой фото проверяется на резкость, свет и размер. На терминалы оно уходит через агента в лицее, обычно за несколько секунд.</p>
 
-    <dialog id="dlg">
-      <h2 id="d-name"></h2>
-      <div class="meta" id="d-meta"></div>
-      <div
-        class="shot"
-        id="shot"
-        tabindex="0"
-        role="button"
-        aria-label="Выбрать фото или перетащить сюда"
-      ></div>
-      <div class="pick">
-        <button class="ghost" id="pick-cam" type="button">📷 Камера</button>
-        <button class="ghost" id="pick-file" type="button">📁 Файл</button>
-      </div>
-      <input
-        type="file"
-        id="file"
-        accept="image/jpeg,image/png,image/webp,image/*"
-        hidden
-      />
-      <input type="file" id="cam" accept="image/*" capture="user" hidden />
-      <div class="msg" id="msg" role="status"></div>
-      <div class="actions">
-        <button class="ghost" id="cancel" type="button">Отмена</button
-        ><button id="send" type="button" disabled>Отправить в СКУД</button>
-      </div>
-    </dialog>
+  <div class="panel hide" id="subs"><h2>Фото от студентов на проверку</h2><div id="subs-list"></div></div>
 
-    <script>
-      const $ = (id) => document.getElementById(id);
-      const LABEL = {
-        none: "не отправлен",
-        pending: "в очереди",
-        processing: "отправляется",
-        done: "в СКУД",
-        partial: "не на всех",
-        failed: "ошибка",
-      };
-      const esc = (s) =>
-        String(s ?? "").replace(
-          /[&<>"]/g,
-          (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
-        );
-      let items = [],
-        current = null,
-        blob = null,
-        timer = null;
-      const HINT =
-        "<span>Перетащите фото сюда, вставьте (Ctrl+V)<br>или нажмите, чтобы выбрать файл<br><small>Лицо крупно, анфас, ровный свет, без очков и головного убора</small></span>";
+  <div class="bar">
+    <select id="group" aria-label="Группа"><option value="">Группа…</option></select>
+    <input type="text" id="q" placeholder="или поиск по ФИО" aria-label="Поиск по ФИО">
+    <button class="ghost" id="bulk-open" type="button">📦 Массовая загрузка</button>
+  </div>
+  <div class="list" id="list"><div class="empty">Выберите группу или введите ФИО</div></div>
+</main>
 
-      async function j(url, opt) {
-        const r = await fetch(url, opt);
-        const d = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(d.error || "Ошибка " + r.status);
-        return d;
-      }
+<!-- фото одного человека -->
+<dialog id="dlg">
+  <h2 id="d-name"></h2>
+  <div class="meta" id="d-meta"></div>
+  <div class="shot" id="shot" tabindex="0" role="button" aria-label="Выбрать фото или перетащить сюда"></div>
+  <div class="pick">
+    <button class="ghost" id="pick-cam" type="button">📷 Камера</button>
+    <button class="ghost" id="pick-file" type="button">📁 Файл</button>
+  </div>
+  <input type="file" id="file" accept="image/*" hidden>
+  <input type="file" id="cam" accept="image/*" capture="user" hidden>
+  <div class="issues" id="issues"></div>
+  <label class="field">Пропуск действует до (необязательно)<input type="date" id="until"></label>
+  <label class="check" id="consent-wrap"><input type="checkbox" id="consent"><span>Получено согласие на обработку биометрических данных (для несовершеннолетних, от родителей)</span></label>
+  <div class="msg" id="msg" role="status"></div>
+  <div class="actions"><button class="ghost" id="cancel" type="button">Отмена</button><button id="send" type="button" disabled>Отправить в СКУД</button></div>
+</dialog>
 
-      async function loadGroups() {
-        const gs = await j("/api/admin/skud-reg/groups");
-        $("group").innerHTML =
-          '<option value="">Группа…</option>' +
-          gs
-            .map((g) => `<option value="${g._id}">${esc(g.name)}</option>`)
-            .join("");
-      }
+<!-- массовая загрузка -->
+<dialog id="bdlg" class="wide">
+  <h2>Массовая загрузка фото</h2>
+  <div class="meta">Имя файла = поименный № или ИНН студента выбранной группы (например 2024015.jpg). Можно выбрать папку или перетащить файлы сюда.</div>
+  <div class="pick">
+    <button class="ghost" id="b-files" type="button">📁 Файлы</button>
+    <button class="ghost" id="b-dir" type="button">🗂 Папка</button>
+  </div>
+  <input type="file" id="bfiles" accept="image/*" multiple hidden>
+  <input type="file" id="bdir" webkitdirectory hidden>
+  <div id="bdrop" class="shot" style="height:90px">Перетащите фото сюда</div>
+  <div style="max-height:260px;overflow:auto"><table id="btable"></table></div>
+  <label class="check"><input type="checkbox" id="bconsent"><span>Получено согласие на обработку биометрических данных у всех, кого загружаю</span></label>
+  <div class="msg" id="bmsg" role="status"></div>
+  <div class="actions"><button class="ghost" id="bclose" type="button">Закрыть</button><button id="bsend" type="button" disabled>Отправить</button></div>
+</dialog>
 
-      async function load() {
-        const gid = $("group").value,
-          q = $("q").value.trim();
-        if (!gid && q.length < 2) {
-          items = [];
-          render();
-          return;
-        }
-        items = await j(
-          "/api/admin/skud-reg/students?" +
-            (gid ? "groupId=" + gid : "q=" + encodeURIComponent(q)),
-        );
-        render();
-        clearTimeout(timer);
-        if (
-          items.some((s) => s.status === "pending" || s.status === "processing")
-        )
-          timer = setTimeout(load, 4000);
-      }
+<!-- ссылка студенту -->
+<dialog id="ldlg">
+  <h2>Ссылка для самостоятельной съёмки</h2>
+  <div class="meta" id="l-name"></div>
+  <div class="qr"><img id="l-qr" alt="QR-код ссылки"><input type="text" id="l-url" readonly aria-label="Ссылка"></div>
+  <p class="note">Студент снимает себя на телефон и отправляет. Вы проверяете фото в верхней панели этой страницы. Ссылка действует 3 суток.</p>
+  <div class="actions"><button class="ghost" id="l-copy" type="button">Скопировать</button><button id="l-close" type="button">Закрыть</button></div>
+</dialog>
 
-      function render() {
-        $("list").innerHTML = items.length
-          ? items
-              .map((s) => {
-                const errs = s.results
-                  .filter((r) => !r.ok)
-                  .map((r) => `${esc(r.ip)}: ${esc(r.error)}`)
-                  .join("<br>");
-                const busy =
-                  s.status === "pending" || s.status === "processing";
-                return `<div class="row">
-      <div><h3>${esc(s.fio)}</h3><div class="meta">${esc(s.group)} · ИНН ${esc(s.inn) || "—"} · № ${esc(s.lyceumId) || "—"}</div></div>
-      <div class="side"><span class="chip ${s.status}">${LABEL[s.status]}</span>
+<script src="/skud-photo.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const LABEL = { none:"не отправлен", pending:"в очереди", processing:"отправляется", done:"в СКУД", partial:"не на всех", failed:"ошибка", removing:"удаляется", removed:"удалён с терминалов", remove_failed:"ошибка удаления" };
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+let items = [], current = null, blob = null, timer = null, me = { role: "" }, issues = [];
+const HINT = '<span>Перетащите фото сюда, вставьте (Ctrl+V)<br>или нажмите, чтобы выбрать файл<br><small>Лицо крупно, анфас, ровный свет, без очков и головного убора</small></span>';
+
+async function j(url, opt) { const r = await fetch(url, opt); const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || "Ошибка " + r.status); return d; }
+
+async function init() {
+  me = await j("/api/admin/skud-reg/me").catch(() => ({ role: "" }));
+  if (me.role === "admin") document.querySelectorAll(".admin-only").forEach(e => e.classList.remove("hide"));
+  const gs = await j("/api/admin/skud-reg/groups");
+  $("group").innerHTML = '<option value="">Группа…</option>' + gs.map(g => `<option value="${g._id}">${esc(g.name)}</option>`).join("");
+  if (gs.length === 1) { $("group").value = gs[0]._id; load(); }
+  loadSubs();
+}
+
+/* ---------- фото от студентов ---------- */
+async function loadSubs() {
+  try {
+    const subs = await j("/api/admin/staff-submissions?scope=student");
+    $("subs").classList.toggle("hide", !subs.length);
+    $("subs-list").innerHTML = subs.map(s => `<div class="sub">
+      <img src="/api/admin/staff-submissions/${s.id}/photo" alt="Фото ${esc(s.fio)}">
+      <div><b>${esc(s.fio)}</b><div class="meta">${esc(s.group)}</div></div>
+      <div class="side"><button class="sm" data-ok="${s.id}">Принять</button><button class="sm danger" data-no="${s.id}">Отклонить</button></div></div>`).join("");
+  } catch { $("subs").classList.add("hide"); }
+}
+$("subs-list").onclick = async e => {
+  const ok = e.target.dataset.ok, no = e.target.dataset.no;
+  if (!ok && !no) return;
+  e.target.disabled = true;
+  try { await j(`/api/admin/staff-submissions/${ok || no}/${ok ? "approve" : "reject"}`, { method: "POST" }); }
+  catch (er) { alert(er.message); }
+  loadSubs(); load();
+};
+
+/* ---------- список ---------- */
+async function load() {
+  const gid = $("group").value, q = $("q").value.trim();
+  if (!gid && q.length < 2) { items = []; render(); return; }
+  try { items = await j("/api/admin/skud-reg/students?" + (gid ? "groupId=" + gid : "q=" + encodeURIComponent(q))); }
+  catch (e) { items = []; $("list").innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  render();
+  clearTimeout(timer);
+  if (items.some(s => ["pending", "processing", "removing"].includes(s.status))) timer = setTimeout(load, 4000);
+}
+
+function render() {
+  $("list").innerHTML = items.length ? items.map(s => {
+    const errs = s.results.filter(r => !r.ok).map(r => `${esc(r.ip)}: ${esc(r.error)}`).join("<br>");
+    const busy = ["pending", "processing", "removing"].includes(s.status);
+    const failed = ["failed", "partial"].includes(s.status);
+    const inTerm = ["done", "partial"].includes(s.status);
+    return `<div class="row">
+      <div><h3>${esc(s.fio)}</h3><div class="meta">${esc(s.group)} · ИНН ${esc(s.inn) || "—"} · № ${esc(s.lyceumId) || "—"}${s.consent ? "" : " · нет согласия"}</div></div>
+      <div class="side"><span class="chip ${s.status}">${LABEL[s.status] || s.status}${s.retrying ? " · повтор" : ""}</span>
+        ${failed && s.jobId ? `<button class="sm ghost" data-retry="${s.jobId}">Повторить</button>` : ""}
+        <button class="sm ghost" data-link="${s.id}" ${!s.ready ? "disabled" : ""} title="Ссылка и QR для съёмки самим студентом">🔗 Ссылка</button>
+        ${me.role === "admin" && (inTerm || failed) ? `<button class="sm danger" data-rm="${s.id}">С терминалов</button>` : ""}
         <button data-id="${s.id}" ${!s.ready || busy ? "disabled" : ""} class="${s.status === "done" ? "ghost" : ""}">${s.status === "done" ? "Заменить фото" : "Фото"}</button></div>
       ${!s.ready ? '<div class="err">Заполните ИНН и поименный № в карточке студента</div>' : ""}
       ${errs ? `<div class="err">${errs}</div>` : ""}
     </div>`;
-              })
-              .join("")
-          : '<div class="empty">Ничего не найдено</div>';
-      }
+  }).join("") : '<div class="empty">Ничего не найдено</div>';
+}
 
-      $("list").onclick = (e) => {
-        const b = e.target.closest("button[data-id]");
-        if (!b) return;
-        current = items.find((s) => s.id === b.dataset.id);
-        blob = null;
-        $("send").disabled = true;
-        $("msg").textContent = "";
-        $("msg").className = "msg";
-        $("shot").innerHTML = HINT;
-        $("d-name").textContent = current.fio;
-        $("d-meta").textContent = `ИНН ${current.inn} · № ${current.lyceumId}`;
-        $("dlg").showModal();
-      };
-      $("cancel").onclick = () => $("dlg").close();
+$("list").onclick = async e => {
+  const b = e.target.closest("button"); if (!b) return;
+  try {
+    if (b.dataset.retry) { await j(`/api/admin/skud-reg/jobs/${b.dataset.retry}/retry`, { method: "POST" }); return load(); }
+    if (b.dataset.rm) {
+      const s = items.find(x => x.id === b.dataset.rm);
+      if (!confirm(`Удалить ${s.fio} с терминалов? В базе студент останется.`)) return;
+      await j(`/api/admin/skud-reg/${s.id}/remove`, { method: "POST" }); return load();
+    }
+    if (b.dataset.link) {
+      const s = items.find(x => x.id === b.dataset.link);
+      const d = await j(`/api/admin/skud-selflink/${s.id}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      $("l-name").textContent = s.fio; $("l-qr").src = d.qr; $("l-url").value = d.url; return $("ldlg").showModal();
+    }
+    if (b.dataset.id) openPhoto(items.find(s => s.id === b.dataset.id));
+  } catch (er) { alert(er.message); }
+};
+$("l-close").onclick = () => $("ldlg").close();
+$("l-copy").onclick = () => { $("l-url").select(); navigator.clipboard?.writeText($("l-url").value).catch(() => document.execCommand("copy")); $("l-copy").textContent = "Скопировано"; setTimeout(() => $("l-copy").textContent = "Скопировать", 1500); };
 
-      // Уменьшаем до 1024px и подбираем качество, чтобы JPEG был не больше 200 КБ
-      async function shrink(file) {
-        const img = await createImageBitmap(file, {
-          imageOrientation: "from-image",
-        });
-        const k = Math.min(1, 1024 / Math.max(img.width, img.height));
-        const c = document.createElement("canvas");
-        c.width = Math.round(img.width * k);
-        c.height = Math.round(img.height * k);
-        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-        for (const q of [0.85, 0.75, 0.65, 0.55, 0.45, 0.35]) {
-          const b = await new Promise((r) => c.toBlob(r, "image/jpeg", q));
-          if (b.size <= 190 * 1024) return b;
-        }
-        throw new Error("Не удалось уменьшить фото, попробуйте другое");
-      }
+/* ---------- фото одного студента ---------- */
+function openPhoto(s) {
+  current = s; blob = null; issues = [];
+  $("send").disabled = true; $("msg").textContent = ""; $("msg").className = "msg"; $("issues").innerHTML = "";
+  $("shot").innerHTML = HINT; $("until").value = "";
+  $("consent").checked = false; $("consent-wrap").classList.toggle("hide", !!s.consent);
+  $("d-name").textContent = s.fio; $("d-meta").textContent = `ИНН ${s.inn} · № ${s.lyceumId}`;
+  $("dlg").showModal();
+}
+$("cancel").onclick = () => $("dlg").close();
+const bad = t => { $("msg").textContent = t; $("msg").className = "msg bad"; };
+function refresh() {
+  $("send").disabled = !blob || issues.some(i => i.level === "error") || (!current?.consent && !$("consent").checked);
+  $("send").textContent = issues.some(i => i.level === "warn") ? "Всё равно отправить" : "Отправить в СКУД";
+}
+$("consent").onchange = refresh;
 
-      const bad = (t) => {
-        $("msg").textContent = t;
-        $("msg").className = "msg bad";
-      };
+async function handleFile(f) {
+  if (!f) return;
+  $("msg").className = "msg"; $("msg").textContent = "Обработка фото…"; $("send").disabled = true; $("issues").innerHTML = "";
+  try {
+    const r = await SkudPhoto.prepare(f);
+    blob = r.blob; issues = r.issues;
+    $("shot").innerHTML = `<img alt="Предпросмотр" src="${URL.createObjectURL(blob)}">`;
+    $("issues").innerHTML = issues.map(i => `<div class="${i.level}">${i.level === "error" ? "⛔" : "⚠️"} ${esc(i.text)}</div>`).join("") ||
+      `<div style="color:var(--ok)">✅ Фото подходит${r.faceChecked ? " (лицо найдено)" : ""}</div>`;
+    $("msg").textContent = "";
+  } catch (e) { blob = null; issues = []; bad(e.message || "Не удалось открыть фото"); }
+  refresh();
+}
+$("pick-file").onclick = () => $("file").click();
+$("pick-cam").onclick = () => $("cam").click();
+$("shot").onclick = () => $("file").click();
+$("shot").onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("file").click(); } };
+for (const id of ["file", "cam"]) $(id).onchange = async () => { await handleFile($(id).files[0]); $(id).value = ""; };
+const isImg = f => /^image\//.test(f.type) || /\.(jpe?g|png|webp)$/i.test(f.name);
+const shot = $("shot");
+["dragenter", "dragover"].forEach(ev => shot.addEventListener(ev, e => { e.preventDefault(); shot.classList.add("drag"); }));
+["dragleave", "drop"].forEach(ev => shot.addEventListener(ev, e => { e.preventDefault(); shot.classList.remove("drag"); }));
+shot.addEventListener("drop", e => handleFile([...e.dataTransfer.files].find(isImg)));
+["dragover", "drop"].forEach(ev => window.addEventListener(ev, e => e.preventDefault()));
+document.addEventListener("paste", e => {
+  if (!$("dlg").open) return;
+  const f = [...(e.clipboardData?.files || [])].find(f => /^image\//.test(f.type));
+  if (f) { e.preventDefault(); handleFile(f); }
+});
 
-      // Общий обработчик: выбор файла, камера, перетаскивание, вставка из буфера
-      async function handleFile(f) {
-        if (!f) return;
-        if (!/^image\//.test(f.type) && !/\.(jpe?g|png|webp)$/i.test(f.name))
-          return bad("Нужен файл-изображение (JPG, PNG)");
-        if (f.size > 25 * 1024 * 1024)
-          return bad("Файл слишком большой (больше 25 МБ)");
-        $("msg").className = "msg";
-        $("msg").textContent = "Обработка фото…";
-        $("send").disabled = true;
-        try {
-          blob = await shrink(f);
-          $("shot").innerHTML =
-            `<img alt="Предпросмотр" src="${URL.createObjectURL(blob)}">`;
-          $("send").disabled = false;
-          $("msg").textContent = "";
-        } catch (e) {
-          blob = null;
-          bad(
-            /HEIC|HEIF/i.test(f.type + f.name)
-              ? "Формат HEIC не поддерживается, сохраните как JPG"
-              : e.message || "Не удалось открыть фото",
-          );
-        }
-      }
+function form(b, consent, until) {
+  const fd = new FormData(); fd.append("photo", b, "face.jpg");
+  if (consent) fd.append("consent", "1");
+  if (until) fd.append("validUntil", until);
+  return fd;
+}
+$("send").onclick = async () => {
+  $("send").disabled = true; $("msg").className = "msg"; $("msg").textContent = "Отправка…";
+  try {
+    await j("/api/admin/skud-reg/" + current.id, { method: "POST", body: form(blob, $("consent").checked, $("until").value) });
+    $("dlg").close(); await load();
+  } catch (e) { bad(e.message); $("send").disabled = false; }
+};
 
-      $("pick-file").onclick = () => $("file").click();
-      $("pick-cam").onclick = () => $("cam").click();
-      $("shot").onclick = () => $("file").click();
-      $("shot").onkeydown = (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          $("file").click();
-        }
-      };
-      for (const id of ["file", "cam"])
-        $(id).onchange = async () => {
-          await handleFile($(id).files[0]);
-          $(id).value = "";
-        };
+/* ---------- массовая загрузка ---------- */
+let batch = [];
+$("bulk-open").onclick = () => {
+  if (!$("group").value) return alert("Сначала выберите группу");
+  batch = []; renderBatch(); $("bmsg").textContent = ""; $("bconsent").checked = false; $("bdlg").showModal();
+};
+$("bclose").onclick = () => { $("bdlg").close(); load(); };
+$("b-files").onclick = () => $("bfiles").click();
+$("b-dir").onclick = () => $("bdir").click();
+$("bfiles").onchange = () => { addBatch([...$("bfiles").files]); $("bfiles").value = ""; };
+$("bdir").onchange = () => { addBatch([...$("bdir").files]); $("bdir").value = ""; };
+["dragenter", "dragover"].forEach(ev => $("bdrop").addEventListener(ev, e => { e.preventDefault(); $("bdrop").classList.add("drag"); }));
+["dragleave", "drop"].forEach(ev => $("bdrop").addEventListener(ev, e => { e.preventDefault(); $("bdrop").classList.remove("drag"); }));
+$("bdrop").addEventListener("drop", e => addBatch([...e.dataTransfer.files]));
+$("bconsent").onchange = () => renderBatch();
 
-      // Drag & drop
-      const shot = $("shot");
-      ["dragenter", "dragover"].forEach((ev) =>
-        shot.addEventListener(ev, (e) => {
-          e.preventDefault();
-          shot.classList.add("drag");
-        }),
-      );
-      ["dragleave", "drop"].forEach((ev) =>
-        shot.addEventListener(ev, (e) => {
-          e.preventDefault();
-          shot.classList.remove("drag");
-        }),
-      );
-      shot.addEventListener("drop", (e) =>
-        handleFile(
-          [...e.dataTransfer.files].find(
-            (f) =>
-              /^image\//.test(f.type) || /\.(jpe?g|png|webp)$/i.test(f.name),
-          ),
-        ),
-      );
-      // не даём браузеру открыть файл в вкладке, если промахнулись мимо зоны
-      ["dragover", "drop"].forEach((ev) =>
-        window.addEventListener(ev, (e) => e.preventDefault()),
-      );
+async function addBatch(files) {
+  for (const f of files.filter(isImg)) {
+    const key = f.name.replace(/\.[^.]+$/, "").trim();
+    const st = items.find(s => s.lyceumId === key || s.inn === key);
+    const row = { f, key, st, state: st ? (st.ready ? "prep" : "bad") : "bad", note: st ? (st.ready ? "обработка…" : "нет ИНН/№") : "не найден в группе" };
+    batch = batch.filter(b => !(b.st && st && b.st.id === st.id)); batch.push(row);
+  }
+  renderBatch();
+  for (const r of batch.filter(b => b.state === "prep")) {
+    try {
+      const p = await SkudPhoto.prepare(r.f);
+      const err = p.issues.find(i => i.level === "error");
+      if (err) { r.state = "bad"; r.note = err.text; }
+      else { r.blob = p.blob; r.state = "ready"; r.note = p.issues.length ? "⚠ " + p.issues[0].text : "готово"; r.warn = !!p.issues.length; }
+    } catch (e) { r.state = "bad"; r.note = e.message; }
+    renderBatch();
+  }
+}
+function renderBatch() {
+  const ready = batch.filter(b => b.state === "ready");
+  const needConsent = ready.some(b => !b.st.consent);
+  $("btable").innerHTML = batch.length ? "<tr><th>Файл</th><th>Студент</th><th>Статус</th></tr>" + batch.map(b =>
+    `<tr><td>${esc(b.f.name)}</td><td>${esc(b.st?.fio || "—")}</td><td class="${b.state === "ready" || b.state === "sent" ? "ok" : b.state === "bad" ? "no" : "wait"}">${esc(b.note)}</td></tr>`).join("") : "";
+  $("bsend").disabled = !ready.length || (needConsent && !$("bconsent").checked);
+  $("bsend").textContent = ready.length ? `Отправить (${ready.length})` : "Отправить";
+}
+$("bsend").onclick = async () => {
+  $("bsend").disabled = true;
+  let ok = 0;
+  for (const r of batch.filter(b => b.state === "ready")) {
+    r.note = "отправка…"; r.state = "prep"; renderBatch();
+    try { await j("/api/admin/skud-reg/" + r.st.id, { method: "POST", body: form(r.blob, !r.st.consent && $("bconsent").checked, "") }); r.state = "sent"; r.note = "отправлено"; ok++; }
+    catch (e) { r.state = "bad"; r.note = e.message; }
+    renderBatch();
+  }
+  $("bmsg").textContent = `Отправлено: ${ok}`; $("bmsg").className = "msg";
+};
 
-      // Вставка из буфера (Ctrl+V), пока открыто окно
-      document.addEventListener("paste", (e) => {
-        if (!$("dlg").open) return;
-        const f = [...(e.clipboardData?.files || [])].find((f) =>
-          /^image\//.test(f.type),
-        );
-        if (f) {
-          e.preventDefault();
-          handleFile(f);
-        }
-      });
-
-      $("send").onclick = async () => {
-        $("send").disabled = true;
-        $("msg").className = "msg";
-        $("msg").textContent = "Отправка…";
-        try {
-          const fd = new FormData();
-          fd.append("photo", blob, "face.jpg");
-          const d = await j("/api/admin/skud-reg/" + current.id, {
-            method: "POST",
-            body: fd,
-          });
-          $("dlg").close();
-          await load();
-        } catch (e) {
-          $("msg").textContent = e.message;
-          $("msg").className = "msg bad";
-          $("send").disabled = false;
-        }
-      };
-
-      $("group").onchange = () => {
-        $("q").value = "";
-        load();
-      };
-      $("q").oninput = () => {
-        $("group").value = "";
-        clearTimeout($("q")._t);
-        $("q")._t = setTimeout(load, 300);
-      };
-      $("shot").innerHTML = HINT;
-      loadGroups();
-    </script>
-  </body>
+$("group").onchange = () => { $("q").value = ""; load(); };
+$("q").oninput = () => { $("group").value = ""; clearTimeout($("q")._t); $("q")._t = setTimeout(load, 300); };
+$("shot").innerHTML = HINT;
+init();
+</script>
+</body>
 </html>

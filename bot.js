@@ -15,7 +15,9 @@ module.exports = function createBot(models, helpers, buildSummaryDocx) {
 
   const TG_TOKEN     = process.env.TG_TOKEN;
   if (!TG_TOKEN) throw new Error("❌ TG_TOKEN не задан в .env!");
-  const ADMIN_SECRET = process.env.ADMIN_TG_SECRET  || "pl3admin2026";
+  // Секрет входа админа в бот: только из .env. Если не задан, на этот запуск создаётся случайный.
+  const SECRET_FROM_ENV = !!process.env.ADMIN_TG_SECRET;
+  const ADMIN_SECRET = process.env.ADMIN_TG_SECRET || require("crypto").randomBytes(9).toString("base64url");
   const BOT_USERNAME = process.env.BOT_USERNAME     || "pl3_check_bot";
 
   const bot = new TelegramBot(TG_TOKEN, { polling: true });
@@ -1434,9 +1436,8 @@ _Все оценки студента тоже будут удалены_`,
   }
 
   console.log("✅ Telegram bot v3.0 запущен");
-  console.log("   Token:", TG_TOKEN.slice(0,12)+"...");
-  console.log("   Admin secret:", ADMIN_SECRET);
   console.log("   Bot username:", BOT_USERNAME);
-  console.log("   Войти как админ: /admin " + ADMIN_SECRET);
+  if (SECRET_FROM_ENV) console.log("   Вход админа: /admin <ADMIN_TG_SECRET из .env>");
+  else console.warn("⚠️ ADMIN_TG_SECRET не задан: на этот запуск создан временный секрет: /admin " + ADMIN_SECRET);
   return { bot, notifyAll, notifyParents, notifyAdmins, notifyCurators: notifyCuratorsOfGroup };
 };

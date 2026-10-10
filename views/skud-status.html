@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>СКУД: сводка | ПЛ №3</title>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --accent:#4f46e5; --accent-light:#eef2ff; --bg:#f1f5f9; --card:#fff; --border:#e2e8f0; --text:#0f172a; --muted:#64748b; --ok:#16a34a; --warn:#d97706; --bad:#dc2626; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:"Golos Text","Segoe UI",sans-serif; min-height:100vh; }
+  header { background:#0f172a; color:#fff; padding:14px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  header a { color:#cbd5e1; text-decoration:none; font-size:14px; } header a:hover { color:#fff; }
+  header h1 { font-size:18px; font-weight:700; margin-right:auto; }
+  main { max-width:1000px; margin:0 auto; padding:18px 16px 60px; }
+  nav { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+  nav button { background:#fff; color:var(--text); border:2px solid var(--border); }
+  nav button[aria-selected=true] { background:var(--accent); color:#fff; border-color:var(--accent); }
+  button, .btn { font:inherit; font-weight:600; font-size:14px; padding:9px 14px; border:0; border-radius:10px; background:var(--accent); color:#fff; cursor:pointer; text-decoration:none; display:inline-block; }
+  button.ghost, .btn.ghost { background:#fff; color:var(--accent); border:2px solid var(--accent-light); }
+  button.danger { background:#fff; color:var(--bad); border:2px solid #fee2e2; }
+  button.sm { padding:5px 10px; font-size:13px; }
+  button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:14px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
+  .stat { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; }
+  .stat b { display:block; font-size:26px; } .stat span { font-size:12px; color:var(--muted); }
+  .stat.ok b { color:var(--ok); } .stat.warn b { color:var(--warn); } .stat.bad b { color:var(--bad); }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--border); vertical-align:top; }
+  th { font-size:12px; color:var(--muted); font-weight:600; }
+  td.n, th.n { text-align:right; }
+  tr.click { cursor:pointer; } tr.click:hover { background:#f8fafc; }
+  .wrap { overflow-x:auto; }
+  .meta { color:var(--muted); font-size:13px; }
+  .bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+  .chip { font-size:12px; font-weight:600; padding:3px 9px; border-radius:99px; background:#e2e8f0; color:#334155; white-space:nowrap; }
+  .chip.done, .chip.online { background:#dcfce7; color:var(--ok); } .chip.partial, .chip.silent { background:#fef3c7; color:var(--warn); }
+  .chip.failed, .chip.offline, .chip.remove_failed { background:#fee2e2; color:var(--bad); }
+  .chip.pending, .chip.processing, .chip.removing { background:var(--accent-light); color:var(--accent); }
+  .dev { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:10px; }
+  .empty { color:var(--muted); padding:20px 0; text-align:center; }
+  select { font:inherit; padding:8px 10px; border:2px solid var(--border); border-radius:10px; background:#fff; }
+  .hide { display:none !important; }
+  .bar-in { height:8px; border-radius:99px; background:#e2e8f0; overflow:hidden; min-width:70px; } .bar-in i { display:block; height:100%; background:var(--ok); }
+</style>
+</head>
+<body>
+<header><h1>СКУД: сводка</h1><a href="/skud-register.html">Регистрация</a><a href="/skud-staff.html" class="adm hide">Сотрудники и гости</a><a href="/">← Админка</a></header>
+<main>
+  <nav role="tablist">
+    <button role="tab" data-tab="sum" aria-selected="true">Сводка</button>
+    <button role="tab" data-tab="dev" class="adm hide" aria-selected="false">Терминалы</button>
+    <button role="tab" data-tab="rec" class="adm hide" aria-selected="false">Сверка</button>
+    <button role="tab" data-tab="log" class="adm hide" aria-selected="false">Журнал</button>
+  </nav>
+
+  <section id="t-sum">
+    <div class="cards" id="totals"></div>
+    <div class="bar">
+      <a class="btn ghost" href="/api/admin/skud-reg/summary.xlsx" download>⬇ Excel: все</a>
+      <a class="btn ghost" href="/api/admin/skud-reg/summary.xlsx?onlyMissing=1" download>⬇ Excel: кого нет в СКУД</a>
+    </div>
+    <div class="card wrap"><table id="groups"></table></div>
+    <div class="card hide" id="detail">
+      <div class="bar"><b id="d-title"></b><span style="flex:1"></span>
+        <a class="btn ghost sm" id="d-xlsx" download>⬇ Excel группы (кого нет)</a><button class="ghost sm" id="d-close">Закрыть</button></div>
+      <div class="wrap"><table id="d-table"></table></div>
+    </div>
+  </section>
+
+  <section id="t-dev" class="hide"><div class="dev" id="devs"></div><p class="meta" style="margin-top:10px">Состояние обновляется агентом каждую минуту. Об отключении терминала более 3 минут придёт уведомление в Telegram.</p></section>
+
+  <section id="t-rec" class="hide">
+    <div class="bar"><button id="rec-run">🔎 Запустить сверку</button><span class="meta" id="rec-at"></span></div>
+    <p class="meta" style="margin-bottom:10px">Сверка сравнивает людей на терминалах с базой: «лишние» есть на терминале, но не в базе (например, добавлены вручную в iVMS); «не хватает» отправлены системой, но на терминале не найдены.</p>
+    <div id="rec"></div>
+  </section>
+
+  <section id="t-log" class="hide">
+    <div class="bar"><select id="log-act"><option value="">Все действия</option></select><button class="ghost" id="log-reload">Обновить</button></div>
+    <div class="card wrap"><table id="log"></table></div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const fmt = d => d ? new Date(d).toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" }) : "—";
+const KIND = { students:"студенты", teachers:"преподаватели", masters:"мастера", guests:"гости" };
+const ACT = { photo_upload:"Фото отправлено", terminal_remove:"Удаление с терминалов", terminal_remove_auto:"Автоудаление (студент удалён)", job_retry:"Повтор отправки", job_result:"Результат отправки",
+  link_create:"Создана ссылка", link_revoke:"Ссылка отозвана", selflink_create:"Ссылка студенту", staff_approve:"Сотрудник одобрен", student_photo_approve:"Фото студента принято",
+  submission_reject:"Заявка отклонена", reconcile_request:"Запрошена сверка" };
+const DEV = { online:"в сети", offline:"не отвечает", silent:"агент молчит" };
+let role = "", tabTimer;
+async function j(url, opt) { const r = await fetch(url, opt); const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || "Ошибка " + r.status); return d; }
+const post = (u, b) => j(u, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b || {}) });
+
+/* ---- сводка ---- */
+async function loadSum() {
+  const d = await j("/api/admin/skud-reg/summary"), t = d.totals;
+  $("totals").innerHTML = [
+    ["Всего", t.total, ""], ["В СКУД", t.registered, "ok"], ["Нет лица", t.missing, t.missing ? "warn" : ""],
+    ["В очереди", t.queued, ""], ["Не на всех", t.partial, t.partial ? "warn" : ""], ["Ошибки", t.failed, t.failed ? "bad" : ""],
+    ["Нет ИНН/№", t.notReady, t.notReady ? "warn" : ""],
+  ].map(([l, n, c]) => `<div class="stat ${c}"><b>${n}</b><span>${l}</span></div>`).join("");
+  $("groups").innerHTML = "<tr><th>Группа</th><th>Тип</th><th class='n'>Всего</th><th>Готовность</th><th class='n'>В СКУД</th><th class='n'>Нет лица</th><th class='n'>Ошибки</th><th class='n'>Без согласия</th></tr>" +
+    d.groups.map(g => `<tr class="click" data-g="${g.id}"><td><b>${esc(g.name)}</b></td><td class="meta">${KIND[g.kind] || ""}</td><td class="n">${g.total}</td>
+      <td><div class="bar-in"><i style="width:${g.total ? Math.round(g.registered * 100 / g.total) : 0}%"></i></div></td>
+      <td class="n">${g.registered}</td><td class="n" style="color:${g.missing ? "var(--warn)" : ""}">${g.missing}</td>
+      <td class="n" style="color:${g.failed + g.partial ? "var(--bad)" : ""}">${g.failed + g.partial}</td><td class="n">${g.noConsent}</td></tr>`).join("");
+  if (!d.groups.length) $("groups").innerHTML = '<tr><td class="empty">Групп нет</td></tr>';
+}
+$("groups").onclick = async e => {
+  const tr = e.target.closest("tr[data-g]"); if (!tr) return;
+  const d = await j("/api/admin/skud-reg/summary?groupId=" + tr.dataset.g);
+  $("d-title").textContent = d.groups[0]?.name || "";
+  $("d-xlsx").href = `/api/admin/skud-reg/summary.xlsx?groupId=${tr.dataset.g}&onlyMissing=1`;
+  const ST = { none:"нет лица", pending:"в очереди", processing:"отправляется", done:"в СКУД", partial:"не на всех", failed:"ошибка", removing:"удаляется", removed:"удалён", remove_failed:"ошибка удаления" };
+  $("d-table").innerHTML = "<tr><th>ФИО</th><th>ИНН</th><th>№</th><th>Статус</th><th>Согласие</th><th>Причина</th></tr>" +
+    d.students.map(s => `<tr><td>${esc(s.fio)}</td><td>${esc(s.inn) || "—"}</td><td>${esc(s.lyceumId) || "—"}</td><td><span class="chip ${s.status}">${ST[s.status] || s.status}</span></td><td>${s.consent ? "да" : "нет"}</td><td class="meta">${esc(s.reason)}</td></tr>`).join("");
+  $("detail").classList.remove("hide"); $("detail").scrollIntoView({ behavior: "smooth" });
+};
+$("d-close").onclick = () => $("detail").classList.add("hide");
+
+/* ---- терминалы ---- */
+async function loadDev() {
+  const ds = await j("/api/admin/skud-reg/devices");
+  $("devs").innerHTML = ds.length ? ds.map(d => `<div class="card"><div class="bar" style="margin:0 0 6px"><b>${esc(d.ip)}</b><span class="chip ${d.state}">${DEV[d.state]}</span></div>
+    <div class="meta">Сигнал: ${fmt(d.lastSeen)}</div>
+    <div class="meta">Был в сети: ${fmt(d.lastOk)}</div>
+    ${d.users != null ? `<div class="meta">Людей на терминале: ${d.users}</div>` : ""}
+    ${d.latencyMs != null && d.state === "online" ? `<div class="meta">Отклик: ${d.latencyMs} мс</div>` : ""}
+    ${d.error && d.state !== "online" ? `<div class="meta" style="color:var(--bad)">${esc(d.error)}</div>` : ""}</div>`).join("") :
+    '<div class="empty">Агент ещё не присылал сигналов. Запустите обновлённый agent.js в лицее.</div>';
+}
+
+/* ---- сверка ---- */
+async function loadRec() {
+  const r = await j("/api/admin/skud-reg/reconcile");
+  $("rec-at").textContent = r.requested ? "Ожидаем ответ агента…" : r.at ? "Последняя сверка: " + fmt(r.at) : "Сверок ещё не было";
+  $("rec").innerHTML = r.devices.map(d => !d.ok ? `<div class="card"><b>${esc(d.ip)}</b> <span class="chip offline">нет ответа</span><div class="meta">${esc(d.error)}</div></div>` :
+    `<div class="card"><div class="bar" style="margin:0 0 8px"><b>${esc(d.ip)}</b><span class="meta">на терминале: ${d.total} · лишних: ${d.extra.length} · не хватает: ${d.missing.length}</span></div>
+     ${d.extra.length ? `<div class="meta"><b>Лишние на терминале</b></div><table>${d.extra.map(x => `<tr><td>${esc(x.employeeNo)}</td><td>${esc(x.name)}</td><td class="n"><button class="danger sm" data-rm="${esc(x.employeeNo)}" data-nm="${esc(x.name)}">Удалить</button></td></tr>`).join("")}</table>` : ""}
+     ${d.missing.length ? `<div class="meta" style="margin-top:8px"><b>Не хватает на терминале</b> (отправьте фото заново на странице регистрации)</div><table>${d.missing.map(x => `<tr><td>${esc(x.employeeNo)}</td><td>${esc(x.fio)}</td></tr>`).join("")}</table>` : ""}
+     ${!d.extra.length && !d.missing.length ? '<div class="meta" style="color:var(--ok)">✅ Совпадает с базой</div>' : ""}</div>`).join("") || '<div class="empty">Нет данных</div>';
+}
+$("rec-run").onclick = async () => { await post("/api/admin/skud-reg/reconcile/run"); $("rec-at").textContent = "Запрошено, агент ответит в течение минуты…"; setTimeout(loadRec, 5000); };
+$("rec").onclick = async e => {
+  const b = e.target.closest("button[data-rm]"); if (!b) return;
+  if (!confirm(`Удалить с терминалов № ${b.dataset.rm} (${b.dataset.nm})?`)) return;
+  try { await post("/api/admin/skud-reg/remove-employee", { employeeNo: b.dataset.rm, name: b.dataset.nm }); b.textContent = "В очереди"; b.disabled = true; } catch (er) { alert(er.message); }
+};
+
+/* ---- журнал ---- */
+async function loadLog() {
+  const a = $("log-act").value;
+  const rows = await j("/api/admin/skud-reg/audit?limit=300" + (a ? "&action=" + encodeURIComponent(a) : ""));
+  if ($("log-act").options.length === 1) $("log-act").innerHTML += Object.entries(ACT).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
+  $("log").innerHTML = "<tr><th>Когда</th><th>Кто</th><th>Действие</th><th>Кого</th><th>Детали</th></tr>" + (rows.map(r =>
+    `<tr><td class="meta">${fmt(r.at)}</td><td>${esc(r.actor)}</td><td>${esc(ACT[r.action] || r.action)}</td><td>${esc(r.target)}</td><td class="meta">${esc(r.details)}</td></tr>`).join("") || '<tr><td class="empty" colspan="5">Записей нет</td></tr>');
+}
+$("log-act").onchange = loadLog; $("log-reload").onclick = loadLog;
+
+/* ---- вкладки ---- */
+const LOAD = { sum: loadSum, dev: loadDev, rec: loadRec, log: loadLog };
+function tab(name) {
+  document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
+  for (const k of Object.keys(LOAD)) $("t-" + k).classList.toggle("hide", k !== name);
+  clearInterval(tabTimer);
+  const run = () => LOAD[name]().catch(e => console.error(e));
+  run(); if (name === "dev" || name === "sum") tabTimer = setInterval(() => !document.hidden && run(), 15000);
+  history.replaceState(null, "", "#" + name);
+}
+document.querySelector("nav").onclick = e => { const b = e.target.closest("button[data-tab]"); if (b) tab(b.dataset.tab); };
+(async () => {
+  const me = await j("/api/admin/skud-reg/me").catch(() => ({}));
+  role = me.role;
+  if (role === "admin") document.querySelectorAll(".adm").forEach(e => e.classList.remove("hide"));
+  const h = location.hash.slice(1);
+  tab(LOAD[h] && (role === "admin" || h === "sum") ? h : "sum");
+})();
+</script>
+</body>
+</html>

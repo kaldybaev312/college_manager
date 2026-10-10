@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Фото для пропуска | ПЛ №3</title>
+<style>
+  :root { --accent:#4f46e5; --accent-light:#eef2ff; --bg:#f1f5f9; --card:#fff; --border:#e2e8f0; --text:#0f172a; --muted:#64748b; --ok:#16a34a; --bad:#dc2626; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  [hidden] { display:none !important; }
+  body { background:var(--bg); color:var(--text); font-family:"Segoe UI",system-ui,sans-serif; min-height:100vh; }
+  main { max-width:460px; margin:0 auto; padding:20px 16px 48px; }
+  h1 { font-size:22px; font-weight:800; margin-bottom:2px; }
+  .sub { color:var(--muted); font-size:14px; margin-bottom:16px; }
+  form, .done { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px; display:grid; gap:14px; }
+  label.f { display:grid; gap:5px; font-size:13px; font-weight:600; color:#475569; }
+  input[type=text], input[type=tel] { font:inherit; font-size:16px; color:var(--text); padding:12px; border:2px solid var(--border); border-radius:10px; width:100%; }
+  input:focus-visible, button:focus-visible, .shot:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .shot { display:grid; place-items:center; text-align:center; height:250px; border:2px dashed var(--border); border-radius:12px; background:#f8fafc; color:var(--muted); font-size:14px; padding:10px; overflow:hidden; cursor:pointer; }
+  .shot.drag { border-color:var(--accent); background:var(--accent-light); color:var(--accent); }
+  .shot img { width:100%; height:100%; object-fit:contain; }
+  .shot small { display:block; margin-top:6px; font-size:12px; }
+  .pick { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  button { font:inherit; font-weight:700; padding:13px; border:0; border-radius:10px; background:var(--accent); color:#fff; cursor:pointer; }
+  button.ghost { background:#fff; color:var(--accent); border:2px solid var(--accent-light); }
+  button:disabled { opacity:.55; cursor:not-allowed; }
+  .consent { display:flex; gap:10px; align-items:flex-start; font-size:13px; color:#475569; line-height:1.4; }
+  .consent input { width:20px; height:20px; margin-top:1px; flex:none; }
+  .msg { font-size:14px; min-height:20px; } .msg.bad { color:var(--bad); font-weight:600; }
+  .done { text-align:center; } .done h2 { color:var(--ok); }
+  .tips { font-size:12px; color:var(--muted); line-height:1.5; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="h1">Анкета сотрудника</h1>
+  <p class="sub" id="sub">Загрузка…</p>
+
+  <form id="f" hidden>
+    <div id="staff-fields" style="display:grid;gap:14px">
+    <label class="f">Фамилия, имя, отчество
+      <input type="text" id="fio" autocomplete="name" required placeholder="Иванов Иван Иванович">
+    </label>
+    <label class="f">ИНН (14 цифр)
+      <input type="tel" id="inn" inputmode="numeric" maxlength="14" pattern="\d{14}" required placeholder="12345678901234">
+    </label>
+    </div>
+    <div id="who" class="sub" hidden style="font-weight:700;color:#0f172a;margin:0"></div>
+
+    <div>
+      <div class="shot" id="shot" tabindex="0" role="button" aria-label="Выбрать фото"></div>
+      <div class="pick" style="margin-top:8px">
+        <button class="ghost" id="pick-cam" type="button">📷 Камера</button>
+        <button class="ghost" id="pick-file" type="button">📁 Файл</button>
+      </div>
+      <p class="tips" style="margin-top:8px">Фото для пропуска: лицо крупно, строго анфас, ровный свет, без очков, маски и головного убора.</p>
+    </div>
+    <input type="file" id="file" accept="image/*" hidden>
+    <input type="file" id="cam" accept="image/*" capture="user" hidden>
+
+    <label class="consent"><input type="checkbox" id="consent" required>
+      <span>Согласен(на) на обработку моих персональных данных, ИНН и фотографии для работы системы контроля доступа лицея.</span></label>
+
+    <div class="msg" id="msg" role="status"></div>
+    <div id="issues" class="msg"></div>
+    <button id="send" type="submit" disabled>Отправить</button>
+  </form>
+
+  <div class="done" id="done" hidden>
+    <h2>Отправлено</h2>
+    <p>Администратор или куратор проверит данные и внесёт вас в систему. Повторно отправлять не нужно.</p>
+  </div>
+</main>
+
+<script src="/skud-photo.js"></script>
+<script>
+let mode = "staff";
+const $ = id => document.getElementById(id);
+const token = location.pathname.split("/").filter(Boolean).pop();
+const HINT = '<span>Перетащите фото сюда, вставьте (Ctrl+V)<br>или нажмите, чтобы выбрать файл<small>Нужно фото лица</small></span>';
+let blob = null;
+$("shot").innerHTML = HINT;
+
+fetch(`/api/join/${encodeURIComponent(token)}/info`).then(async r => {
+  const d = await r.json();
+  if (!r.ok) { $("sub").textContent = d.error; return; }
+  mode = d.mode;
+  if (mode === "student") { $("h1").textContent = "Фото для пропуска"; $("staff-fields").hidden = true; $("fio").required = false; $("inn").required = false; $("inn").removeAttribute("pattern"); $("who").hidden = false; $("who").textContent = d.name; }
+  $("sub").textContent = `${mode === "student" ? "Фото для пропуска" : "Группа: " + d.label} · ссылка действует до ${new Date(d.expiresAt).toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" })}`;
+  $("f").hidden = false;
+}).catch(() => { $("sub").textContent = "Нет связи с сервером"; });
+
+const bad = t => { $("msg").textContent = t; $("msg").className = "msg bad"; };
+let blocked = false;
+const refresh = () => { $("send").disabled = !(blob && !blocked && $("consent").checked && (mode === "student" || ($("fio").value.trim() && /^\d{14}$/.test($("inn").value.trim())))); };
+
+async function handleFile(f) {
+  if (!f) return;
+  $("msg").className = "msg"; $("msg").textContent = "Обработка фото…"; $("issues").innerHTML = "";
+  try {
+    const r = await SkudPhoto.prepare(f);
+    blob = r.blob; blocked = r.issues.some(i => i.level === "error");
+    $("shot").innerHTML = `<img alt="Предпросмотр" src="${URL.createObjectURL(blob)}">`;
+    $("issues").innerHTML = r.issues.map(i => `<div style="color:${i.level === "error" ? "var(--bad)" : "#d97706"}">${i.level === "error" ? "⛔" : "⚠️"} ${i.text.replace(/</g, "&lt;")}</div>`).join("");
+    $("msg").textContent = "";
+  } catch (e) { blob = null; blocked = false; bad(e.message || "Не удалось открыть фото"); }
+  refresh();
+}
+
+$("pick-file").onclick = () => $("file").click();
+$("pick-cam").onclick = () => $("cam").click();
+$("shot").onclick = () => $("file").click();
+$("shot").onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("file").click(); } };
+for (const id of ["file", "cam"]) $(id).onchange = async () => { await handleFile($(id).files[0]); $(id).value = ""; };
+const shot = $("shot");
+["dragenter", "dragover"].forEach(ev => shot.addEventListener(ev, e => { e.preventDefault(); shot.classList.add("drag"); }));
+["dragleave", "drop"].forEach(ev => shot.addEventListener(ev, e => { e.preventDefault(); shot.classList.remove("drag"); }));
+shot.addEventListener("drop", e => handleFile([...e.dataTransfer.files].find(f => /^image\//.test(f.type))));
+["dragover", "drop"].forEach(ev => window.addEventListener(ev, e => e.preventDefault()));
+document.addEventListener("paste", e => { const f = [...(e.clipboardData?.files || [])].find(f => /^image\//.test(f.type)); if (f) { e.preventDefault(); handleFile(f); } });
+$("fio").oninput = refresh; $("consent").onchange = refresh;
+$("inn").oninput = () => { $("inn").value = $("inn").value.replace(/\D/g, ""); refresh(); };
+
+$("f").onsubmit = async e => {
+  e.preventDefault();
+  if (!blob) return bad("Добавьте фото");
+  $("send").disabled = true; $("msg").className = "msg"; $("msg").textContent = "Отправка…";
+  const fd = new FormData();
+  if (mode !== "student") { fd.append("fio", $("fio").value.trim()); fd.append("inn", $("inn").value.trim()); }
+  fd.append("consent", $("consent").checked ? "1" : "0"); fd.append("photo", blob, "face.jpg");
+  try {
+    const r = await fetch(`/api/join/${encodeURIComponent(token)}`, { method: "POST", body: fd });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { bad(d.error || "Ошибка отправки"); $("send").disabled = false; return; }
+    $("f").hidden = true; $("done").hidden = false; $("sub").textContent = "";
+  } catch { bad("Нет связи с сервером, попробуйте ещё раз"); $("send").disabled = false; }
+};
+</script>
+</body>
+</html>
