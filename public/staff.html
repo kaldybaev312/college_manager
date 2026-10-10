@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Преподаватели и мастера | ПЛ №3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&display=swap">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#13285c">
+<link rel="icon" type="image/png" href="/icons/favicon-32.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<style>
+:root{color-scheme:light;--page:#f1f5fb;--surface:#fff;--surface-2:#f6f8fc;--line:#e2e8f2;--text:#0f172a;--text-2:#475569;--muted:#94a3b8;--accent:#2a78d6;--accent-soft:#e3eefc;
+  --good:#0ca30c;--good-bg:#e6f6e6;--warning:#b77900;--warning-bg:#fdf3dc;--serious:#e0652f;--serious-bg:#fdebe2;--critical:#d03b3b;--critical-bg:#fbe5e5;--info-bg:#e0e7ff;--info:#4338ca}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){color-scheme:dark;--page:#0f1115;--surface:#1a1a19;--surface-2:#22231f;--line:#2f302c;--text:#f0efec;--text-2:#c3c2b7;--muted:#8a897f;--accent:#3987e5;--accent-soft:#1d2a3d;
+  --good-bg:#16301a;--warning-bg:#33290f;--serious-bg:#3a2216;--critical-bg:#3b1a1a;--info-bg:#22264a;--info:#a5b4fc}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--text);font:14px/1.45 'Golos Text',system-ui,-apple-system,'Segoe UI',sans-serif}
+.wrap{max-width:1280px;margin:0 auto;padding:0 16px 48px}
+header.top{background:linear-gradient(135deg,#13285c,#2a4fb3);color:#fff}
+header.top .wrap{padding-top:16px;padding-bottom:16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{margin:0;font-size:20px;font-weight:800}
+header p{margin:2px 0 0;color:#c9d6ff;font-size:13px}
+header a{color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:7px 12px;font-weight:600}
+.tabs{display:flex;gap:6px;margin:16px 0 12px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:10px;padding:8px 14px;font:600 14px 'Golos Text',sans-serif;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;min-width:0}
+.card h2{margin:0 0 4px;font-size:16px;font-weight:800}
+.hint{color:var(--text-2);font-size:13px;margin:0 0 10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input,select,button{font:inherit}
+input[type=date],input[type=month],select{border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:10px;padding:7px 10px}
+.btn{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:10px;padding:7px 12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--surface);color:var(--accent);border-color:var(--line)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.kpi b{display:block;font-size:28px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;color:var(--text-2);font-weight:600}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--text-2);font-weight:700;white-space:nowrap;background:var(--surface-2)}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.b-ok{background:var(--good-bg)}.b-late{background:var(--warning-bg)}.b-absent{background:var(--critical-bg)}.b-excused{background:var(--info-bg)}.b-free,.b-extra{background:var(--surface-2);color:var(--text-2)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.d-ok{background:var(--good)}.d-late{background:var(--warning)}.d-absent{background:var(--critical)}.d-excused{background:var(--info)}.d-free,.d-extra{background:var(--muted)}
+.bad{color:var(--critical);font-weight:700}.warn{color:var(--warning);font-weight:700}
+.lessons{font-size:12px;color:var(--text-2)}
+.grid td,.grid th{padding:4px 5px;text-align:center;font-size:12px;border:1px solid var(--line)}
+.grid td.fio,.grid th.fio{text-align:left;white-space:nowrap;position:sticky;left:0;background:var(--surface);z-index:1}
+.c-ok{background:var(--good-bg)}.c-late{background:var(--warning-bg)}.c-absent{background:var(--critical-bg);font-weight:800}.c-excused{background:var(--info-bg)}.c-early{box-shadow:inset 0 -3px 0 var(--serious)}
+.empty{padding:20px;text-align:center;color:var(--text-2)}
+.msg{padding:10px 12px;border-radius:10px;margin-top:10px;font-size:13px}
+.msg.ok{background:var(--good-bg)}.msg.err{background:var(--critical-bg)}.msg.info{background:var(--accent-soft)}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:18px;text-align:center;color:var(--text-2);cursor:pointer}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+code{background:var(--surface-2);padding:1px 5px;border-radius:5px}
+@media (max-width:800px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body data-splash-wait>
+<div id="pl3-splash" role="status" aria-label="Загрузка">
+<style>
+#pl3-splash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:linear-gradient(160deg,#0d1d47,#13285c 45%,#2a4fb3);color:#fff;font:15px/1.4 system-ui,-apple-system,'Segoe UI',sans-serif;text-align:center;opacity:0;animation:pl3in .25s ease .3s forwards;transition:opacity .4s ease}
+#pl3-splash.pl3-out{opacity:0!important;animation:none;pointer-events:none}
+#pl3-splash img{width:88px;height:88px;border-radius:22px}
+#pl3-splash .t{font-size:20px;font-weight:800;margin-top:6px}
+#pl3-splash .s{color:#c9d6ff;font-size:14px}
+@keyframes pl3in{to{opacity:1}}
+</style>
+<img src="/icons/icon-192.png" alt=""><div class="t">Профессиональный лицей №3</div><div class="s">г. Бишкек</div>
+</div>
+<script src="/pwa.js"></script>
+
+<header class="top"><div class="wrap">
+  <div><h1>👩‍🏫 Преподаватели и мастера</h1><p>Преподаватели — по расписанию Kundoluk, мастера — присутствие и часы</p></div>
+  <a href="/">← Админка</a>
+</div></header>
+
+<main class="wrap">
+  <div class="tabs" role="tablist">
+    <button role="tab" data-tab="day" aria-selected="true">📅 День</button>
+    <button role="tab" data-tab="month" aria-selected="false">🗂 Табель</button>
+    <button role="tab" data-tab="sched" aria-selected="false">🗓 Расписание</button>
+  </div>
+
+  <!-- ДЕНЬ -->
+  <section id="tab-day">
+    <div class="row" style="margin-bottom:12px"><input type="date" id="d-date" aria-label="Дата"><button class="btn ghost" id="d-today">Сегодня</button></div>
+    <div id="d-warn"></div>
+    <div class="kpis" id="d-kpis"></div>
+    <div class="card"><h2>Преподаватели</h2><p class="hint">Опоздание — от начала первого урока, ранний уход — до конца последнего. В дни без уроков отсутствие не считается.</p><div class="tbl" id="d-teachers"></div></div>
+    <div class="card"><h2>Мастера</h2><p class="hint">Был или не был в рабочий день и сколько часов провёл в лицее.</p><div class="tbl" id="d-masters"></div></div>
+  </section>
+
+  <!-- ТАБЕЛЬ -->
+  <section id="tab-month" hidden>
+    <div class="row" style="margin-bottom:12px"><input type="month" id="m-month" aria-label="Месяц"><a class="btn" id="m-xlsx" href="#">📥 Табель в Excel</a></div>
+    <div class="card"><h2>Преподаватели</h2><p class="hint">В клетке — время прихода; <span class="warn">+N</span> — опоздание (мин), подчёркнуто — ушёл раньше; <span class="bad">Н</span> — не пришёл в день с уроками; У — по уважительной причине.</p><div class="tbl" id="m-teachers"></div></div>
+    <div class="card"><h2>Мастера</h2><p class="hint">В клетке — часы в лицее; <span class="bad">Н</span> — не был в рабочий день.</p><div class="tbl" id="m-masters"></div></div>
+  </section>
+
+  <!-- РАСПИСАНИЕ -->
+  <section id="tab-sched" hidden>
+    <div class="card">
+      <h2>Откуда берётся расписание</h2>
+      <p class="hint">1) Из редактора расписания кнопкой «📤 В pl3service» — автоматически, по ключу <code>SCHEDULE_API_KEY</code>. 2) Или загрузите сюда Excel из раздела «Отчёты» редактора.</p>
+      <div id="s-key"></div>
+      <div class="drop" id="s-drop" tabindex="0" role="button" aria-label="Загрузить Excel с расписанием">📄 Перетащите сюда Excel из «Отчётов» или нажмите, чтобы выбрать (можно несколько файлов)</div>
+      <input type="file" id="s-file" accept=".xlsx,.xls" multiple hidden>
+      <div id="s-result"></div>
+    </div>
+    <div class="card"><h2>Не найдены среди сотрудников СКУД</h2><p class="hint">ФИО из расписания, которым не нашлось пары среди преподавателей в СКУД. Выберите, кто это, — запомнится.</p><div id="s-unmatched"></div></div>
+    <div class="card"><h2>Ручные сопоставления</h2><div id="s-aliases"></div></div>
+    <div class="card"><h2>Последние загрузки</h2><div class="tbl" id="s-imports"></div></div>
+  </section>
+</main>
+
+<script src="/absence-ui.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const hm = (m) => (m ? `${Math.floor(m / 60)} ч ${String(m % 60).padStart(2, "0")} мин` : "—");
+const WD = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+const ST = { ok: "Пришёл вовремя", late: "Опоздал", absent: "Не пришёл", excused: "По причине", free: "Нет уроков", extra: "Пришёл (нет уроков)" };
+const STM = { ok: "Был", absent: "Не был", excused: "По причине", free: "Выходной" };
+async function api(url, opts = {}) {
+  const r = await fetch(url, { credentials: "include", headers: { Accept: "application/json" }, ...opts });
+  if (r.redirected || r.status === 401) { location.href = "/login"; throw new Error("Войдите"); }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || "Ошибка " + r.status);
+  return j;
+}
+const today = () => { const d = new Date(Date.now() + (new Date().getTimezoneOffset() + 360) * 60000); return d.toISOString().slice(0, 10); };
+const badge = (st, map = ST) => `<span class="badge b-${st}"><span class="dot d-${st}"></span>${map[st] || st}</span>`;
+
+/* ---------- вкладки ---------- */
+document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+  ["day", "month", "sched"].forEach((t) => ($("tab-" + t).hidden = t !== b.dataset.tab));
+  if (b.dataset.tab === "month") loadMonth();
+  if (b.dataset.tab === "sched") loadSched();
+}));
+
+/* ---------- день ---------- */
+let DAY = null;
+async function loadDay() {
+  try {
+    DAY = await api(`/api/admin/staff/day?date=${$("d-date").value}`);
+  } catch (e) { $("d-teachers").innerHTML = `<div class="msg err">${esc(e.message)}</div>`; return window.pl3Ready?.(); }
+  const t = DAY.teachers, m = DAY.masters;
+  const withL = t.filter((x) => x.lessons.length);
+  $("d-warn").innerHTML = DAY.scheduleLoaded ? "" : `<div class="msg info" style="margin-bottom:12px">На эту дату расписание не загружено — опоздания преподавателей не считаются. Загрузите его во вкладке «Расписание».</div>`;
+  const k = [
+    [withL.length, "преподавателей с уроками"],
+    [withL.filter((x) => x.status === "ok" || x.status === "late").length, "пришли"],
+    [`<span class="${t.some((x) => x.late) ? "warn" : ""}">${t.filter((x) => x.late).length}</span>`, "опоздали"],
+    [`<span class="${t.some((x) => x.status === "absent") ? "bad" : ""}">${t.filter((x) => x.status === "absent").length}</span>`, "не пришли"],
+    [`${m.filter((x) => x.status === "ok").length} из ${m.filter((x) => x.workday).length}`, "мастеров на месте"],
+  ];
+  $("d-kpis").innerHTML = k.map(([v, l]) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join("");
+  const order = { absent: 0, late: 1, ok: 2, excused: 3, extra: 4, free: 5 };
+  const ts = [...t].sort((a, b) => order[a.status] - order[b.status] || a.fio.localeCompare(b.fio, "ru"));
+  $("d-teachers").innerHTML = ts.length ? `<table><thead><tr><th>ФИО</th><th>Уроки</th><th>Приход</th><th>Опоздание</th><th>Уход</th><th>Ранний уход</th><th>В лицее</th><th>Статус</th><th></th></tr></thead><tbody>
+    ${ts.map((x) => `<tr><td><b>${esc(x.fio)}</b></td>
+      <td>${x.lessons.length ? `<b class="num">${x.first}–${x.last}</b> · ${x.lessons.length} ур.<div class="lessons">${x.lessons.map((l) => `${l.start} ${esc(l.group)}${l.subject ? " · " + esc(l.subject) : ""}${l.room ? " · каб. " + esc(l.room) : ""}`).join("<br>")}</div>` : '<span class="lessons">—</span>'}</td>
+      <td class="num">${x.in || "—"}</td><td class="num">${x.late ? `<span class="warn">+${x.late} мин</span>` : "—"}</td>
+      <td class="num">${x.out || "—"}</td><td class="num">${x.early ? `<span class="warn">${x.early} мин</span>` : "—"}</td>
+      <td class="num">${hm(x.minutes)}</td><td>${badge(x.status)}${x.reason ? `<div class="lessons">${esc(x.reason)}</div>` : ""}</td>
+      <td>${x.status === "absent" ? `<button class="btn ghost sm" data-reason="${x.id}" data-fio="${esc(x.fio)}">Причина</button>` : ""}</td></tr>`).join("")}</tbody></table>` : '<div class="empty">Нет зарегистрированных преподавателей. Добавьте их через «СКУД → Сотрудники».</div>';
+  $("d-masters").innerHTML = m.length ? `<table><thead><tr><th>ФИО</th><th>Приход</th><th>Уход</th><th>В лицее</th><th>Статус</th><th></th></tr></thead><tbody>
+    ${m.map((x) => `<tr><td><b>${esc(x.fio)}</b></td><td class="num">${x.in || "—"}</td><td class="num">${x.out || "—"}</td><td class="num">${hm(x.minutes)}</td><td>${badge(x.status, STM)}${x.reason ? `<div class="lessons">${esc(x.reason)}</div>` : ""}</td>
+      <td>${x.status === "absent" ? `<button class="btn ghost sm" data-reason="${x.id}" data-fio="${esc(x.fio)}">Причина</button>` : ""}</td></tr>`).join("")}</tbody></table>` : '<div class="empty">Нет зарегистрированных мастеров.</div>';
+  window.pl3Ready?.();
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-reason]");
+  if (b) AbsenceUI.open({ id: b.dataset.reason, fio: b.dataset.fio }, { date: DAY.date, reason: null });
+});
+$("d-date").addEventListener("change", loadDay);
+$("d-today").addEventListener("click", () => { // после сохранения причины в окне — обновить день
+AbsenceUI.bind(document.createElement("tbody"), { canEdit: false, matrix: [] }, () => loadDay());
+$("d-date").value = today(); loadDay(); });
+
+/* ---------- табель ---------- */
+async function loadMonth() {
+  const m = $("m-month").value;
+  $("m-xlsx").href = `/api/admin/staff/month?month=${m}&format=xlsx`;
+  let d;
+  try { d = await api(`/api/admin/staff/month?month=${m}`); } catch (e) { $("m-teachers").innerHTML = `<div class="msg err">${esc(e.message)}</div>`; return; }
+  const head = `<th class="fio">ФИО</th>${d.days.map((x) => `<th>${+x.slice(8)}<br><span style="font-weight:500">${WD[new Date(x + "T00:00:00Z").getUTCDay()]}</span></th>`).join("")}`;
+  const cellT = (c) => {
+    if (!c || c.status === "free") return "<td></td>";
+    if (c.status === "absent") return `<td class="c-absent" title="Не пришёл: уроки ${c.first}–${c.last}">Н</td>`;
+    if (c.status === "excused") return `<td class="c-excused" title="${esc(c.reason || "")}">У</td>`;
+    const cls = (c.late ? "c-late" : "c-ok") + (c.early ? " c-early" : "");
+    return `<td class="${cls}" title="${c.lessons.length ? `Уроки ${c.first}–${c.last}. ` : "Без уроков. "}Приход ${c.in || "?"}, уход ${c.out || "?"}${c.late ? `, опоздание ${c.late} мин` : ""}${c.early ? `, ушёл раньше на ${c.early} мин` : ""}">${c.in || "+"}${c.late ? `<br><b>+${c.late}</b>` : ""}</td>`;
+  };
+  $("m-teachers").innerHTML = d.teachers.length ? `<table class="grid"><thead><tr>${head}<th>С уроками</th><th>Пришёл</th><th>Н</th><th>Опозд.</th><th>Мин</th><th>Раньше</th><th>Часы</th></tr></thead><tbody>
+    ${d.teachers.map((r) => { const by = Object.fromEntries(r.days.map((x) => [x.date, x])); const t = r.totals;
+      return `<tr><td class="fio">${esc(r.fio)}</td>${d.days.map((x) => cellT(by[x])).join("")}<td>${t.lessonDays}</td><td>${t.attended}</td><td class="${t.absent ? "bad" : ""}">${t.absent}</td><td class="${t.late ? "warn" : ""}">${t.late}</td><td>${t.lateMin}</td><td>${t.early}</td><td>${Math.round(t.minutes / 6) / 10}</td></tr>`; }).join("")}</tbody></table>` : '<div class="empty">Нет преподавателей</div>';
+  const cellM = (c) => !c || c.status === "free" ? "<td></td>" : c.status === "absent" ? `<td class="c-absent">Н</td>` : c.status === "excused" ? `<td class="c-excused">У</td>` : `<td class="c-ok" title="${c.in}–${c.out}">${c.minutes ? (c.minutes / 60).toFixed(1) : "+"}</td>`;
+  $("m-masters").innerHTML = d.masters.length ? `<table class="grid"><thead><tr>${head}<th>Раб. дней</th><th>Был</th><th>Н</th><th>Часы</th></tr></thead><tbody>
+    ${d.masters.map((r) => { const by = Object.fromEntries(r.days.map((x) => [x.date, x])); const t = r.totals;
+      return `<tr><td class="fio">${esc(r.fio)}</td>${d.days.map((x) => cellM(by[x])).join("")}<td>${t.workdays}</td><td>${t.present}</td><td class="${t.absent ? "bad" : ""}">${t.absent}</td><td>${Math.round(t.minutes / 6) / 10}</td></tr>`; }).join("")}</tbody></table>` : '<div class="empty">Нет мастеров</div>';
+}
+$("m-month").addEventListener("change", loadMonth);
+
+/* ---------- расписание ---------- */
+let SCHED = null;
+async function loadSched() {
+  try { SCHED = await api("/api/admin/staff/schedule/status"); } catch (e) { $("s-result").innerHTML = `<div class="msg err">${esc(e.message)}</div>`; return; }
+  $("s-key").innerHTML = SCHED.keyConfigured
+    ? `<div class="msg ok" style="margin:0 0 10px">Ключ для редактора расписания настроен.${SCHED.lastDate ? ` Расписание есть до ${SCHED.lastDate}.` : ""}</div>`
+    : `<div class="msg info" style="margin:0 0 10px">Чтобы редактор отправлял расписание сам, задайте на Render переменную <code>SCHEDULE_API_KEY</code> (любая длинная строка) и тот же ключ — в настройках редактора.</div>`;
+  const opts = `<option value="">— выберите преподавателя —</option>` + SCHED.teachers.map((t) => `<option value="${t.id}">${esc(t.fio)}</option>`).join("");
+  $("s-unmatched").innerHTML = SCHED.unmatched.length
+    ? `<table><tbody>${SCHED.unmatched.map((u) => `<tr><td><b>${esc(u.name)}</b></td><td><select data-alias="${esc(u.name)}">${opts}</select></td></tr>`).join("")}</tbody></table>`
+    : '<div class="empty">✅ Все ФИО из расписания нашлись</div>';
+  $("s-aliases").innerHTML = SCHED.aliases.length
+    ? `<table><tbody>${SCHED.aliases.map((a) => `<tr><td>${esc(a.name)}</td><td>→ <b>${esc(a.fio)}</b></td><td><button class="btn ghost sm" data-unalias="${esc(a.key)}">Удалить</button></td></tr>`).join("")}</tbody></table>`
+    : '<div class="empty">Пока нет</div>';
+  const SRC = { kundoluk: "Редактор (Kundoluk)", excel: "Excel" };
+  $("s-imports").innerHTML = SCHED.imports.length
+    ? `<table><thead><tr><th>Когда</th><th>Откуда</th><th>Недели</th><th>Групп</th><th>Уроков</th><th>Не найдено ФИО</th></tr></thead><tbody>${SCHED.imports.map((i) => `<tr><td class="num">${new Date(i.createdAt).toLocaleString("ru-RU")}</td><td>${SRC[i.source] || esc(i.source)}</td><td class="num">${i.weeks.join(", ")}</td><td>${i.groups}</td><td>${i.lessons}</td><td>${i.unmatched.length}</td></tr>`).join("")}</tbody></table>`
+    : '<div class="empty">Расписание ещё не загружалось</div>';
+}
+document.addEventListener("change", async (e) => {
+  const s = e.target.closest("[data-alias]");
+  if (!s || !s.value) return;
+  try { await api("/api/admin/staff/alias", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ name: s.dataset.alias, staffId: s.value }) }); loadSched(); }
+  catch (er) { alert(er.message); }
+});
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-unalias]");
+  if (!b) return;
+  await api(`/api/admin/staff/alias/${encodeURIComponent(b.dataset.unalias)}`, { method: "DELETE" }).catch((er) => alert(er.message));
+  loadSched();
+});
+async function upload(files) {
+  if (!files.length) return;
+  const fd = new FormData();
+  [...files].forEach((f) => fd.append("files", f));
+  $("s-result").innerHTML = `<div class="msg info">Загружаю…</div>`;
+  try {
+    const r = await api("/api/admin/staff/schedule/upload", { method: "POST", body: fd });
+    $("s-result").innerHTML = `<div class="msg ok">Загружено: групп ${r.groups}, уроков ${r.lessons}, недели: ${r.weeks.join(", ")}.${r.unmatched.length ? ` Не найдено ФИО: ${r.unmatched.length} — сопоставьте ниже.` : ""}</div>`;
+    loadSched();
+  } catch (e) { $("s-result").innerHTML = `<div class="msg err">${esc(e.message)}</div>`; }
+}
+const drop = $("s-drop");
+drop.addEventListener("click", () => $("s-file").click());
+drop.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") $("s-file").click(); });
+drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); upload(e.dataTransfer.files); });
+$("s-file").addEventListener("change", (e) => { upload(e.target.files); e.target.value = ""; });
+
+$("d-date").value = today();
+$("m-month").value = today().slice(0, 7);
+loadDay();
+</script>
+</body>
+</html>
