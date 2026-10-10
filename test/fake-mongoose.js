@@ -204,7 +204,7 @@ function model(name, schema) {
         return wrap(d);
       }
       applyUpdate(d, u); if (ts) d.updatedAt = new Date();
-      return wrap(project(opt.new ? d : before, o.sel));
+      return wrap(project(opt.new || opt.returnDocument === "after" ? d : before, o.sel));
     }),
   };
   M.findByIdAndUpdate = (id, u, opt) => M.findOneAndUpdate({ _id: id }, u, opt);

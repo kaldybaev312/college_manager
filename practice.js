@@ -609,7 +609,7 @@ module.exports = function practiceModule(app, { Student, Group, Curator, getSess
     const e = await DiaryEntry.findOneAndUpdate(
       { practice: x.p._id, student: x.row.student, date },
       { $set: { checkIn }, $setOnInsert: { text: "", status: "draft", media: [] } },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: "after" },
     ).lean();
     res.status(ok ? 200 : 422).json(ok ? { checkIn: e.checkIn } : { checkIn: e.checkIn, error: `Вы в ${dist} м от организации — это дальше допустимых ${x.org.geo.radius || 300} м. Подойдите ближе и отметьтесь снова.` });
   }));

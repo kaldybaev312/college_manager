@@ -981,7 +981,7 @@ app.post("/api/agent/sync", async (req, res) => {
             $inc: { "skudDaily.$.inCount": 1 },
             $set: { "skudDaily.$.present": true, "skudDaily.$.lastIn": eventIso },
           },
-          { new: false, projection: { skudDaily: { $elemMatch: { date: dateKey } } } },
+          { returnDocument: "before", projection: { skudDaily: { $elemMatch: { date: dateKey } } } },
         ).lean();
         const before = prev?.skudDaily?.[0] || {};
         if (!before.firstIn)
@@ -1393,7 +1393,7 @@ app.put(
             month: req.params.month,
             grades,
           },
-          { upsert: true, new: true, setDefaultsOnInsert: true },
+          { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
         );
       }
       res.json({ ok: true });
@@ -1529,7 +1529,7 @@ app.post(
         await Student.findOneAndUpdate(
           { inn: inn || null, fio },
           { fio, birthDate, inn, lyceumId, group: g._id },
-          { upsert: true, new: true },
+          { upsert: true, returnDocument: "after" },
         );
         created++;
       }
