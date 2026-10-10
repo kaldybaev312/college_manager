@@ -64,6 +64,9 @@ function createReports({ Group, Student, Curator, TgSub, getTodayKey }) {
     const rows = students.map((stu) => {
       const sid = String(stu._id);
       const cells = [];
+      // kinds — то же по дням в машинном виде для дашборда:
+      // p — был, l — опоздал, x — пропуск по уважительной, u — без уважительной, "" — не учебный/будущий день
+      const kinds = [];
       let present = 0,
         late = 0,
         excused = 0,
@@ -76,20 +79,24 @@ function createReports({ Group, Student, Curator, TgSub, getTodayKey }) {
           present++;
           if (st.late) late++;
           cells.push(st.late ? "О" : "П");
+          kinds.push(st.late ? "l" : "p");
         } else if (isWeekend(dk, sat) || dk > today) {
           cells.push("");
+          kinds.push("");
         } else if (reason) {
           if (!reason.confirmed) pending++;
           if (reason.excused && reason.confirmed) excused++;
           else unexcused++;
           cells.push(reason.code + (reason.confirmed ? "" : "?"));
+          kinds.push(reason.excused && reason.confirmed ? "x" : "u");
         } else {
           unexcused++;
           cells.push("Н");
+          kinds.push("u");
         }
       }
       const pct = workdays.length ? Math.round((Math.min(present, workdays.length) / workdays.length) * 100) : 0;
-      return { id: sid, fio: stu.fio, cells, present, late, excused, unexcused, pending, pct };
+      return { id: sid, fio: stu.fio, cells, kinds, present, late, excused, unexcused, pending, pct };
     });
 
     const total = rows.length;
