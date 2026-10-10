@@ -877,6 +877,10 @@ app.get("/summary.html", requireAuth, (req, res) =>
 app.get("/skud-register.html", requireAuth, requireAdmin, (req, res) =>
   res.sendFile(path.join(__dirname, "public", "skud-register.html")),
 );
+// Производственная практика: админ = старший мастер, куратор = мастер п/о
+app.get(["/practice", "/practice.html"], requireAuth, (req, res) =>
+  res.sendFile(path.join(__dirname, "public", "practice.html")),
+);
 app.use("/api/admin", requireAuth);
 app.use(express.static("public"));
 require("./skud-register")(app, {
