@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Сотрудники и гости | СКУД</title>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --accent:#4f46e5; --accent-light:#eef2ff; --bg:#f1f5f9; --card:#fff; --border:#e2e8f0; --text:#0f172a; --muted:#64748b; --ok:#16a34a; --warn:#d97706; --bad:#dc2626; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:"Golos Text","Segoe UI",sans-serif; min-height:100vh; }
+  header { background:#0f172a; color:#fff; padding:14px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  header a { color:#cbd5e1; text-decoration:none; font-size:14px; } header h1 { font-size:18px; font-weight:700; }
+  main { max-width:900px; margin:0 auto; padding:20px 16px 60px; display:grid; gap:22px; }
+  h2 { font-size:16px; margin-bottom:10px; } .note { color:var(--muted); font-size:13px; margin-bottom:10px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; }
+  .bar { display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
+  .bar label { display:grid; gap:4px; font-size:12px; font-weight:600; color:var(--muted); }
+  select, input[type=number] { font:inherit; padding:9px 10px; border:2px solid var(--border); border-radius:10px; background:#fff; min-width:140px; }
+  button { font:inherit; font-weight:600; font-size:14px; padding:9px 14px; border:0; border-radius:10px; background:var(--accent); color:#fff; cursor:pointer; }
+  button.ghost { background:#fff; color:var(--accent); border:2px solid var(--accent-light); }
+  button.red { background:#fff; color:var(--bad); border:2px solid #fee2e2; }
+  button:disabled { opacity:.5; cursor:not-allowed; } button:focus-visible, select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .list { display:grid; gap:8px; margin-top:12px; }
+  .row { border:1px solid var(--border); border-radius:10px; padding:10px 12px; display:grid; grid-template-columns:1fr auto; gap:6px 12px; align-items:center; }
+  .row h3 { font-size:15px; font-weight:600; } .meta { color:var(--muted); font-size:13px; }
+  .side { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .chip { font-size:12px; font-weight:600; padding:3px 9px; border-radius:99px; background:#e2e8f0; color:#334155; white-space:nowrap; }
+  .chip.active, .chip.done { background:#dcfce7; color:var(--ok); } .chip.partial { background:#fef3c7; color:var(--warn); }
+  .chip.failed, .chip.revoked, .chip.expired, .chip.full { background:#fee2e2; color:var(--bad); } .chip.pending, .chip.processing { background:var(--accent-light); color:var(--accent); }
+  .sub { display:grid; grid-template-columns:72px 1fr auto; gap:12px; align-items:center; border:1px solid var(--border); border-radius:10px; padding:10px; }
+  .sub img { width:72px; height:90px; object-fit:cover; border-radius:8px; background:#e8ebf0; cursor:zoom-in; }
+  .link { word-break:break-all; font-size:12px; color:var(--accent); }
+  .empty { color:var(--muted); font-size:14px; padding:6px 0; } .err { color:var(--bad); font-size:12px; grid-column:1/-1; }
+  dialog { border:0; border-radius:16px; padding:16px; margin:auto; max-width:94vw; box-shadow:0 20px 50px rgba(0,0,0,.25); text-align:center; }
+  dialog::backdrop { background:rgba(15,23,42,.55); } dialog img { max-width:min(380px,86vw); max-height:70vh; display:block; margin:0 auto 12px; border-radius:8px; }
+  #toast { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:#0f172a; color:#fff; padding:10px 16px; border-radius:10px; font-size:14px; display:none; max-width:90vw; }
+</style>
+</head>
+<body>
+<header><a href="/">← Админка</a><h1>Сотрудники и гости</h1><a href="/skud-status.html" style="margin-left:auto">Сводка</a><a href="/skud-register.html">Регистрация студентов →</a></header>
+<main>
+  <section class="card">
+    <h2>Временная ссылка-анкета</h2>
+    <p class="note">Сотрудник сам вводит ФИО, ИНН и добавляет фото. Поименный номер выдаётся автоматически после вашего одобрения. Для гостей по умолчанию пропуск на 30 дней, потом он перестаёт действовать сам; для остальных можно указать срок в днях.</p>
+    <div class="bar">
+      <label>Кому<select id="kind"><option value="teachers">Преподаватели</option><option value="masters">Мастера</option><option value="guests">Гости и практиканты</option></select></label>
+      <label>Срок действия<select id="hours"><option value="1">1 час</option><option value="24" selected>24 часа</option><option value="72">3 дня</option><option value="168">7 дней</option></select></label>
+      <label>Макс. заявок<input type="number" id="max" min="1" max="500" value="30"></label>
+      <label>Пропуск, дней<input type="number" id="days" min="1" max="3650" placeholder="без срока"></label>
+      <button id="mk">Создать ссылку</button>
+    </div>
+    <div class="list" id="links"></div>
+  </section>
+
+  <section class="card">
+    <h2>Заявки на проверку <span class="chip" id="cnt">0</span></h2>
+    <p class="note">Проверьте фото и данные. Только после «Одобрить» человек попадает в группу и на терминалы.</p>
+    <div class="list" id="subs"></div>
+  </section>
+
+  <section class="card">
+    <h2>Последние отправки на терминалы</h2>
+    <div class="list" id="jobs"></div>
+  </section>
+</main>
+
+<dialog id="dlg"><img id="big" alt=""><button class="ghost" id="close" type="button">Закрыть</button></dialog>
+<div id="toast" role="status"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+const fmt = d => new Date(d).toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" });
+const ST = { active:"активна", expired:"истекла", revoked:"отозвана", full:"лимит" };
+const JST = { pending:"в очереди", processing:"отправляется", done:"в СКУД", partial:"не на всех", failed:"ошибка" };
+let toastT;
+const toast = t => { const e = $("toast"); e.textContent = t; e.style.display = "block"; clearTimeout(toastT); toastT = setTimeout(() => e.style.display = "none", 3500); };
+async function j(url, opt) { const r = await fetch(url, opt); const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || "Ошибка " + r.status); return d; }
+const post = (url, body) => j(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+
+async function loadLinks() {
+  const ls = await j("/api/admin/staff-links");
+  $("links").innerHTML = ls.length ? ls.map(l => `<div class="row">
+      <div><h3>${esc(l.label)} <span class="chip ${l.state}">${ST[l.state]}</span></h3>
+        <div class="meta">до ${fmt(l.expiresAt)} · заявок ${l.uses}/${l.maxUses}${l.accessDays ? ` · пропуск ${l.accessDays} дн.` : ""}</div>
+        <div class="link">${esc(l.url)}</div></div>
+      <div class="side">${l.state === "active" ? `<button data-copy="${esc(l.url)}">Копировать</button><button class="ghost" data-qr="${l.id}">QR</button><button class="red" data-revoke="${l.id}">Отозвать</button>` : ""}</div>
+    </div>`).join("") : '<div class="empty">Ссылок пока нет</div>';
+}
+async function loadSubs() {
+  const ss = await j("/api/admin/staff-submissions");
+  $("cnt").textContent = ss.length;
+  $("subs").innerHTML = ss.length ? ss.map(s => `<div class="sub">
+      <img src="/api/admin/staff-submissions/${s.id}/photo" data-big="/api/admin/staff-submissions/${s.id}/photo" alt="Фото">
+      <div><h3>${esc(s.fio)}</h3><div class="meta">ИНН ${esc(s.inn)} · ${esc(s.label)}${s.accessDays ? ` · пропуск ${s.accessDays} дн.` : ""} · ${fmt(s.createdAt)}</div></div>
+      <div class="side"><button data-ok="${s.id}">Одобрить</button><button class="red" data-no="${s.id}">Отклонить</button></div>
+    </div>`).join("") : '<div class="empty">Новых заявок нет</div>';
+}
+async function loadJobs() {
+  const js = await j("/api/admin/staff-jobs");
+  $("jobs").innerHTML = js.length ? js.map(x => {
+    const errs = (x.results || []).filter(r => !r.ok).map(r => `${esc(r.ip)}: ${esc(r.error)}`).join("<br>");
+    return `<div class="row"><div><h3>${esc(x.fio)}</h3><div class="meta">№ ${esc(x.employeeNo)} · ${fmt(x.createdAt)}</div></div>
+      <span class="chip ${x.status}">${JST[x.status] || x.status}</span>${errs ? `<div class="err">${errs}</div>` : ""}</div>`;
+  }).join("") : '<div class="empty">Пока пусто</div>';
+}
+const all = () => Promise.all([loadLinks(), loadSubs(), loadJobs()]).catch(e => toast(e.message));
+
+$("mk").onclick = async () => {
+  try { await post("/api/admin/staff-links", { kind: $("kind").value, hours: $("hours").value, maxUses: $("max").value, accessDays: $("days").value }); toast("Ссылка создана"); loadLinks(); }
+  catch (e) { toast(e.message); }
+};
+document.addEventListener("click", async e => {
+  const t = e.target.closest("button,img[data-big]"); if (!t) return;
+  try {
+    if (t.dataset.copy) { await navigator.clipboard.writeText(t.dataset.copy); toast("Ссылка скопирована"); }
+    else if (t.dataset.qr) { $("big").src = `/api/admin/staff-links/${t.dataset.qr}/qr`; $("dlg").showModal(); }
+    else if (t.dataset.big) { $("big").src = t.dataset.big; $("dlg").showModal(); }
+    else if (t.dataset.revoke) { if (confirm("Отозвать ссылку? Она сразу перестанет работать.")) { await j(`/api/admin/staff-links/${t.dataset.revoke}`, { method: "DELETE" }); loadLinks(); } }
+    else if (t.dataset.ok) { t.disabled = true; const d = await post(`/api/admin/staff-submissions/${t.dataset.ok}/approve`); toast(`Одобрено: ${d.group}, № ${d.employeeNo}. Отправка на терминалы…`); all(); }
+    else if (t.dataset.no) { if (confirm("Отклонить заявку? Фото будет удалено.")) { t.disabled = true; await post(`/api/admin/staff-submissions/${t.dataset.no}/reject`); all(); } }
+    else if (t.id === "close") $("dlg").close();
+  } catch (err) { toast(err.message); all(); }
+});
+all(); setInterval(() => { if (!document.hidden && !$("dlg").open) all(); }, 8000);
+</script>
+</body>
+</html>

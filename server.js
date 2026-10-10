@@ -25,6 +25,7 @@ function requireEnv(name) {
 }
 
 const app = express();
+app.set("trust proxy", 1); // за прокси Render: реальный IP клиента в req.ip
 const upload = multer({ dest: "uploads/" });
 if (!fs.existsSync("uploads")) fs.mkdirSync("uploads");
 app.use(express.json({ limit: "2mb" }));
@@ -49,23 +50,56 @@ function hashPassword(p) {
     .update(String(p || ""))
     .digest("hex");
 }
+
+// Сессия подписана HMAC: подделать cookie без SESSION_SECRET нельзя.
+// Без SESSION_SECRET ключ выводится из других секретов (см. .env.example), но лучше задать его явно.
+const SESSION_SECRET =
+  process.env.SESSION_SECRET ||
+  crypto
+    .createHash("sha256")
+    .update(
+      [ADMIN_PASS, process.env.MONGO_URI, process.env.AGENT_API_KEY].join("|"),
+    )
+    .digest("hex");
+if (!process.env.SESSION_SECRET)
+  console.warn(
+    "⚠️ SESSION_SECRET не задан: ключ сессий выведен из других секретов. Задайте SESSION_SECRET в .env / Render.",
+  );
+const SESSION_MS = 30 * 24 * 60 * 60 * 1000;
+const sign = (payload) =>
+  crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest("base64url");
+function safeEq(a, b) {
+  const h = (x) =>
+    crypto
+      .createHash("sha256")
+      .update(String(x ?? ""))
+      .digest();
+  return crypto.timingSafeEqual(h(a), h(b));
+}
+
 function getSession(req) {
   const raw = getCookie(req, AUTH_COOKIE);
   if (!raw) return null;
   try {
-    return JSON.parse(
-      Buffer.from(decodeURIComponent(raw), "base64").toString("utf8"),
-    );
+    const [payload, sig] = decodeURIComponent(raw).split(".");
+    if (!payload || !sig || !safeEq(sig, sign(payload))) return null;
+    const s = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    if (!s.exp || s.exp < Date.now()) return null;
+    return s;
   } catch {
     return null;
   }
 }
 function setAuthCookie(res, session) {
-  const value = Buffer.from(JSON.stringify(session), "utf8").toString("base64");
-  res.cookie(AUTH_COOKIE, value, {
-    maxAge: 30 * 24 * 60 * 60 * 1000,
+  const payload = Buffer.from(
+    JSON.stringify({ ...session, exp: Date.now() + SESSION_MS }),
+    "utf8",
+  ).toString("base64url");
+  res.cookie(AUTH_COOKIE, `${payload}.${sign(payload)}`, {
+    maxAge: SESSION_MS,
     httpOnly: true,
     sameSite: "lax",
+    secure: !!process.env.RENDER,
   });
 }
 function clearAuthCookies(res) {
@@ -137,9 +171,27 @@ app.get("/login", (req, res) => {
   );
 });
 
+// Защита от подбора пароля: не больше 10 неудачных входов с одного IP за 15 минут
+const loginFails = new Map();
+const failsOf = (ip) =>
+  (loginFails.get(ip) || []).filter((t) => Date.now() - t < 15 * 60 * 1000);
+setInterval(() => {
+  for (const ip of loginFails.keys()) if (!failsOf(ip).length) loginFails.delete(ip);
+}, 10 * 60 * 1000).unref();
+
 app.post("/login", (req, res) => {
+  const ip = req.ip;
+  if (failsOf(ip).length >= 10)
+    return res
+      .status(429)
+      .send("Слишком много попыток входа. Подождите 15 минут.");
+  const bad = () => {
+    loginFails.set(ip, [...failsOf(ip), Date.now()]);
+    return res.redirect("/login?error=1");
+  };
   const { username, password } = req.body;
-  if (username === ADMIN_LOGIN && password === ADMIN_PASS) {
+  if (safeEq(username, ADMIN_LOGIN) && safeEq(password, ADMIN_PASS)) {
+    loginFails.delete(ip);
     setAuthCookie(res, { role: "admin", username: ADMIN_LOGIN });
     return res.redirect("/");
   }
@@ -148,10 +200,11 @@ app.post("/login", (req, res) => {
     .then((curator) => {
       if (
         !curator ||
-        curator.passwordHash !== hashPassword(password) ||
+        !safeEq(curator.passwordHash, hashPassword(password)) ||
         !curator.groups?.length
       )
-        return res.redirect("/login?error=1");
+        return bad();
+      loginFails.delete(ip);
       const groups = curator.groups.map((g) => ({
         id: String(g._id),
         name: g.name,
@@ -167,7 +220,7 @@ app.post("/login", (req, res) => {
       });
       res.redirect("/summary.html");
     })
-    .catch(() => res.redirect("/login?error=1"));
+    .catch(() => bad());
 });
 
 app.get("/logout", (req, res) => {
@@ -302,6 +355,12 @@ const Group = mongoose.model(
     profKg: String,
     duration: String,
     shiftStart: { type: String, default: "08:00" },
+    // students: обычная группа; teachers/masters/guests: сотрудники и гости СКУД
+    kind: {
+      type: String,
+      enum: ["students", "teachers", "masters", "guests"],
+      default: "students",
+    },
     summarySubjects: [
       {
         key: String,
@@ -322,6 +381,8 @@ const Student = mongoose.model(
     birthDate: String,
     inn: String,
     lyceumId: String,
+    skudConsentAt: Date, // согласие на обработку биометрии (СКУД)
+    skudConsentBy: String,
     group: { type: mongoose.Schema.Types.ObjectId, ref: "Group" },
     attendance: [{ date: String, present: Boolean }],
     skudDaily: [
@@ -711,7 +772,7 @@ app.get("/api/admin/attendance-matrix/:gid/:month", async (req, res) => {
 
 app.post("/api/agent/sync", async (req, res) => {
   const { apiKey, data } = req.body;
-  if (apiKey !== AGENT_API_KEY) return res.status(403).send("Forbidden");
+  if (!safeEq(apiKey, AGENT_API_KEY)) return res.status(403).send("Forbidden");
   if (!Array.isArray(data))
     return res.status(400).json({ error: "array expected" });
   let ok = 0,
@@ -874,7 +935,8 @@ app.get("/admin/events", requireAuth, requireAdmin, (req, res) =>
 app.get("/summary.html", requireAuth, (req, res) =>
   res.sendFile(path.join(__dirname, "public", "summary.html")),
 );
-app.get("/skud-register.html", requireAuth, requireAdmin, (req, res) =>
+// Администратор видит все группы, куратор только свои (проверяется в API)
+app.get("/skud-register.html", requireAuth, (req, res) =>
   res.sendFile(path.join(__dirname, "public", "skud-register.html")),
 );
 // Производственная практика (страницы /practice и /p, API /api/practice и /api/p).
@@ -882,12 +944,17 @@ app.get("/skud-register.html", requireAuth, requireAdmin, (req, res) =>
 require("./practice")(app, { Student, Group, Curator, getSession, getTodayKey });
 app.use("/api/admin", requireAuth);
 app.use(express.static("public"));
-require("./skud-register")(app, {
+const skud = require("./skud")(app, {
   Student,
   Group,
+  requireAuth,
   requireAdmin,
   normalizeINN,
   AGENT_API_KEY,
+  getSession,
+  canAccessGroup,
+  getAccessibleGroupIds,
+  notify: (m) => notifyAdmins(m),
 });
 
 app.get("/api/admin/me", async (req, res) => {
@@ -923,6 +990,7 @@ app.get("/api/admin/skud-events", requireAdmin, (req, res) =>
 
 app.delete("/api/admin/group/:id", requireAdmin, async (req, res) => {
   try {
+    await skud.enqueueDeleteForGroup(req.params.id, req).catch(() => {});
     await Curator.updateMany({}, { $pull: { groups: req.params.id } });
     await SummaryRecord.deleteMany({ group: req.params.id });
     await Student.deleteMany({ group: req.params.id });
@@ -934,6 +1002,7 @@ app.delete("/api/admin/group/:id", requireAdmin, async (req, res) => {
 });
 app.delete("/api/admin/group/:id/clear", requireAdmin, async (req, res) => {
   try {
+    await skud.enqueueDeleteForGroup(req.params.id, req).catch(() => {});
     const ss = await Student.find({ group: req.params.id }).select("_id");
     await SummaryRecord.deleteMany({ student: { $in: ss.map((s) => s._id) } });
     await Student.deleteMany({ group: req.params.id });
@@ -1201,6 +1270,8 @@ app.put("/api/admin/student/:id", requireAdmin, async (req, res) => {
 });
 app.delete("/api/admin/student/:id", requireAdmin, async (req, res) => {
   try {
+    const st = await Student.findById(req.params.id);
+    if (st) await skud.enqueueDeleteForStudent(st, req).catch(() => {});
     await SummaryRecord.deleteMany({ student: req.params.id });
     await Student.findByIdAndDelete(req.params.id);
     res.json({ ok: true });
