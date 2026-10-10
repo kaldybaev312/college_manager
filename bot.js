@@ -1456,5 +1456,10 @@ _Все оценки студента тоже будут удалены_`,
   console.log("   Bot username:", BOT_USERNAME);
   if (SECRET_FROM_ENV) console.log("   Вход админа: /admin <ADMIN_TG_SECRET из .env>");
   else console.warn("⚠️ ADMIN_TG_SECRET не задан: на этот запуск создан временный секрет: /admin " + ADMIN_SECRET);
-  return { bot, notifyAll, notifyParents, notifyAdmins, notifyCurators: notifyCuratorsOfGroup };
+  // Забыть кэш роли куратора: после изменения групп, логина или удаления бот перечитает данные из базы
+  function forgetCurator(curatorId) {
+    for (const [k, v] of SESS) if (v?.curatorId === String(curatorId)) SESS.delete(k);
+  }
+
+  return { bot, notifyAll, notifyParents, notifyAdmins, notifyCurators: notifyCuratorsOfGroup, forgetCurator };
 };
