@@ -361,7 +361,7 @@
           for (let d = 1; d <= data.daysInMonth; d++) {
             const dateObj = new Date(Date.UTC(y, m - 1, d));
             const isWknd =
-              dateObj.getUTCDay() === 0 || dateObj.getUTCDay() === 6;
+              dateObj.getUTCDay() === 0 || (dateObj.getUTCDay() === 6 && !data.saturday);
             headHtml += `<th class="${isWknd ? "weekend-header" : ""}">${d}</th>`;
           }
           headHtml += `</tr>`;

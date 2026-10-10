@@ -55,7 +55,8 @@ function createReports({ Group, Student, Curator, TgSub, getTodayKey }) {
   async function buildGroupReport(group, range) {
     const today = getTodayKey();
     const days = datesBetween(range.from, range.to);
-    const workdays = days.filter((dk) => !isWeekend(dk) && dk <= today);
+    const sat = !!group.saturday;
+    const workdays = days.filter((dk) => !isWeekend(dk, sat) && dk <= today);
     const shiftMin = shiftMinutes(group.shiftStart);
     const students = await Student.find({ group: group._id }).sort({ fio: 1 }).select("fio skudDaily attendance").lean();
     const reasons = await reasonsIndex({ group: group._id }, range.from, range.to);
@@ -75,7 +76,7 @@ function createReports({ Group, Student, Curator, TgSub, getTodayKey }) {
           present++;
           if (st.late) late++;
           cells.push(st.late ? "О" : "П");
-        } else if (isWeekend(dk) || dk > today) {
+        } else if (isWeekend(dk, sat) || dk > today) {
           cells.push("");
         } else if (reason) {
           if (!reason.confirmed) pending++;
@@ -94,7 +95,7 @@ function createReports({ Group, Student, Curator, TgSub, getTodayKey }) {
     const total = rows.length;
     const sum = (k) => rows.reduce((a, r) => a + r[k], 0);
     return {
-      group: { id: String(group._id), name: group.name, profRu: group.profRu || "", shiftStart: group.shiftStart || "" },
+      group: { id: String(group._id), name: group.name, profRu: group.profRu || "", shiftStart: group.shiftStart || "", saturday: sat },
       range,
       days,
       workdays: workdays.length,
@@ -118,7 +119,7 @@ function createReports({ Group, Student, Curator, TgSub, getTodayKey }) {
     const aoa = [
       [`${kind} отчёт по посещаемости — ПЛ №3`],
       [`Группа: ${rep.group.name}${rep.group.profRu ? " · " + rep.group.profRu : ""}`],
-      [`Период: ${rep.range.title} · учебных дней: ${rep.workdays} · начало занятий: ${rep.group.shiftStart || "—"}`],
+      [`Период: ${rep.range.title} · учебных дней: ${rep.workdays}${rep.group.saturday ? " (с субботой)" : ""} · начало занятий: ${rep.group.shiftStart || "—"}`],
       [],
       head,
       ...rep.rows.map((r, i) => [i + 1, r.fio, ...r.cells, r.present, r.late, r.excused, r.unexcused, r.pct / 100]),

@@ -379,6 +379,7 @@ const Group = mongoose.model(
     profKg: String,
     duration: String,
     shiftStart: { type: String, default: "08:00" },
+    saturday: { type: Boolean, default: false }, // учебная суббота
     // students: обычная группа; teachers/masters/guests: сотрудники и гости СКУД
     kind: {
       type: String,
@@ -775,7 +776,8 @@ app.get("/api/admin/attendance-matrix/:gid/:month", journalAccess, async (req, r
       .lean();
     const reasons = await absence.reasonsIndex({ group: gid }, from, to);
     const tdk = getTodayKey(),
-      tiw = att.isWeekend(tdk);
+      sat = !!group?.saturday,
+      tiw = att.isWeekend(tdk, sat);
     let ptc = 0,
       tml = 0;
     const matrix = students.map((s) => {
@@ -787,7 +789,7 @@ app.get("/api/admin/attendance-matrix/:gid/:month", journalAccess, async (req, r
         se = 0;
       for (let d = 1; d <= dim; d++) {
         const dk = `${month}-${pad2(d)}`,
-          iw = att.isWeekend(dk);
+          iw = att.isWeekend(dk, sat);
         const st = att.dayStatus(s, dk, shiftMin);
         let reason = null;
         if (!st.present && !iw && dk <= tdk) {
@@ -828,6 +830,7 @@ app.get("/api/admin/attendance-matrix/:gid/:month", journalAccess, async (req, r
       daysInMonth: dim,
       matrix,
       shiftStart: shiftTime,
+      saturday: sat,
       canEdit: !req.journalShare,
       stats: {
         totalStudents: students.length,
@@ -1081,8 +1084,9 @@ app.delete("/api/admin/group/:id/clear", requireAdmin, async (req, res) => {
 });
 app.put("/api/admin/group/:id/settings", requireAdmin, async (req, res) => {
   try {
-    const { profId, shiftStart } = req.body;
+    const { profId, shiftStart, saturday } = req.body;
     let ud = { shiftStart: shiftStart || "09:30" };
+    if (saturday !== undefined) ud.saturday = !!saturday;
     if (profId) {
       const prof = PROFESSIONS.find((p) => p.id == profId);
       if (prof) {
@@ -1505,7 +1509,7 @@ app.get(
             sp++;
             if (st.late) sl++;
             row.push(st.late ? "О" : "П");
-          } else if (!att.isWeekend(dk) && dk <= tdk) {
+          } else if (!att.isWeekend(dk, g.saturday) && dk <= tdk) {
             const r = reasons.get(`${s._id}|${dk}`);
             if (r && r.excused && r.confirmed) se++;
             else sa++;

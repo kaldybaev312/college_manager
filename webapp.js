@@ -80,12 +80,12 @@ module.exports = function registerWebapp(app, deps) {
     if (!clean) throw fail(400, "Не указан ИНН");
     if (sub?.role !== "admin" && !(sub?.role === "parent" && (sub.linkedInns || []).includes(clean)))
       throw fail(403, "Нет доступа");
-    const stu = await Student.findOne({ inn: clean }).populate("group", "name shiftStart");
+    const stu = await Student.findOne({ inn: clean }).populate("group", "name shiftStart saturday");
     if (!stu) throw fail(404, "Студент не найден");
     return stu;
   }
 
-  const groupBrief = (g) => ({ id: String(g._id), name: g.name, profRu: g.profRu || "", shiftStart: g.shiftStart || "09:30" });
+  const groupBrief = (g) => ({ id: String(g._id), name: g.name, profRu: g.profRu || "", shiftStart: g.shiftStart || "09:30", saturday: !!g.saturday });
 
   app.get("/api/webapp/open", (_req, res) => res.sendFile(path.join(__dirname, "public", "miniapp.html")));
 
@@ -97,11 +97,11 @@ module.exports = function registerWebapp(app, deps) {
     wrap(async (req, res) => {
       const sub = req.tg.sub;
       if (sub?.role === "admin") {
-        const groups = await Group.find().sort({ name: 1 }).select("name profRu shiftStart");
+        const groups = await Group.find().sort({ name: 1 }).select("name profRu shiftStart saturday");
         return res.json({ role: "admin", absenceTypes: absence.REASON_TYPES, groups: groups.map(groupBrief) });
       }
       if (sub?.role === "curator" && sub.curatorId) {
-        const cur = await Curator.findById(sub.curatorId).populate("groups", "name profRu shiftStart");
+        const cur = await Curator.findById(sub.curatorId).populate("groups", "name profRu shiftStart saturday");
         if (!cur) return res.json({ role: null });
         return res.json({ role: "curator", absenceTypes: absence.REASON_TYPES, curatorName: cur.fullName || cur.username || "", groups: cur.groups.map(groupBrief) });
       }
@@ -181,6 +181,7 @@ module.exports = function registerWebapp(app, deps) {
       const reasons = await absence.reasonsIndex({ group: gid }, from, to);
       res.json({
         days,
+        saturday: !!g?.saturday,
         students: students.map((stu) => {
           const { statuses, codes } = monthStatuses(stu, days, shiftMin, reasons);
           return { id: String(stu._id), fio: stu.fio, statuses, reasons: codes };
@@ -315,7 +316,7 @@ module.exports = function registerWebapp(app, deps) {
           reason: r ? { label: r.label, code: r.code, confirmed: r.confirmed, comment: r.comment } : null,
         };
       }
-      res.json({ fio: stu.fio, attMap });
+      res.json({ fio: stu.fio, saturday: !!stu.group?.saturday, attMap });
     }),
   );
 
@@ -406,7 +407,7 @@ module.exports = function registerWebapp(app, deps) {
           if (st.present) present++;
           if (st.late) late++;
         }
-        const absent = isWeekend(tdk) ? 0 : students.length - present;
+        const absent = isWeekend(tdk, g.saturday) ? 0 : students.length - present;
         totals.total += students.length;
         totals.present += present;
         totals.absent += absent;
