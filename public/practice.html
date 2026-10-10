@@ -1,0 +1,871 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Практика ПЛ №3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=PT+Serif:wght@400;700&display=swap">
+<style>
+/* Рабочий инструмент: спокойный светлый интерфейс, синий «чернильный» акцент, документы набраны серифом как на бланке */
+:root{
+  --ink:#1F3A93; --ink-soft:#E8EDF9; --text:#262A33; --muted:#667085; --line:#DCE2EC;
+  --bg:#F2F4F8; --card:#FFFFFF;
+  --ok:#2E7D4F; --ok-bg:#E3F1E8; --warn:#8A5A12; --warn-bg:#FBF0DC; --bad:#B42318; --bad-bg:#FBE9E7;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --serif:'PT Serif',Georgia,'Times New Roman',serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 var(--sans)}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px}
+header.top{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+header.top .wrap{padding-block:12px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.brand{font-weight:600;color:var(--ink);font-size:17px;margin-right:auto}
+.tabs{display:inline-flex;flex-wrap:wrap;gap:2px;background:#EBEEF4;border-radius:9px;padding:3px}
+.tabs button{border:0;background:transparent;padding:7px 12px;border-radius:7px;font:500 14px var(--sans);color:#4F5869;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(20,30,60,.15)}
+main{padding-block:20px 60px}
+h2{font-size:20px;margin:0;text-wrap:balance}
+h3{font-size:16px;margin:0}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.between{justify-content:space-between}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.card.tight{padding:12px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:680px){.grid2,.grid3{grid-template-columns:1fr}.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+label.f{display:block;font-size:13px}
+label.f>span{display:block;margin-bottom:4px;color:var(--muted)}
+input,select,textarea{width:100%;font:14px var(--sans);color:var(--text);background:#fff;border:1px solid var(--line);border-radius:7px;padding:8px 10px}
+textarea{resize:vertical}
+input[type=checkbox]{width:auto}
+:focus-visible{outline:2px solid #8FA8E8;outline-offset:1px}
+.btn{border:1px solid var(--ink);background:var(--ink);color:#fff;font:500 14px var(--sans);padding:8px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn.ghost{background:#fff;color:var(--ink);border-color:var(--line)}
+.btn.ok{background:var(--ok);border-color:var(--ok)}
+.btn.warn{background:#fff;color:var(--bad);border-color:#EBC0BA}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.linkbtn{border:0;background:none;padding:0;color:var(--ink);font:inherit;cursor:pointer;text-align:left}
+.linkbtn:hover{text-decoration:underline}
+.chip{display:inline-block;font-size:12px;font-weight:500;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.st-draft{color:#5B6475;background:#EEF0F3}.st-sent{color:var(--warn);background:var(--warn-bg)}
+.st-ok{color:var(--ok);background:var(--ok-bg)}.st-back{color:var(--bad);background:var(--bad-bg)}
+.st-info{color:var(--ink);background:var(--ink-soft)}
+.bar{height:7px;border-radius:9px;background:#E4E8F0;flex:1;min-width:60px}
+.bar>i{display:block;height:7px;border-radius:9px;background:var(--ink)}
+.bar.full>i{background:var(--ok)}
+.num{font-variant-numeric:tabular-nums}
+.stat .v{font-size:26px;font-weight:600;font-variant-numeric:tabular-nums}
+.stat .l{font-size:13px;color:var(--muted)}
+.tbl{overflow-x:auto}
+table.list{width:100%;border-collapse:collapse;font-size:14px}
+table.list th{font-weight:500;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.list td{padding:8px;border-bottom:1px solid #EEF1F5;vertical-align:middle}
+table.list tr.click{cursor:pointer}
+table.list tr.click:hover td{background:#F7F9FC}
+.alert{border-left:3px solid var(--warn);background:var(--warn-bg);padding:8px 12px;border-radius:6px;font-size:14px}
+.alert.bad{border-color:var(--bad);background:var(--bad-bg)}
+.note{background:var(--ink-soft);padding:10px 12px;border-radius:8px;font-size:14px}
+.media{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.media figure{margin:0;position:relative;width:96px;height:96px;border-radius:8px;overflow:hidden;background:#E9ECF2}
+.media img,.media video{width:100%;height:100%;object-fit:cover;display:block}
+.media figure button{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;line-height:20px}
+.media figure.big{width:160px;height:120px}
+.upl{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink);border:1px dashed #AFC0E6;border-radius:7px;padding:5px 10px;cursor:pointer;background:#fff}
+.upl input{display:none}
+.grades button{width:36px;height:36px;border-radius:7px;border:1px solid var(--line);background:#fff;font:600 14px var(--sans);cursor:pointer;color:var(--text)}
+.grades button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.pill{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;font:13px var(--sans);cursor:pointer;color:var(--text)}
+.pill[aria-pressed="true"]{border-color:var(--ink);background:var(--ink-soft);color:var(--ink)}
+.modal{position:fixed;inset:0;background:rgba(25,32,52,.55);z-index:50;display:flex;flex-direction:column}
+.modal .mbar{background:#fff;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line)}
+.modal .mbody{flex:1;overflow:auto;padding:16px}
+.modal .panel{background:#fff;max-width:620px;margin:40px auto;border-radius:12px;padding:20px;width:calc(100% - 32px)}
+.paper{background:#fff;max-width:794px;margin:0 auto;padding:44px 52px;box-shadow:0 1px 3px rgba(20,30,60,.15)}
+.paper .page{border-bottom:1px dashed #B9C2D3;padding-bottom:30px;margin-bottom:30px}
+.paper .page:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+@media (max-width:640px){.paper{padding:20px 14px}}
+/* документы */
+.doc{font-family:var(--serif);color:#000;font-size:13.5px;line-height:1.45}
+.doc h1{font-size:15px;text-align:center;margin:0;font-weight:700}
+.doc p{margin:5px 0;text-align:justify}
+.doc .c{text-align:center}
+.doc .r{text-align:right}
+.doc .u{border-bottom:1px solid #000;padding:0 4px;font-weight:700}
+.doc .hint{display:block;text-align:center;font-size:10.5px;margin-top:-2px}
+.doc table{width:100%;border-collapse:collapse;margin:8px 0}
+.doc td,.doc th{border:1px solid #000;padding:4px 6px;vertical-align:top;font-size:12.5px}
+.doc th{font-weight:700;text-align:center}
+.doc table.nob td{border:0;padding:2px 4px}
+.doc .mp{font-weight:700}
+.doc .code{font-size:10px;color:#555;margin-top:14px;text-align:left}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="root"><p class="wrap" style="padding-block:20px">Загрузка…</p></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/htm@3.1.1/dist/htm.umd.js"></script>
+<script>
+const html = htm.bind(React.createElement);
+const { useState, useEffect } = React;
+
+/* =================== константы лицея =================== */
+const LY = {
+  name: "Профессиональный лицей №3",
+  directorGen: "Белялова Ш.А.",
+  address: "ул. Раззакова, 62",
+  phone: "0312 62-49-12",
+};
+/* Страница лежит в pl3service (public/practice.html) — API на том же сайте, вход по той же сессии */
+const ON_PL3 = location.protocol.startsWith("http") && !/vercel\.app$/.test(location.hostname);
+const DEFAULT_SETTINGS = {
+  apiBase: ON_PL3 ? "" : "https://pl3service.onrender.com",
+  groupsPath: "/api/admin/groups-list",
+  studentsPath: "/api/admin/group-students/{group}",
+  token: "",
+};
+
+/* =================== утилиты =================== */
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const uid = () => Math.random().toString(36).slice(2, 10);
+const code4 = () => Math.random().toString(36).slice(2, 6).toUpperCase();
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const TODAY = iso(new Date());
+const fmt = (d) => { if (!d) return ""; const [y, m, dd] = d.split("-"); return `${dd}.${m}.${y}`; };
+const MG = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+const longDate = (d) => { const [y, m, dd] = d.split("-"); return `${+dd} ${MG[m - 1]} ${y} г.`; };
+const WD = ["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
+const wd = (d) => WD[new Date(d + "T00:00").getDay()];
+const short = (fio = "") => { const [f, i, o] = fio.trim().split(/\s+/); return `${f || ""} ${i ? i[0] + "." : ""}${o ? o[0] + "." : ""}`.trim(); };
+const sumHours = (p) => p.days.reduce((a, d) => a + Number(d.hours || 0), 0);
+const GW = { 2: "неудовлетворительно", 3: "удовлетворительно", 4: "хорошо", 5: "отлично" };
+const clone = (o) => JSON.parse(JSON.stringify(o));
+
+function buildDays(start, end, hours, sat) {
+  const out = []; const d = new Date(start + "T00:00"); const e = new Date(end + "T00:00");
+  while (d <= e && out.length < 250) { const g = d.getDay(); if (g !== 0 && (sat || g !== 6)) out.push({ date: iso(d), hours }); d.setDate(d.getDate() + 1); }
+  return out;
+}
+const phase = (p) => (TODAY < p.start ? "soon" : TODAY > p.end ? "done" : "now");
+const PHASE = { soon: ["Скоро", "st-info"], now: ["Идёт", "st-ok"], done: ["Завершена", "st-draft"] };
+const orgOf = (p, sid) => p.orgs.find((o) => o.studentIds.includes(sid));
+const masterOf = (db, p) => db.masters.find((m) => m.id === p.masterId) || { name: "—", phone: "" };
+function stats(db, p, sid) {
+  const E = db.entries[p.id]?.[sid] || {}; let ok = 0, sent = 0, back = 0;
+  p.days.forEach((d) => { const s = E[d.date]?.status; if (s === "ok") ok++; else if (s === "sent") sent++; else if (s === "back") back++; });
+  return { E, ok, sent, back, total: p.days.length };
+}
+
+/* =================== хранилище =================== */
+const KEY = "pl3-practice-v3";
+function loadDb() { try { const r = localStorage.getItem(KEY); if (r) return JSON.parse(r); } catch (e) {} return seed(); }
+function saveDb(db) { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) { console.warn("Не удалось сохранить", e); } }
+
+/* фото и видео — в IndexedDB браузера */
+const idb = {
+  _db: null,
+  open() {
+    if (this._db) return Promise.resolve(this._db);
+    return new Promise((res, rej) => {
+      const r = indexedDB.open("pl3-practice-media", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("m");
+      r.onsuccess = () => { this._db = r.result; res(r.result); };
+      r.onerror = () => rej(r.error);
+    });
+  },
+  async put(id, blob) { const db = await this.open(); return new Promise((res, rej) => { const t = db.transaction("m", "readwrite"); t.objectStore("m").put(blob, id); t.oncomplete = res; t.onerror = () => rej(t.error); }); },
+  async get(id) { const db = await this.open(); return new Promise((res) => { const q = db.transaction("m").objectStore("m").get(id); q.onsuccess = () => res(q.result); q.onerror = () => res(null); }); },
+  async del(id) { const db = await this.open(); db.transaction("m", "readwrite").objectStore("m").delete(id); },
+};
+function compressImage(file, max = 1280) {
+  return new Promise((res) => {
+    const img = new Image(); const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob((b) => { URL.revokeObjectURL(url); res(b || file); }, "image/jpeg", 0.82);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); res(file); };
+    img.src = url;
+  });
+}
+
+/* =================== импорт с pl3service =================== */
+async function api(settings, path) {
+  const url = settings.apiBase.replace(/\/$/, "") + path;
+  const headers = settings.token ? { Authorization: "Bearer " + settings.token } : {};
+  let r;
+  try { r = await fetch(url, { headers: { Accept: "application/json", ...headers }, credentials: "include" }); }
+  catch (e) { throw new Error(`Не удалось подключиться к ${url || "pl3service"}. Откройте эту страницу с сайта pl3service: ${location.protocol.startsWith("http") ? "" : "файл, открытый с компьютера, не может войти в pl3service."}`); }
+  const login = (r.redirected && /\/login/.test(r.url)) || (r.headers.get("content-type") || "").includes("text/html");
+  if (login || r.status === 401) throw new Error("Сессия pl3service не найдена — войдите на pl3service под своим логином и обновите страницу.");
+  if (r.status === 403) throw new Error("Нет доступа к этой группе в pl3service.");
+  if (!r.ok) throw new Error(`pl3service ответил кодом ${r.status} на ${url}.`);
+  return r.json();
+}
+/* курс по названию группы: «ЭМ-24», «ЭМ-2-24», «ЭМ 24-1» → год набора 2024 */
+function guessCourse(name) {
+  const m = String(name).match(/(?:^|\D)(2\d)(?:\D|$)/); if (!m) return 0;
+  const now = new Date(); const startYY = (now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1) % 100;
+  const c = startYY - Number(m[1]) + 1; return c >= 1 && c <= 3 ? c : 0;
+}
+async function fetchMe() {
+  if (!ON_PL3) return null;
+  try { const r = await fetch("/api/admin/me", { credentials: "include", headers: { Accept: "application/json" } }); if (!r.ok || (r.headers.get("content-type") || "").includes("text/html")) return null; return await r.json(); }
+  catch (e) { return null; }
+}
+const asArray = (j) => (Array.isArray(j) ? j : j?.data || j?.groups || j?.students || j?.items || j?.result || []);
+const normGroup = (g) => typeof g === "string" ? { key: g, name: g, profession: "", course: "" } : {
+  key: g._id || g.id || g.name, name: g.name || g.title || g.groupName || g.group || String(g._id || g.id),
+  profession: g.profRu || g.profession || g.specialty || g.speciality || "", course: g.course || g.kurs || guessCourse(g.name) || "",
+  students: Array.isArray(g.students) ? g.students : null,
+};
+const normStudent = (s) => typeof s === "string" ? { extId: "", name: s.trim() } : {
+  extId: String(s._id || s.id || ""),
+  name: (s.fullName || s.fio || s.full_name || s.FIO || s.name || [s.lastName || s.surname, s.firstName, s.middleName || s.patronymic].filter(Boolean).join(" ")).trim(),
+};
+async function fetchGroups(settings) { return asArray(await api(settings, settings.groupsPath)).map(normGroup).filter((g) => g.name); }
+async function fetchStudents(settings, g) {
+  if (g.students?.length && typeof g.students[0] === "object") return g.students.map(normStudent).filter((s) => s.name);
+  const path = settings.studentsPath.replace("{group}", encodeURIComponent(g.key)).replace("{groupName}", encodeURIComponent(g.name));
+  return asArray(await api(settings, path)).map(normStudent).filter((s) => s.name);
+}
+function parsePasted(text) {
+  const t = text.trim(); if (!t) return [];
+  if (t[0] === "[" || t[0] === "{") { try { return asArray(JSON.parse(t)).map(normStudent).filter((s) => s.name); } catch (e) {} }
+  return t.split("\n").map((x) => x.replace(/^\s*\d+[.)]\s*/, "").trim()).filter(Boolean).map((name) => ({ extId: "", name }));
+}
+
+/* =================== демо-данные =================== */
+function seed() {
+  const masters = [
+    { id: "m1", name: "Абдыкадыров Мирлан Сапарович", phone: "0700 12-34-56" },
+    { id: "m2", name: "Иманалиева Гульнара Токтосуновна", phone: "0555 98-76-54" },
+  ];
+  const sA = ["Асанов Бакыт Эркинович","Токтогулова Айпери Маратовна","Мамытов Нурбек Алмазович","Жээнбеков Эмир Талантович","Садыров Адилет Бакытович"].map((name, i) => ({ id: "a" + i, extId: "", name }));
+  const sB = ["Турсунов Данияр Айбекович","Осмоналиев Бекзат Русланович","Кадыров Тимур Азаматович","Шамшиев Арсен Нурланович"].map((name, i) => ({ id: "b" + i, extId: "", name }));
+  const p1 = {
+    id: "p1", group: "ЭМ-2-24", course: 2, profession: "Электромонтер по ремонту и обслуживанию электрооборудования",
+    start: "2026-10-05", end: "2026-10-17", sat: true, days: buildDays("2026-10-05", "2026-10-17", 8, true), masterId: "m1", source: "демо", students: sA,
+    orgs: [
+      { id: "o1", code: "K7Q2", name: "ОсОО «Кант Энерго Сервис»", address: "г. Кант, ул. Ленина, 45", phone: "0700 45-45-45", head: "директора Жумабаева Т.К.",
+        supName: "Осмонов Руслан Бекович", supPos: "главный энергетик", supPhone: "0702 11-22-33",
+        tb: "Инструктаж по ТБ и ППМ при работе с электрооборудованием", tbDate: "2026-10-05", contract: "returned", studentIds: ["a0", "a1", "a2"] },
+      { id: "o2", code: "M4D8", name: "ОсОО «Чуй-Электромонтаж»", address: "с. Люксембург, ул. Заводская, 3", phone: "0555 30-30-30", head: "генерального директора Касымова Н.Ж.",
+        supName: "Бекмуратов Азамат Нурланович", supPos: "мастер участка", supPhone: "0778 44-55-66",
+        tb: "Инструктаж по ТБ и ППМ при работе с электрооборудованием", tbDate: "2026-10-05", contract: "printed", studentIds: ["a3", "a4"] },
+    ],
+  };
+  const p2 = {
+    id: "p2", group: "СВ-1-25", course: 1, profession: "Электрогазосварщик",
+    start: "2026-10-12", end: "2026-10-24", sat: true, days: buildDays("2026-10-12", "2026-10-24", 6, true), masterId: "m2", source: "демо", students: sB,
+    orgs: [
+      { id: "o3", code: "W9T5", name: "ОсОО «Кант Металл Строй»", address: "г. Кант, ул. Промышленная, 12", phone: "0709 55-66-77", head: "директора Алиева Р.С.",
+        supName: "Эсенкулов Талант Маратович", supPos: "бригадир сварочного участка", supPhone: "0701 23-45-67",
+        tb: "Инструктаж по ТБ при электросварочных и газосварочных работах", tbDate: "2026-10-12", contract: "draft", studentIds: ["b0", "b1"] },
+    ],
+  };
+  const T = [
+    ["Вводный инструктаж по технике безопасности, знакомство с предприятием и рабочим местом", 5],
+    ["Изучение схемы электроснабжения цеха, осмотр распределительных щитов ЩР-1 и ЩР-2", 5],
+    ["Замена автоматических выключателей в щите освещения под контролем мастера", 4],
+    ["Прокладка кабеля ВВГнг 3×2,5 в гофротрубе, монтаж розеточной группы", 5],
+    ["Ревизия электродвигателя АИР80: разборка, замер сопротивления изоляции мегаомметром", 5],
+    ["Подключение электродвигателя по схеме «звезда», проверка направления вращения", null],
+  ];
+  const mk = (days, statuses) => { const o = {}; statuses.forEach((st, i) => { if (!st) return; o[days[i].date] = { text: T[i][0], status: st, grade: st === "ok" ? T[i][1] || 5 : null, media: [] }; }); return o; };
+  const d1 = p1.days;
+  const entries = { p1: {
+    a0: mk(d1, ["ok","ok","ok","ok","ok","sent"]),
+    a1: mk(d1, ["ok","ok","ok","ok","sent"]),
+    a3: mk(d1, ["ok","ok","back"]),
+  } };
+  entries.p1.a3[d1[2].date].comment = "Опишите подробнее, какие именно автоматы меняли и в каком щите.";
+  return { settings: { ...DEFAULT_SETTINGS }, masters, practices: [p1, p2], entries, chars: {} };
+}
+
+/* =================== документы =================== */
+function contractCopy(p, o, m) {
+  const st = p.students.filter((s) => o.studentIds.includes(s.id));
+  const names = st.map((s) => s.name).join(", ") || "____________________";
+  const tbRows = st.map((s, i) => `<tr><td class="c">${i + 1}</td><td><b>${esc(s.name)}</b></td><td>${esc(o.tb)}</td><td class="c">${fmt(o.tbDate)}</td><td></td><td></td></tr>`).join("")
+    + Array.from({ length: Math.max(0, 4 - st.length) }, () => `<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>`).join("");
+  return `
+<h1>ТИПОВОЙ ДОГОВОР</h1>
+<p class="c"><b>о производственной практике учащихся Профессионального лицея №3</b></p>
+<p>${LY.name} в лице директора учебного заведения <b>${LY.directorGen}</b>, именуемое в дальнейшем «Лицей», с одной стороны, и <span class="u">${esc(o.name)}</span></p>
+<span class="hint">(наименование предприятия, организации, учреждения)</span>
+<p>в лице <span class="u">${esc(o.head || "________________________________")}</span></p>
+<span class="hint">(должность, Ф.И.О)</span>
+<p>именуемое в дальнейшем «Предприятие», с другой стороны, заключили нижеследующий договор:</p>
+<p><b>1. «ЛИЦЕЙ» ОБЯЗУЕТСЯ:</b></p>
+<p>1.1. Руководствуясь учебными планами и программами для подготовки квалифицированных рабочих, направить <b><i>с ${longDate(p.start)} по ${longDate(p.end)}</i></b> на производственную практику учащихся <span class="u">${esc(names)}</span></p>
+<span class="hint">(ФИО учащихся)</span>
+<p>по профессии <span class="u">${esc(p.profession)}</span></p>
+<p>1.2. Обеспечить профессиональную предварительную подготовку учащихся, направляемых на предприятие в качестве практикантов, изучение и соблюдение ими правила технической эксплуатации производственного обучения, правил поведения на рабочих местах и на территории предприятия, правил и норм безопасности труда. На учащихся в период практики распространяется правила трудового распорядка «Предприятия».</p>
+<p>1.3. Через мастеров производственного обучения осуществлять организацию учебного работы и методическое руководство практикой учащихся.</p>
+<p><b>2. «ПРЕДПРИЯТИЕ» ОБЯЗУЕТСЯ:</b></p>
+<p>2.1 Предоставить для практикантов оснащённые рабочие места соответственно профессии, обеспечивать их производственными заданиями, документацией и техническим обслуживанием, не допуская простоев и отвлечения учащихся на работы, не относящихся к профессии, получаемой ими в учебном задании.</p>
+<p>2.2. Обеспечивать безопасные и соответствующие техническим нормам условия труда, предоставлять средства индивидуальной защиты, спецодежду, место для хранения одежды, инструментов.</p>
+<p>2.3. Предоставлять «Лицею» по результату практики производственную характеристику на каждого учащегося – практиканта.</p>
+<p>Настоящий договор составлен в 2 экз. и хранится по 1 экз. у каждой стороны.</p>
+<p class="c" style="margin-top:12px"><b>Лица ответственные за проведение производственной практики</b></p>
+<table><tr><th style="width:50%">от «ЛИЦЕЯ»</th><th>от «ПРЕДПРИЯТИЯ»</th></tr>
+<tr><td>Ф.И.О: <b>${esc(m.name)}</b><br>Должность: мастер п/о<br>Тел.: ${esc(m.phone)}</td>
+<td>Ф.И.О.: <b>${esc(o.supName)}</b><br>Должность: ${esc(o.supPos)}<br>Тел.: ${esc(o.supPhone)}</td></tr></table>
+<p class="c" style="margin-top:12px"><b>ИНСТРУКТАЖ ПО ТЕХНИКЕ БЕЗОПАСНОСТИ</b></p>
+<table><tr><th style="width:28px">№</th><th>Ф.И.О.</th><th>Наименование инструктажа</th><th>Дата проведения</th><th>Подпись инструктируемого</th><th>Подпись лица, проводившего инструктаж</th></tr>${tbRows}</table>
+<p class="c" style="margin-top:12px"><b>ПОДПИСИ И ЮРИДИЧЕСКИЕ АДРЕСА СТОРОН:</b></p>
+<table><tr><th style="width:50%">«ЛИЦЕЙ»</th><th>«ПРЕДПРИЯТИЕ»</th></tr>
+<tr><td style="height:120px"><span class="mp">МП</span><br><br>Подпись ____________________<br><br>Адрес: ${LY.address}<br>Тел.: ${LY.phone}</td>
+<td><span class="mp">МП</span><br><br>Подпись ____________________<br><br>Адрес: ${esc(o.address)}<br>Тел.: ${esc(o.phone)}</td></tr></table>
+<p class="code">Код договора: ${esc(p.group)}-${esc(o.code)}</p>`;
+}
+const contractHTML = (p, o, m) => `<div class="page">${contractCopy(p, o, m)}</div><div class="page">${contractCopy(p, o, m)}</div>`;
+
+function diaryHTML(p, s, o, m, E) {
+  const rows = p.days.map((d, i) => {
+    const e = E[d.date] || {}; const show = e.status === "ok" || e.status === "sent";
+    const media = show && e.media?.length ? ` <i>(фото/видео: ${e.media.length})</i>` : "";
+    return `<tr><td class="c">${i + 1}</td><td class="c">${fmt(d.date)}</td><td class="c">${d.hours}</td><td>${show ? esc(e.text) + media : ""}</td><td class="c">${e.status === "ok" ? e.grade : ""}</td><td style="width:92px"></td></tr>`;
+  }).join("");
+  const g = p.days.map((d) => E[d.date]).filter((e) => e?.status === "ok").map((e) => e.grade);
+  const avg = g.length ? (g.reduce((a, b) => a + b, 0) / g.length).toFixed(1) : "";
+  return `<div class="page">
+<p class="c">Министерство науки, высшего образования и инноваций Кыргызской Республики</p>
+<p class="c"><b>${LY.name}</b></p>
+<h1 style="font-size:26px;margin-top:70px;letter-spacing:.06em">ДНЕВНИК</h1>
+<p class="c" style="font-size:15px">прохождения производственной практики</p>
+<table class="nob" style="margin-top:50px;font-size:14px">
+<tr><td style="width:42%">Учащийся</td><td><b>${esc(s.name)}</b></td></tr>
+<tr><td>Группа, курс</td><td>${esc(p.group)}, ${p.course} курс</td></tr>
+<tr><td>Профессия</td><td>${esc(p.profession)}</td></tr>
+<tr><td>Место практики</td><td>${esc(o?.name || "")}${o?.address ? ", " + esc(o.address) : ""}</td></tr>
+<tr><td>Срок практики</td><td>с ${longDate(p.start)} по ${longDate(p.end)}</td></tr>
+<tr><td>Объём</td><td>${p.days.length} дн., ${sumHours(p)} ч</td></tr>
+<tr><td>Руководитель от предприятия</td><td>${esc(o?.supName || "")}, ${esc(o?.supPos || "")}</td></tr>
+<tr><td>Мастер п/о</td><td>${esc(m.name)}</td></tr>
+</table>
+<p class="c" style="margin-top:90px">г. Кант, ${p.start.slice(0, 4)}</p></div>
+<div class="page"><h1>Учёт выполненных работ</h1>
+<table><tr><th style="width:28px">№</th><th style="width:80px">Дата</th><th style="width:44px">Часы</th><th>Содержание выполненной работы</th><th style="width:56px">Оценка</th><th>Подпись руководителя</th></tr>${rows}
+<tr><td colspan="2"><b>Итого</b></td><td class="c"><b>${sumHours(p)}</b></td><td class="r">Средняя оценка</td><td class="c"><b>${avg}</b></td><td></td></tr></table>
+<table class="nob" style="margin-top:22px"><tr><td>Руководитель практики от предприятия ____________ / ${esc(short(o?.supName))}</td><td class="r mp">МП</td></tr>
+<tr><td style="padding-top:14px">Мастер п/о ____________ / ${esc(short(m.name))}</td><td></td></tr></table>
+<p class="code">Код проверки: ${esc(p.group)}-${esc(o?.code || "")}-${s.id.slice(0, 4).toUpperCase()}</p></div>`;
+}
+
+const CH = {
+  disc: { 5: "Добросовестно относился(ась) к работе, нарушений трудовой дисциплины не имел(а), пропусков без уважительных причин нет.",
+          4: "Ответственно относился(ась) к работе, трудовую дисциплину соблюдал(а), имелись единичные опоздания.",
+          3: "К работе относился(ась) удовлетворительно, имелись нарушения трудовой дисциплины." },
+  skill: { 5: "Показал(а) хорошую теоретическую подготовку, самостоятельно и качественно выполнял(а) работы по профессии.",
+           4: "Теоретическая подготовка достаточная, работы по профессии выполнял(а) с незначительной помощью наставника.",
+           3: "Работы по профессии выполнял(а) под постоянным контролем наставника, допускал(а) ошибки." },
+  tb: { 5: "Правила техники безопасности и охраны труда соблюдал(а) в полном объёме, средствами индивидуальной защиты пользовался(ась) правильно.",
+        4: "Правила техники безопасности соблюдал(а), получал(а) отдельные замечания по использованию СИЗ.",
+        3: "Допускал(а) нарушения правил техники безопасности, требовал(а) постоянного контроля." },
+  qual: ["дисциплинированность","пунктуальность","аккуратность","инициативность","ответственность","умение работать в команде","быстро осваивает новое","самостоятельность"],
+};
+function charHTML(p, s, o, ch) {
+  ch = ch || {};
+  return `<div class="page">
+<h1 style="font-size:18px;letter-spacing:.06em">ХАРАКТЕРИСТИКА</h1>
+<p class="c">на учащегося(уюся) группы ${esc(p.group)} Профессионального лицея №3</p>
+<p class="c" style="font-size:16px;margin-top:14px"><b>${esc(s.name)}</b></p>
+<p style="margin-top:14px">проходил(а) производственную практику в <b>${esc(o?.name || "")}</b> с ${longDate(p.start)} по ${longDate(p.end)} по профессии «${esc(p.profession)}», в объёме ${sumHours(p)} часов.</p>
+<p style="margin-top:10px"><b>1. Отношение к работе и трудовая дисциплина.</b> ${esc(CH.disc[ch.disc] || "")}</p>
+<p><b>2. Профессиональные знания и умения.</b> ${esc(CH.skill[ch.skill] || "")} ${esc(ch.works || "")}</p>
+<p><b>3. Охрана труда и техника безопасности.</b> ${esc(CH.tb[ch.tb] || "")}</p>
+<p><b>4. Личные качества:</b> ${esc((ch.q || []).join(", ") || "—")}.</p>
+${ch.extra ? `<p><b>5. Дополнительно.</b> ${esc(ch.extra)}</p>` : ""}
+<p style="margin-top:12px"><b>Заключение.</b> Программа производственной практики выполнена${ch.grade <= 2 ? " не в полном объёме" : ""}.${ch.rank ? ` Рекомендуется присвоение квалификации «${esc(p.profession)}» <b>${esc(ch.rank)}</b> разряда.` : ""}</p>
+<p>Оценка за практику: <b>${ch.grade ? `${ch.grade} (${GW[ch.grade]})` : "________________"}</b></p>
+<table class="nob" style="margin-top:30px"><tr><td>Руководитель практики от предприятия<br>${esc(o?.supPos || "")}<br><br>____________ / ${esc(short(o?.supName))}<br><br>«___» ______________ 20___ г.</td><td class="r mp" style="vertical-align:bottom">МП</td></tr></table>
+<p class="code">Код проверки: ${esc(p.group)}-${esc(o?.code || "")}-${s.id.slice(0, 4).toUpperCase()}-Х</p></div>`;
+}
+
+/* =================== печать и Word =================== */
+const DOC_CSS_PRINT = () => [...document.styleSheets].map((ss) => { try { return [...ss.cssRules].map((r) => r.cssText).filter((t) => t.startsWith(".doc") || t.startsWith(":root")).join("\n"); } catch (e) { return ""; } }).join("\n");
+const fullHTML = (body, title) => `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>@page{size:A4;margin:16mm 15mm}body{margin:0}
+${DOC_CSS_PRINT()}
+.doc{font-family:'Times New Roman',serif;font-size:12pt}.doc td,.doc th{font-size:11pt}.page{page-break-after:always}.page:last-child{page-break-after:auto}</style></head><body class="doc">${body}</body></html>`;
+function printDoc(body, title) {
+  const f = document.createElement("iframe");
+  Object.assign(f.style, { position: "fixed", right: 0, bottom: 0, width: 0, height: 0, border: 0 });
+  document.body.appendChild(f);
+  const d = f.contentDocument; d.open(); d.write(fullHTML(body, title)); d.close();
+  setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) {} setTimeout(() => f.remove(), 2000); }, 350);
+}
+function downloadDoc(body, title) {
+  const blob = new Blob(["﻿" + fullHTML(body, title)], { type: "application/msword" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = title.replace(/[\\/:*?"<>|]/g, "_") + ".doc"; document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* =================== мелкие компоненты =================== */
+const Btn = ({ kind = "", sm, children, ...rest }) => html`<button className=${`btn ${kind} ${sm ? "sm" : ""}`} ...${rest}>${children}</button>`;
+const Chip = ({ map, k, extra }) => { const [t, c] = map[k] || map.draft || ["", ""]; return html`<span className=${"chip " + c}>${t}${extra || ""}</span>`; };
+const STATUS = { draft: ["Не заполнено", "st-draft"], sent: ["На проверке", "st-sent"], ok: ["Подтверждено", "st-ok"], back: ["На доработку", "st-back"], future: ["Ещё не наступил", "st-draft"] };
+const CONTRACT = { draft: ["Не распечатан", "st-draft"], printed: ["На подписи", "st-sent"], returned: ["Сдан в лицей", "st-ok"] };
+const Field = ({ label, children }) => html`<label className="f"><span>${label}</span>${children}</label>`;
+const Progress = ({ v, t }) => { const pct = t ? Math.round((v / t) * 100) : 0; return html`<div className="row" style=${{ flexWrap: "nowrap" }}><div className=${"bar" + (pct === 100 ? " full" : "")}><i style=${{ width: pct + "%" }}></i></div><span className="small muted num">${v}/${t}</span></div>`; };
+const Grades = ({ value, onChange, list = [5, 4, 3, 2] }) => html`<div className="row grades">${list.map((g) => html`<button key=${g} aria-pressed=${value === g} onClick=${() => onChange(g)}>${g}</button>`)}</div>`;
+
+function MediaThumb({ m, onRemove, big }) {
+  const [url, setUrl] = useState(null);
+  useEffect(() => { let u; idb.get(m.id).then((b) => { if (b) { u = URL.createObjectURL(b); setUrl(u); } }); return () => u && URL.revokeObjectURL(u); }, [m.id]);
+  return html`<figure className=${big ? "big" : ""} title=${m.name}>
+    ${!url ? html`<span className="small muted" style=${{ padding: 8, display: "block" }}>нет файла</span>`
+      : m.type === "video" ? html`<video src=${url} controls preload="metadata"></video>`
+      : html`<a href=${url} target="_blank" rel="noopener"><img src=${url} alt=${m.name} /></a>`}
+    ${onRemove && html`<button aria-label="Удалить файл" onClick=${onRemove}>×</button>`}
+  </figure>`;
+}
+
+function DocModal({ doc, onClose }) {
+  return html`<div className="modal" role="dialog" aria-label=${doc.title}>
+    <div className="mbar"><b style=${{ marginRight: "auto" }}>${doc.title}</b>
+      <${Btn} sm onClick=${() => { printDoc(doc.html, doc.title); doc.onPrint && doc.onPrint(); }}>Печать<//>
+      <${Btn} sm kind="ghost" onClick=${() => downloadDoc(doc.html, doc.title)}>Скачать Word<//>
+      <${Btn} sm kind="ghost" onClick=${onClose}>Закрыть<//></div>
+    <div className="mbody"><div className="paper doc" dangerouslySetInnerHTML=${{ __html: doc.html }}></div></div>
+  </div>`;
+}
+
+/* =================== настройки pl3service =================== */
+function SettingsModal({ db, mutate, onClose }) {
+  const [s, setS] = useState({ ...DEFAULT_SETTINGS, ...db.settings });
+  const [msg, setMsg] = useState(null);
+  const set = (k) => (e) => setS({ ...s, [k]: e.target.value });
+  const test = async () => { setMsg(["…", "st-info"]); try { const g = await fetchGroups(s); setMsg([`Подключено: найдено групп — ${g.length}`, "st-ok"]); } catch (e) { setMsg([e.message, "st-back"]); } };
+  return html`<div className="modal"><div className="panel stack">
+    <h2>Подключение к pl3service</h2>
+    <p className="small muted">Отсюда мастер п/о берёт группы и списки студентов. Поля ответа распознаются автоматически: name / fullName / fio, _id, profession, course.</p>
+    <${Field} label="Адрес сайта"><input id="apiBase" value=${s.apiBase} onInput=${set("apiBase")} /><//>
+    <div className="grid2">
+      <${Field} label="Список групп"><input id="groupsPath" value=${s.groupsPath} onInput=${set("groupsPath")} /><//>
+      <${Field} label="Студенты группы ({group} — id группы)"><input id="studentsPath" value=${s.studentsPath} onInput=${set("studentsPath")} /><//>
+    </div>
+    <${Field} label="Токен доступа (если API закрыт)"><input id="token" value=${s.token} onInput=${set("token")} placeholder="необязательно" /><//>
+    ${msg && html`<span className=${"chip " + msg[1]} style=${{ whiteSpace: "normal" }}>${msg[0]}</span>`}
+    <div className="note small">${ON_PL3 ? "Страница открыта с pl3service — данные берутся по вашему входу (админ видит все группы, куратор — свои). Адрес сайта оставьте пустым." : "Страница открыта не с pl3service: вход в pl3service здесь не работает. Откройте её по адресу pl3service.onrender.com/practice.html."}</div>
+    <div className="row"><${Btn} onClick=${() => { mutate((n) => (n.settings = s)); onClose(); }}>Сохранить<//><${Btn} kind="ghost" onClick=${test}>Проверить соединение<//><${Btn} kind="ghost" onClick=${onClose}>Отмена<//></div>
+  </div></div>`;
+}
+
+/* =================== СТАРШИЙ МАСТЕР =================== */
+function SeniorView({ db, setDoc }) {
+  const [filter, setFilter] = useState("now");
+  const [open, setOpen] = useState(null);
+  const list = db.practices.filter((p) => filter === "all" || phase(p) === filter);
+  const act = db.practices.filter((p) => phase(p) === "now");
+  const allOrgs = act.flatMap((p) => p.orgs);
+  const studentsNow = act.reduce((a, p) => a + p.students.length, 0);
+  const pending = act.reduce((a, p) => a + p.students.reduce((b, s) => b + stats(db, p, s.id).sent, 0), 0);
+
+  const alerts = [];
+  db.practices.forEach((p) => {
+    if (phase(p) === "done") { const miss = p.students.filter((s) => !db.chars[p.id]?.[s.id]?.done).length; if (miss) alerts.push(["bad", `${p.group}: практика завершена, нет характеристик — ${miss}`]); return; }
+    const un = p.students.filter((s) => !orgOf(p, s.id)).length;
+    if (un) alerts.push([phase(p) === "now" ? "bad" : "", `${p.group}: ${un} студ. не распределены по организациям`]);
+    p.orgs.forEach((o) => { if (o.contract !== "returned" && (phase(p) === "now" || o.contract === "draft")) alerts.push([phase(p) === "now" ? "bad" : "", `${p.group}: договор с ${o.name} — ${CONTRACT[o.contract][0].toLowerCase()}`]); });
+  });
+
+  return html`<div className="stack">
+    <div className="row between"><h2>Группы на практике</h2>
+      <div className="tabs" role="tablist">${[["now", "Идут"], ["soon", "Скоро"], ["done", "Завершены"], ["all", "Все"]].map(([k, t]) => html`<button key=${k} role="tab" aria-selected=${filter === k} onClick=${() => setFilter(k)}>${t}</button>`)}</div></div>
+    <div className="grid4">
+      <div className="card stat"><div className="v">${act.length}</div><div className="l">групп сейчас на практике</div></div>
+      <div className="card stat"><div className="v">${studentsNow}</div><div className="l">студентов на практике</div></div>
+      <div className="card stat"><div className="v">${allOrgs.filter((o) => o.contract === "returned").length}/${allOrgs.length}</div><div className="l">договоров сдано в лицей</div></div>
+      <div className="card stat"><div className="v">${pending}</div><div className="l">записей ждут руководителя</div></div>
+    </div>
+    ${alerts.length > 0 && html`<div className="stack" style=${{ gap: 6 }}>${alerts.map((a, i) => html`<div key=${i} className=${"alert " + a[0]}>${a[1]}</div>`)}</div>`}
+    <div className="card tbl" style=${{ padding: 0 }}>
+      <table className="list"><thead><tr><th>Группа</th><th>Мастер п/о</th><th>Срок</th><th>Распределено</th><th>Договоры</th><th>Дневники</th><th>Характеристики</th></tr></thead>
+      <tbody>${list.length === 0 && html`<tr><td colSpan="7" className="muted">В этом разделе групп нет.</td></tr>`}
+      ${list.map((p) => {
+        const assigned = p.students.filter((s) => orgOf(p, s.id)).length;
+        const okDays = p.students.reduce((a, s) => a + stats(db, p, s.id).ok, 0);
+        const chars = p.students.filter((s) => db.chars[p.id]?.[s.id]?.done).length;
+        return html`<${React.Fragment} key=${p.id}>
+          <tr className="click" onClick=${() => setOpen(open === p.id ? null : p.id)}>
+            <td><b>${p.group}</b> <${Chip} map=${PHASE} k=${phase(p)} /><div className="small muted">${p.course} курс, ${p.days[0]?.hours || ""} ч/день</div></td>
+            <td>${short(masterOf(db, p).name)}</td>
+            <td className="num small">${fmt(p.start)}–${fmt(p.end)}</td>
+            <td className="num">${assigned}/${p.students.length}</td>
+            <td className="num">${p.orgs.filter((o) => o.contract === "returned").length}/${p.orgs.length}</td>
+            <td style=${{ minWidth: 120 }}><${Progress} v=${okDays} t=${p.days.length * p.students.length} /></td>
+            <td className="num">${chars}/${p.students.length}</td></tr>
+          ${open === p.id && html`<tr><td colSpan="7" style=${{ background: "#F7F9FC" }}><${PracticeDetail} db=${db} p=${p} setDoc=${setDoc} /></td></tr>`}
+        <//>`;
+      })}</tbody></table></div>
+  </div>`;
+}
+function PracticeDetail({ db, p, setDoc }) {
+  const m = masterOf(db, p);
+  const un = p.students.filter((s) => !orgOf(p, s.id));
+  return html`<div className="stack" style=${{ gap: 10 }}>
+    <div className="small muted">Мастер п/о: ${m.name}, тел. ${m.phone}. Профессия: ${p.profession}. ${p.days.length} дн., ${sumHours(p)} ч.</div>
+    ${p.orgs.map((o) => html`<div key=${o.id} className="card tight">
+      <div className="row between"><div><b>${o.name}</b><div className="small muted">${o.supName}, ${o.supPos}, ${o.supPhone}</div></div>
+        <div className="row"><${Chip} map=${CONTRACT} k=${o.contract} /><${Btn} sm kind="ghost" onClick=${() => setDoc({ title: `Договор ${p.group} — ${o.name}`, html: contractHTML(p, o, m) })}>Договор<//></div></div>
+      <div className="stack" style=${{ gap: 4, marginTop: 8 }}>${p.students.filter((s) => o.studentIds.includes(s.id)).map((s) => {
+        const st = stats(db, p, s.id); const ch = db.chars[p.id]?.[s.id];
+        return html`<div key=${s.id} className="grid3 small" style=${{ alignItems: "center" }}>
+          <button className="linkbtn" onClick=${() => setDoc({ title: `Дневник — ${short(s.name)}`, html: diaryHTML(p, s, o, m, st.E) })}>${s.name}</button>
+          <${Progress} v=${st.ok} t=${st.total} />
+          <span>${st.sent ? html`<${Chip} map=${STATUS} k="sent" extra=${": " + st.sent} /> ` : ""}${st.back ? html`<${Chip} map=${STATUS} k="back" extra=${": " + st.back} /> ` : ""}${ch?.done ? html`<span className="chip st-ok">Характеристика ${ch.grade}</span>` : ""}</span></div>`;
+      })}</div></div>`)}
+    ${un.length > 0 && html`<div className="alert">Не распределены: ${un.map((s) => short(s.name)).join(", ")}</div>`}
+  </div>`;
+}
+
+/* =================== МАСТЕР П/О =================== */
+function MasterProfile({ m, mutate }) {
+  const [f, setF] = useState({ name: m.name, phone: m.phone });
+  const [saved, setSaved] = useState(false);
+  useEffect(() => setF({ name: m.name, phone: m.phone }), [m.id]);
+  const incomplete = !m.phone || m.name.split(/\s+/).length < 2;
+  return html`<div className=${"card tight" + (incomplete ? "" : "")} style=${{ background: incomplete ? "var(--warn-bg)" : "var(--card)" }}>
+    ${incomplete && html`<div className="small" style=${{ marginBottom: 8 }}>Заполните ФИО и телефон — они печатаются в договоре как ответственный от лицея.</div>`}
+    <div className="row" style=${{ alignItems: "flex-end" }}>
+      <div style=${{ flex: "2 1 220px" }}><${Field} label="ФИО мастера п/о"><input id="mName" value=${f.name} onInput=${(e) => { setF({ ...f, name: e.target.value }); setSaved(false); }} /><//></div>
+      <div style=${{ flex: "1 1 150px" }}><${Field} label="Телефон"><input id="mPhone" value=${f.phone} onInput=${(e) => { setF({ ...f, phone: e.target.value }); setSaved(false); }} placeholder="0700 00-00-00" /><//></div>
+      <${Btn} sm kind="ghost" onClick=${() => { mutate((n) => Object.assign(n.masters.find((x) => x.id === m.id), f)); setSaved(true); }}>${saved ? "Сохранено" : "Сохранить"}<//>
+    </div></div>`;
+}
+
+function MasterView({ db, mutate, setDoc, openSettings, me }) {
+  const meMaster = me?.role === "curator" ? db.masters.find((m) => m.id === "cur:" + me.username) : null;
+  const [mid, setMid] = useState(meMaster?.id || db.masters[0]?.id);
+  useEffect(() => { if (meMaster) setMid(meMaster.id); }, [meMaster?.id]);
+  const [creating, setCreating] = useState(false);
+  const mine = db.practices.filter((p) => p.masterId === mid);
+  const cur = db.masters.find((m) => m.id === mid);
+  return html`<div className="stack">
+    <div className="row between"><h2>Мои группы</h2>
+      <div className="row">${meMaster ? html`<span className="small muted">Вход: ${me.username}${me.groupNames?.length ? ", группы " + me.groupNames.join(", ") : ""}</span>`
+        : html`<select id="masterSel" style=${{ width: "auto" }} value=${mid} onChange=${(e) => setMid(e.target.value)} aria-label="Мастер п/о">${db.masters.map((m) => html`<option key=${m.id} value=${m.id}>${m.name}</option>`)}</select>`}
+      <${Btn} kind=${creating ? "ghost" : ""} onClick=${() => setCreating(!creating)}>${creating ? "Отмена" : "Отправить группу на практику"}<//></div></div>
+    ${cur && html`<${MasterProfile} m=${cur} mutate=${mutate} />`}
+    ${creating && html`<${NewPractice} db=${db} mutate=${mutate} mid=${mid} openSettings=${openSettings} onDone=${() => setCreating(false)} />`}
+    ${!mine.length && !creating && html`<div className="card">У вас пока нет групп на практике. Нажмите «Отправить группу на практику» — список студентов подтянется с pl3service.</div>`}
+    ${mine.map((p) => html`<${PracticeManage} key=${p.id} db=${db} p=${p} mutate=${mutate} setDoc=${setDoc} />`)}
+  </div>`;
+}
+
+function NewPractice({ db, mutate, mid, onDone, openSettings }) {
+  const [groups, setGroups] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [gKey, setGKey] = useState("");
+  const [students, setStudents] = useState([]);
+  const [manual, setManual] = useState(false);
+  const [paste, setPaste] = useState("");
+  const [f, setF] = useState({ group: "", course: 1, hours: 6, profession: "", start: "", end: "", sat: true });
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
+
+  const loadGroups = async () => { setBusy(true); setErr(""); try { const g = await fetchGroups(db.settings); setGroups(g); if (!g.length) setErr("pl3service вернул пустой список групп."); } catch (e) { setErr(e.message); } setBusy(false); };
+  const pickGroup = async (key) => {
+    setGKey(key); const g = groups.find((x) => String(x.key) === String(key)); if (!g) return;
+    const course = Number(g.course) || (/-(\d)-/.exec(g.name)?.[1] ? 1 : f.course);
+    setF((x) => ({ ...x, group: g.name, profession: g.profession || x.profession, course: Number(g.course) || x.course, hours: (Number(g.course) || x.course) >= 2 ? 8 : 6 }));
+    setBusy(true); setErr("");
+    try { setStudents((await fetchStudents(db.settings, g)).map((s) => ({ ...s, on: true }))); } catch (e) { setErr(e.message); setStudents([]); }
+    setBusy(false);
+  };
+  const applyPaste = () => { const s = parsePasted(paste); setStudents(s.map((x) => ({ ...x, on: true }))); if (!s.length) setErr("Не нашёл ФИО: вставьте по одному на строку или JSON из pl3service."); else setErr(""); };
+  const create = () => {
+    const chosen = students.filter((s) => s.on);
+    if (!f.group || !f.start || !f.end) return setErr("Укажите группу и даты практики.");
+    if (f.end < f.start) return setErr("Дата окончания раньше даты начала.");
+    if (!chosen.length) return setErr("В списке нет ни одного студента.");
+    mutate((n) => n.practices.unshift({
+      id: uid(), group: f.group, course: Number(f.course), profession: f.profession || "—", start: f.start, end: f.end, sat: f.sat,
+      days: buildDays(f.start, f.end, Number(f.hours), f.sat), masterId: mid, source: manual ? "вручную" : "pl3service",
+      students: chosen.map((s) => ({ id: uid(), extId: s.extId, name: s.name })), orgs: [],
+    }));
+    onDone();
+  };
+
+  return html`<div className="card stack">
+    <h3>1. Группа и студенты</h3>
+    ${!manual ? html`<div className="stack" style=${{ gap: 8 }}>
+      <div className="row"><${Btn} kind="ghost" disabled=${busy} onClick=${loadGroups}>${busy && !groups.length ? "Загружаю…" : "Загрузить группы с pl3service"}<//>
+        ${groups.length > 0 && html`<select id="grpSel" style=${{ width: "auto", minWidth: 180 }} value=${gKey} onChange=${(e) => pickGroup(e.target.value)}><option value="">Выберите группу</option>${groups.map((g) => html`<option key=${g.key} value=${g.key}>${g.name}</option>`)}</select>`}
+        <button className="linkbtn small" onClick=${openSettings}>Настройки подключения</button></div>
+      <button className="linkbtn small" onClick=${() => { setManual(true); setErr(""); }}>Сайт недоступен? Вставить список вручную</button></div>`
+    : html`<div className="stack" style=${{ gap: 8 }}>
+      <div className="grid2"><${Field} label="Группа"><input id="grpManual" value=${f.group} onInput=${set("group")} placeholder="ЭМ-1-25" /><//></div>
+      <${Field} label="ФИО по одному на строку, или JSON со студентами из pl3service"><textarea id="paste" rows="5" value=${paste} onInput=${(e) => setPaste(e.target.value)}></textarea><//>
+      <div className="row"><${Btn} sm kind="ghost" onClick=${applyPaste}>Разобрать список<//><button className="linkbtn small" onClick=${() => setManual(false)}>Вернуться к загрузке с pl3service</button></div></div>`}
+    ${err && html`<div className="alert bad">${err}</div>`}
+    ${students.length > 0 && html`<div className="card tight" style=${{ background: "#FAFBFD" }}>
+      <div className="small muted" style=${{ marginBottom: 6 }}>Студентов: ${students.filter((s) => s.on).length} из ${students.length}. Снимите отметку с тех, кто не идёт на практику.</div>
+      <div className="grid2" style=${{ gap: 4 }}>${students.map((s, i) => html`<label key=${i} className="row small" style=${{ flexWrap: "nowrap" }}><input type="checkbox" checked=${s.on} onChange=${() => setStudents(students.map((x, j) => (j === i ? { ...x, on: !x.on } : x)))} />${s.name}</label>`)}</div></div>`}
+    <h3>2. Сроки и часы</h3>
+    <div className="grid3">
+      <${Field} label="Курс"><select id="course" value=${f.course} onChange=${(e) => setF({ ...f, course: e.target.value, hours: e.target.value === "1" ? 6 : 8 })}><option value="1">1 курс</option><option value="2">2 курс</option><option value="3">3 курс</option></select><//>
+      <${Field} label="Часов в день"><input id="hours" type="number" min="1" max="12" value=${f.hours} onInput=${set("hours")} /><//>
+      <${Field} label="Профессия"><input id="prof" value=${f.profession} onInput=${set("profession")} /><//>
+      <${Field} label="Начало"><input id="start" type="date" value=${f.start} onInput=${set("start")} /><//>
+      <${Field} label="Окончание"><input id="end" type="date" value=${f.end} onInput=${set("end")} /><//>
+      <label className="row small" style=${{ alignSelf: "end", paddingBottom: 8 }}><input type="checkbox" checked=${f.sat} onChange=${set("sat")} /> Суббота — рабочий день</label>
+    </div>
+    <p className="small muted" style=${{ margin: 0 }}>Организации и распределение студентов — на следующем шаге, в карточке группы.</p>
+    <div><${Btn} onClick=${create}>Создать практику<//></div>
+  </div>`;
+}
+
+const EMPTY_ORG = { name: "", address: "", phone: "", head: "", supName: "", supPos: "", supPhone: "", tb: "", tbDate: "" };
+function OrgForm({ init, p, onSave, onCancel }) {
+  const [o, setO] = useState({ ...EMPTY_ORG, tb: p.profession.toLowerCase().includes("свар") ? "Инструктаж по ТБ при электросварочных и газосварочных работах" : "Инструктаж по ТБ и ППМ при работе с электрооборудованием", tbDate: p.start, ...init });
+  const [err, setErr] = useState("");
+  const inp = (k, ph = "", type = "text") => html`<input id=${"org-" + k} type=${type} value=${o[k]} placeholder=${ph} onInput=${(e) => setO({ ...o, [k]: e.target.value })} />`;
+  const save = () => { if (!o.name || !o.supName) return setErr("Нужны название организации и ФИО руководителя практики."); onSave(o); };
+  return html`<div className="card tight stack" style=${{ background: "#FAFBFD" }}>
+    <div className="grid2">
+      <${Field} label="Организация">${inp("name", "ОсОО «…»")}<//>
+      <${Field} label="В лице (должность и ФИО в род. падеже)">${inp("head", "директора Жумабаева Т.К.")}<//>
+      <${Field} label="Адрес">${inp("address")}<//>
+      <${Field} label="Телефон организации">${inp("phone")}<//>
+      <${Field} label="Руководитель практики, ФИО">${inp("supName")}<//>
+      <${Field} label="Должность руководителя">${inp("supPos", "мастер участка")}<//>
+      <${Field} label="Телефон руководителя">${inp("supPhone")}<//>
+      <${Field} label="Дата инструктажа по ТБ">${inp("tbDate", "", "date")}<//>
+    </div>
+    <${Field} label="Наименование инструктажа">${inp("tb")}<//>
+    ${err && html`<div className="alert bad">${err}</div>`}
+    <div className="row"><${Btn} sm onClick=${save}>Сохранить организацию<//><${Btn} sm kind="ghost" onClick=${onCancel}>Отмена<//></div>
+  </div>`;
+}
+
+function PracticeManage({ db, p, mutate, setDoc }) {
+  const [tab, setTab] = useState("dist");
+  const [editing, setEditing] = useState(null);
+  const [linkFor, setLinkFor] = useState(null);
+  const m = masterOf(db, p);
+  const upd = (fn) => mutate((n) => fn(n.practices.find((x) => x.id === p.id)));
+  const assign = (sid, oid) => upd((x) => { x.orgs.forEach((o) => (o.studentIds = o.studentIds.filter((i) => i !== sid))); if (oid) x.orgs.find((o) => o.id === oid).studentIds.push(sid); });
+  const saveOrg = (data) => { upd((x) => { if (editing === "new") x.orgs.push({ id: uid(), code: code4(), contract: "draft", studentIds: [], ...data }); else Object.assign(x.orgs.find((o) => o.id === editing), data); }); setEditing(null); };
+  const openContract = (o) => setDoc({ title: `Договор ${p.group} — ${o.name}`, html: contractHTML(p, o, m), onPrint: () => o.contract === "draft" && upd((x) => (x.orgs.find((y) => y.id === o.id).contract = "printed")) });
+  const un = p.students.filter((s) => !orgOf(p, s.id));
+
+  return html`<div className="card stack">
+    <div className="row between"><div><h3 style=${{ fontSize: 18 }}>${p.group} <${Chip} map=${PHASE} k=${phase(p)} /></h3>
+      <div className="small muted">${p.course} курс, ${p.profession}. ${fmt(p.start)}–${fmt(p.end)}, ${p.days.length} дн., ${sumHours(p)} ч. Список: ${p.source}.</div></div>
+      <div className="tabs">${[["dist", "Распределение"], ["hours", "Часы по дням"]].map(([k, t]) => html`<button key=${k} aria-selected=${tab === k} onClick=${() => setTab(k)}>${t}</button>`)}</div></div>
+
+    ${tab === "hours" ? html`<${HoursEditor} p=${p} upd=${upd} />` : html`<div className="stack">
+      ${p.orgs.map((o) => editing === o.id ? html`<${OrgForm} key=${o.id} init=${o} p=${p} onSave=${saveOrg} onCancel=${() => setEditing(null)} />` : html`<div key=${o.id} className="card tight">
+        <div className="row between" style=${{ alignItems: "flex-start" }}>
+          <div style=${{ minWidth: 0 }}><b>${o.name}</b><div className="small muted">${o.address}. Руководитель: ${o.supName}, ${o.supPos}, ${o.supPhone}</div></div>
+          <select id=${"ct-" + o.id} style=${{ width: "auto" }} value=${o.contract} onChange=${(e) => upd((x) => (x.orgs.find((y) => y.id === o.id).contract = e.target.value))} aria-label="Статус договора">
+            ${Object.entries(CONTRACT).map(([k, [t]]) => html`<option key=${k} value=${k}>${t}</option>`)}</select></div>
+        <div className="row" style=${{ marginTop: 8 }}>${p.students.filter((s) => o.studentIds.includes(s.id)).map((s) => html`<span key=${s.id} className="chip st-info">${short(s.name)}</span>`)}
+          ${!o.studentIds.length && html`<span className="small muted">Студенты ещё не назначены</span>`}</div>
+        <div className="row" style=${{ marginTop: 10 }}>
+          <${Btn} sm disabled=${!o.studentIds.length} onClick=${() => openContract(o)}>Договор, 2 экз.<//>
+          <${Btn} sm kind="ghost" onClick=${() => setLinkFor(linkFor === o.id ? null : o.id)}>Ссылка руководителю<//>
+          <${Btn} sm kind="ghost" onClick=${() => setEditing(o.id)}>Изменить<//>
+          ${!o.studentIds.length && html`<${Btn} sm kind="warn" onClick=${() => upd((x) => (x.orgs = x.orgs.filter((y) => y.id !== o.id)))}>Удалить<//>`}</div>
+        ${linkFor === o.id && html`<div className="note" style=${{ marginTop: 10 }}>Отправьте руководителю в WhatsApp: <b>pl3service.onrender.com/practice/${p.id}-${o.code}</b><br /><span className="small muted">Вход без пароля. В прототипе — вкладка «Руководитель практики», код ${o.code}.</span></div>`}
+      </div>`)}
+      ${editing === "new" ? html`<${OrgForm} init=${{}} p=${p} onSave=${saveOrg} onCancel=${() => setEditing(null)} />` : html`<div><${Btn} kind="ghost" onClick=${() => setEditing("new")}>Добавить организацию<//></div>`}
+
+      <div className="tbl"><table className="list"><thead><tr><th>Студент</th><th>Организация</th><th>Дневник</th></tr></thead><tbody>
+        ${p.students.map((s) => { const o = orgOf(p, s.id); const st = stats(db, p, s.id);
+          return html`<tr key=${s.id}><td><button className="linkbtn" onClick=${() => setDoc({ title: `Дневник — ${short(s.name)}`, html: diaryHTML(p, s, o, m, st.E) })}>${s.name}</button></td>
+            <td style=${{ minWidth: 190 }}><select id=${"as-" + s.id} value=${o?.id || ""} onChange=${(e) => assign(s.id, e.target.value)} aria-label=${"Организация для " + s.name}>
+              <option value="">— не распределён —</option>${p.orgs.map((x) => html`<option key=${x.id} value=${x.id}>${x.name}</option>`)}</select></td>
+            <td style=${{ minWidth: 130 }}><${Progress} v=${st.ok} t=${st.total} /></td></tr>`; })}
+      </tbody></table></div>
+      ${un.length > 0 && p.orgs.length > 0 && html`<div className="alert">Не распределено: ${un.length}. Договор формируется по организации — в него попадут только назначенные студенты.</div>`}
+    </div>`}
+  </div>`;
+}
+
+function HoursEditor({ p, upd }) {
+  return html`<div className="stack" style=${{ gap: 10 }}>
+    <div className="row"><span className="small muted">Все дни:</span>${[6, 8].map((h) => html`<${Btn} key=${h} sm kind="ghost" onClick=${() => upd((x) => x.days.forEach((d) => (d.hours = h)))}>${h} ч<//>`)}
+      <span className="small muted" style=${{ marginLeft: "auto" }}>Итого ${p.days.length} дн., ${sumHours(p)} ч</span></div>
+    <div className="grid4" style=${{ gap: 6 }}>${p.days.map((d, i) => html`<div key=${d.date} className="row small" style=${{ flexWrap: "nowrap", border: "1px solid var(--line)", borderRadius: 7, padding: "4px 8px", gap: 6 }}>
+      <span className="num">${fmt(d.date).slice(0, 5)}</span><span className="muted">${wd(d.date)}</span>
+      <input id=${"h-" + d.date} type="number" min="1" max="12" value=${d.hours} aria-label=${"Часы " + fmt(d.date)} style=${{ width: 52, marginLeft: "auto", padding: "3px 6px" }} onInput=${(e) => upd((x) => (x.days[i].hours = Number(e.target.value)))} />
+      <button className="linkbtn" aria-label="Убрать день" onClick=${() => upd((x) => x.days.splice(i, 1))}>×</button></div>`)}</div>
+  </div>`;
+}
+
+/* =================== СТУДЕНТ =================== */
+function DayRow({ d, e, onSave }) {
+  const [text, setText] = useState(e?.text || "");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => setText(e?.text || ""), [e?.text]);
+  const future = d.date > TODAY;
+  const st = future ? "future" : e?.status || "draft";
+  const locked = st === "ok" || st === "sent" || future;
+  const media = e?.media || [];
+  const addFiles = async (files) => {
+    setBusy(true); const add = [];
+    for (const f of files) {
+      const isVid = f.type.startsWith("video"); if (!isVid && !f.type.startsWith("image")) continue;
+      if (isVid && f.size > 60e6) { alert("Видео больше 60 МБ — обрежьте или снимите короче."); continue; }
+      const blob = isVid ? f : await compressImage(f); const id = uid();
+      await idb.put(id, blob); add.push({ id, type: isVid ? "video" : "image", name: f.name });
+    }
+    onSave({ media: [...media, ...add] }); setBusy(false);
+  };
+  return html`<div className="card tight">
+    <div className="row between"><b className="num">${fmt(d.date)} <span className="muted" style=${{ fontWeight: 400 }}>${wd(d.date)}, ${d.hours} ч</span></b><${Chip} map=${STATUS} k=${st} extra=${st === "ok" && e?.grade ? ", оценка " + e.grade : ""} /></div>
+    ${st === "back" && e?.comment && html`<div className="alert bad" style=${{ marginTop: 8 }}>Руководитель: ${e.comment}</div>`}
+    ${locked ? (e?.text && html`<p style=${{ margin: "8px 0 0", whiteSpace: "pre-wrap" }}>${e.text}</p>`) : html`
+      <textarea id=${"t-" + d.date} rows="2" style=${{ marginTop: 8 }} value=${text} onInput=${(x) => setText(x.target.value)} placeholder="Что выполняли в этот день"></textarea>`}
+    ${(media.length > 0 || !locked) && html`<div className="media">${media.map((m) => html`<${MediaThumb} key=${m.id} m=${m} onRemove=${locked ? null : () => { idb.del(m.id); onSave({ media: media.filter((x) => x.id !== m.id) }); }} />`)}</div>`}
+    ${!locked && html`<div className="row" style=${{ marginTop: 8 }}>
+      <label className="upl"><input type="file" accept="image/*,video/*" multiple onChange=${(x) => { addFiles([...x.target.files]); x.target.value = ""; }} />${busy ? "Загружаю…" : "Фото или видео (необязательно)"}</label>
+      <span style=${{ flex: 1 }}></span>
+      <${Btn} sm kind="ghost" onClick=${() => onSave({ text, status: st === "back" ? "back" : "draft" })}>Сохранить<//>
+      <${Btn} sm disabled=${!text.trim()} onClick=${() => onSave({ text, status: "sent", comment: "" })}>Отправить руководителю<//></div>`}
+  </div>`;
+}
+
+function StudentView({ db, mutate, setDoc }) {
+  const [pid, setPid] = useState(db.practices[0]?.id);
+  const p = db.practices.find((x) => x.id === pid) || db.practices[0];
+  const [sid, setSid] = useState(p?.students[0]?.id);
+  if (!p) return html`<div className="card">Практик пока нет.</div>`;
+  const s = p.students.find((x) => x.id === sid) || p.students[0];
+  const o = orgOf(p, s.id); const m = masterOf(db, p); const st = stats(db, p, s.id); const ch = db.chars[p.id]?.[s.id];
+  const ready = st.ok === st.total && ch?.done;
+  const save = (date, patch) => mutate((n) => { n.entries[p.id] ??= {}; n.entries[p.id][s.id] ??= {}; n.entries[p.id][s.id][date] = { ...(n.entries[p.id][s.id][date] || {}), ...patch }; });
+  return html`<div className="stack">
+    <div className="grid2">
+      <${Field} label="Группа"><select id="stP" value=${p.id} onChange=${(e) => { setPid(e.target.value); setSid(db.practices.find((x) => x.id === e.target.value)?.students[0]?.id); }}>${db.practices.map((x) => html`<option key=${x.id} value=${x.id}>${x.group}</option>`)}</select><//>
+      <${Field} label="Вы вошли как"><select id="stS" value=${s.id} onChange=${(e) => setSid(e.target.value)}>${p.students.map((x) => html`<option key=${x.id} value=${x.id}>${x.name}</option>`)}</select><//>
+    </div>
+    ${!o ? html`<div className="alert">Мастер п/о ещё не направил вас в организацию. Дневник откроется после распределения.</div>` : html`
+    <div className="card stack" style=${{ gap: 10 }}>
+      <div><b>${o.name}</b><div className="small muted">${o.address}. Руководитель практики: ${o.supName}, ${o.supPos}, ${o.supPhone}. Мастер п/о: ${m.name}.</div></div>
+      <${Progress} v=${st.ok} t=${st.total} />
+      <div className="row">
+        <${Btn} sm kind="ghost" onClick=${() => setDoc({ title: `Дневник — ${short(s.name)}`, html: diaryHTML(p, s, o, m, st.E) })}>Дневник<//>
+        <${Btn} sm kind="ghost" disabled=${!ch?.done} onClick=${() => setDoc({ title: `Характеристика — ${short(s.name)}`, html: charHTML(p, s, o, ch) })}>Характеристика<//>
+        <${Btn} sm kind="ok" disabled=${!ready} onClick=${() => setDoc({ title: `Документы практики — ${short(s.name)}`, html: diaryHTML(p, s, o, m, st.E) + charHTML(p, s, o, ch) })}>Распечатать дневник и характеристику<//></div>
+      ${!ready && html`<div className="small muted">Печать откроется, когда все дни подтверждены (${st.ok}/${st.total}) и руководитель заполнил характеристику${ch?.done ? " — готово" : ""}.</div>`}
+    </div>
+    <div className="stack" style=${{ gap: 8 }}>${p.days.map((d) => html`<${DayRow} key=${d.date} d=${d} e=${st.E[d.date]} onSave=${(patch) => save(d.date, patch)} />`)}</div>`}
+  </div>`;
+}
+
+/* =================== РУКОВОДИТЕЛЬ ПРАКТИКИ =================== */
+function ReviewRow({ d, e, onDecide }) {
+  const [grade, setGrade] = useState(5);
+  const [comment, setComment] = useState("");
+  return html`<div className="card tight">
+    <b className="num">${fmt(d.date)} <span className="muted" style=${{ fontWeight: 400 }}>${wd(d.date)}, ${d.hours} ч</span></b>
+    <p style=${{ margin: "6px 0", whiteSpace: "pre-wrap" }}>${e.text}</p>
+    ${e.media?.length > 0 && html`<div className="media">${e.media.map((m) => html`<${MediaThumb} key=${m.id} m=${m} big />`)}</div>`}
+    <div className="row" style=${{ marginTop: 8 }}><span className="small muted">Оценка</span><${Grades} value=${grade} onChange=${setGrade} /><${Btn} sm kind="ok" onClick=${() => onDecide({ status: "ok", grade })}>Подтвердить<//></div>
+    <div className="row" style=${{ marginTop: 8, flexWrap: "nowrap" }}><input id=${"c-" + d.date} value=${comment} placeholder="Замечание, если нужно вернуть" onInput=${(x) => setComment(x.target.value)} />
+      <${Btn} sm kind="warn" disabled=${!comment.trim()} onClick=${() => onDecide({ status: "back", comment, grade: null })}>Вернуть<//></div>
+  </div>`;
+}
+
+function CharForm({ p, s, o, ch, onSave, setDoc, avg }) {
+  const init = () => ({ disc: 5, skill: 5, tb: 5, q: [], works: "", extra: "", rank: p.course >= 2 ? "3-го" : "2-го", grade: Math.round(avg) || 5, ...ch });
+  const [c, setC] = useState(init);
+  useEffect(() => setC(init()), [s.id]);
+  const lvl = (k, label) => html`<div className="row"><span className="small" style=${{ width: 210 }}>${label}</span><${Grades} list=${[5, 4, 3]} value=${c[k]} onChange=${(v) => setC({ ...c, [k]: v })} /></div>`;
+  return html`<div className="stack" style=${{ gap: 12 }}>
+    <p className="small muted" style=${{ margin: 0 }}>Отметьте уровень по каждому пункту — текст характеристики соберётся сам. Средняя оценка по дневнику: ${avg ? avg.toFixed(1) : "—"}.</p>
+    ${lvl("disc", "Отношение к работе, дисциплина")}${lvl("skill", "Профессиональные умения")}${lvl("tb", "Техника безопасности")}
+    <div><div className="small muted" style=${{ marginBottom: 6 }}>Личные качества</div><div className="row">${CH.qual.map((x) => html`<button key=${x} className="pill" aria-pressed=${c.q.includes(x)} onClick=${() => setC({ ...c, q: c.q.includes(x) ? c.q.filter((y) => y !== x) : [...c.q, x] })}>${x}</button>`)}</div></div>
+    <${Field} label="Какие работы освоил (необязательно)"><input id="works" value=${c.works} onInput=${(e) => setC({ ...c, works: e.target.value })} placeholder="Монтаж щитов освещения, ревизия электродвигателей" /><//>
+    <${Field} label="Дополнительно (необязательно)"><textarea id="extra" rows="2" value=${c.extra} onInput=${(e) => setC({ ...c, extra: e.target.value })}></textarea><//>
+    <div className="grid2"><${Field} label="Рекомендуемый разряд"><select id="rank" value=${c.rank} onChange=${(e) => setC({ ...c, rank: e.target.value })}><option value="">не указывать</option>${["2-го", "3-го", "4-го"].map((r) => html`<option key=${r} value=${r}>${r}</option>`)}</select><//>
+      <div><div className="small muted" style=${{ marginBottom: 4 }}>Оценка за практику</div><${Grades} value=${c.grade} onChange=${(v) => setC({ ...c, grade: v })} /></div></div>
+    <div className="row"><${Btn} kind="ok" onClick=${() => onSave({ ...c, done: true })}>Сохранить характеристику<//><${Btn} kind="ghost" onClick=${() => setDoc({ title: `Характеристика — ${short(s.name)}`, html: charHTML(p, s, o, c) })}>Предпросмотр<//></div>
+    ${ch?.done && html`<span className="chip st-ok" style=${{ alignSelf: "flex-start" }}>Сохранено — учащийся может распечатать</span>`}
+  </div>`;
+}
+
+function SupervisorView({ db, mutate, setDoc }) {
+  const opts = db.practices.flatMap((p) => p.orgs.map((o) => ({ p, o })));
+  const [key, setKey] = useState(opts[0] ? opts[0].p.id + "|" + opts[0].o.id : "");
+  const [sid, setSid] = useState(null);
+  const [tab, setTab] = useState("diary");
+  const cur = opts.find((x) => x.p.id + "|" + x.o.id === key) || opts[0];
+  if (!cur) return html`<div className="card">Организаций пока нет — мастер п/о добавит их при распределении.</div>`;
+  const { p, o } = cur;
+  const list = p.students.filter((s) => o.studentIds.includes(s.id));
+  const s = list.find((x) => x.id === sid);
+  const decide = (studentId, date, patch) => mutate((n) => Object.assign(n.entries[p.id][studentId][date], patch));
+  const saveChar = (studentId, data) => mutate((n) => { n.chars[p.id] ??= {}; n.chars[p.id][studentId] = data; });
+  return html`<div className="stack">
+    <${Field} label="Вход по ссылке (в прототипе — выбор)"><select id="supSel" value=${key} onChange=${(e) => { setKey(e.target.value); setSid(null); }}>${opts.map(({ p, o }) => html`<option key=${p.id + o.id} value=${p.id + "|" + o.id}>${o.supName} — ${o.name}, ${p.group} (код ${o.code})</option>`)}</select><//>
+    <div className="note">Здравствуйте, ${o.supName}. У вас на практике ${list.length} учащ. группы ${p.group}, ${fmt(p.start)}–${fmt(p.end)}. Мастер п/о: ${masterOf(db, p).name}, ${masterOf(db, p).phone}.</div>
+    <div className="card" style=${{ padding: 0 }}>${list.map((x, i) => { const st = stats(db, p, x.id); const ch = db.chars[p.id]?.[x.id];
+      return html`<button key=${x.id} onClick=${() => setSid(x.id === sid ? null : x.id)} className="row" style=${{ width: "100%", border: 0, borderTop: i ? "1px solid var(--line)" : 0, padding: "12px 16px", background: x.id === sid ? "#F2F5FC" : "transparent", cursor: "pointer", font: "inherit", color: "inherit", textAlign: "left", flexWrap: "nowrap" }}>
+        <span style=${{ flex: 1, fontWeight: 500 }}>${x.name}</span>
+        ${st.sent > 0 && html`<span className="chip st-sent">${st.sent} на проверке</span>`}
+        ${ch?.done && html`<span className="chip st-ok">характеристика</span>`}
+        <span className="small muted num">${st.ok}/${st.total}</span></button>`; })}</div>
+    ${s && html`<div className="card stack">
+      <div className="row between"><h3>${s.name}</h3><div className="tabs">${[["diary", "Дневник"], ["char", "Характеристика"]].map(([k, t]) => html`<button key=${k} aria-selected=${tab === k} onClick=${() => setTab(k)}>${t}</button>`)}</div></div>
+      ${tab === "diary" ? (() => { const st = stats(db, p, s.id); const pend = p.days.filter((d) => st.E[d.date]?.status === "sent");
+        return pend.length ? html`<div className="stack" style=${{ gap: 8 }}>${pend.map((d) => html`<${ReviewRow} key=${d.date} d=${d} e=${st.E[d.date]} onDecide=${(patch) => decide(s.id, d.date, patch)} />`)}</div>`
+          : html`<p className="muted" style=${{ margin: 0 }}>Новых записей нет. Подтверждено дней: ${st.ok} из ${st.total}.</p>`; })()
+        : (() => { const st = stats(db, p, s.id); const g = Object.values(st.E).filter((e) => e.status === "ok" && e.grade).map((e) => e.grade);
+          return html`<${CharForm} p=${p} s=${s} o=${o} ch=${db.chars[p.id]?.[s.id]} avg=${g.length ? g.reduce((a, b) => a + b, 0) / g.length : 0} onSave=${(d) => saveChar(s.id, d)} setDoc=${setDoc} />`; })()}
+    </div>`}
+  </div>`;
+}
+
+/* =================== приложение =================== */
+const ROLES = [["senior", "Старший мастер"], ["master", "Мастер п/о"], ["student", "Студент"], ["sup", "Руководитель практики"]];
+function App() {
+  const [db, setDb] = useState(loadDb);
+  const [role, setRole] = useState(() => { try { return localStorage.getItem(KEY + "-role") || "senior"; } catch (e) { return "senior"; } });
+  const [doc, setDoc] = useState(null);
+  const [settings, setSettings] = useState(false);
+  const [me, setMe] = useState(null);
+  const mutate = (fn) => setDb((cur) => { const n = clone(cur); fn(n); saveDb(n); return n; });
+  const pick = (r) => { setRole(r); try { localStorage.setItem(KEY + "-role", r); } catch (e) {} };
+  useEffect(() => { fetchMe().then((m) => {
+    if (!m?.role) return; setMe(m);
+    if (m.role === "curator") {
+      mutate((n) => { if (!n.masters.some((x) => x.id === "cur:" + m.username)) n.masters.push({ id: "cur:" + m.username, name: m.username, phone: "" }); });
+      pick("master");
+    } else if (m.role === "admin") pick("senior");
+  }); }, []);
+  return html`<${React.Fragment}>
+    <header className="top"><div className="wrap">
+      <div className="brand">Производственная практика ПЛ №3</div>
+      <div className="tabs" role="tablist">${ROLES.map(([k, t]) => html`<button key=${k} role="tab" aria-selected=${role === k} onClick=${() => pick(k)}>${t}</button>`)}</div>
+      <div className="row small">${me && html`<span className="muted">${me.role === "admin" ? "Администратор" : "Куратор"}: ${me.username}</span><span className="muted">·</span>`}<button className="linkbtn" onClick=${() => setSettings(true)}>pl3service</button><span className="muted">·</span><button className="linkbtn" onClick=${() => { const n = seed(); saveDb(n); setDb(n); }}>Сбросить демо</button></div>
+    </div></header>
+    <main className="wrap">
+      ${role === "senior" ? html`<${SeniorView} db=${db} setDoc=${setDoc} />`
+        : role === "master" ? html`<${MasterView} db=${db} mutate=${mutate} setDoc=${setDoc} me=${me} openSettings=${() => setSettings(true)} />`
+        : role === "student" ? html`<${StudentView} db=${db} mutate=${mutate} setDoc=${setDoc} />`
+        : html`<${SupervisorView} db=${db} mutate=${mutate} setDoc=${setDoc} />`}
+    </main>
+    ${doc && html`<${DocModal} doc=${doc} onClose=${() => setDoc(null)} />`}
+    ${settings && html`<${SettingsModal} db=${db} mutate=${mutate} onClose=${() => setSettings(false)} />`}
+  <//>`;
+}
+ReactDOM.createRoot(document.getElementById("root")).render(html`<${App} />`);
+</script>
+</body>
+</html>
