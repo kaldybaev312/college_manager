@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#13285c">
+<title>ПЛ №3</title>
+<link rel="icon" href="/icons/favicon-32.png">
+<style>
+html,body{margin:0;height:100%;background:linear-gradient(160deg,#0d1d47,#13285c 45%,#2a4fb3);color:#fff;font:15px/1.4 system-ui,-apple-system,'Segoe UI',sans-serif}
+.c{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;box-sizing:border-box}
+img{width:96px;height:96px;border-radius:24px;box-shadow:0 18px 40px rgba(0,0,0,.35)}
+h1{margin:6px 0 0;font-size:22px;font-weight:800}
+p{margin:0;color:#c9d6ff;max-width:320px}
+.bar{width:180px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden;margin-top:10px}
+.bar i{display:block;width:40%;height:100%;border-radius:2px;background:#9ec5f4;animation:m 1.2s ease-in-out infinite}
+@keyframes m{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@media (prefers-reduced-motion:reduce){.bar i{animation:none;width:100%}}
+</style>
+</head>
+<body>
+<!-- Показывается сервис-воркером, пока сервер Render просыпается или нет сети. -->
+<div class="c" role="status" aria-live="polite">
+  <img src="/icons/icon-192.png" alt="">
+  <h1>Профессиональный лицей №3</h1>
+  <p id="t">Запускаем систему… Первое открытие после перерыва занимает до минуты.</p>
+  <div class="bar"><i></i></div>
+</div>
+<script>
+// Ждём, пока сервер ответит, и открываем ту же страницу заново
+(async function poll(n) {
+  try {
+    const r = await fetch("/api/health", { cache: "no-store" });
+    if (r.ok) return location.reload();
+  } catch (e) {
+    if (!navigator.onLine) document.getElementById("t").textContent = "Нет интернета. Откроется сам, как только связь появится.";
+  }
+  setTimeout(() => poll(n + 1), Math.min(2000 + n * 500, 6000));
+})(0);
+</script>
+</body>
+</html>
