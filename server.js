@@ -14,6 +14,8 @@ const TelegramBot = require("node-telegram-bot-api");
 const att = require("./attendance-utils");
 const absence = require("./absence");
 const { createReports } = require("./reports");
+const { createWeeklyCards } = require("./weekly-card");
+const { createAssistant } = require("./ai-assistant");
 
 // Секреты берутся ТОЛЬКО из переменных окружения (.env / Render → Environment).
 // Если переменной нет, сервер не запускается и сразу говорит какой.
@@ -2264,6 +2266,11 @@ const createBot = require("./bot");
 // SKUD events buffer (shared with bot)
 const SKUD_EVENTS_REF = SKUD_EVENTS;
 
+// Отчёты, «итог недели» и ИИ-помощник не зависят от бота: бот передаётся при отправке
+const reports = createReports({ Group, Student, Curator, TgSub, getTodayKey });
+const weeklyCards = createWeeklyCards({ Group, Student, TgSub, SummaryRecord, ensureGroupSummarySubjects, getTodayKey });
+const ai = createAssistant({ Group, Student, Curator, SummaryRecord, ensureGroupSummarySubjects, getTodayKey, reports });
+
 const _botExports = createBot(
   // models
   { Group, Student, TgSub, Curator, SummaryRecord },
@@ -2276,6 +2283,8 @@ const _botExports = createBot(
     getSummaryDocumentData,
     formatMonthLabel,
     getSkudEvents: () => SKUD_EVENTS_REF,
+    ai,
+    weeklyCards,
   },
   // buildSummaryDocx
   buildSummaryDocx,
@@ -2309,9 +2318,9 @@ require("./webapp")(app, {
   getTodayKey,
   getBot: () => bot,
   mdv2,
+  weeklyCards,
 });
 
-const reports = createReports({ Group, Student, Curator, TgSub, getTodayKey });
 reports.registerReportRoutes(app, {
   requireAdmin,
   canAccessGroup,
@@ -2319,6 +2328,28 @@ reports.registerReportRoutes(app, {
   getBot: () => bot,
 });
 reports.scheduleReports(bot);
+weeklyCards.schedule(bot);
+
+// «Итог недели»: предпросмотр карточки и ручная рассылка
+app.get("/api/admin/weekly-card/:studentId.png", async (req, res) => {
+  try {
+    const stu = await Student.findById(req.params.studentId).select("group").lean();
+    if (!stu) return res.status(404).json({ error: "Студент не найден" });
+    if (!canAccessGroup(req, stu.group)) return res.status(403).json({ error: "Нет доступа к группе" });
+    const c = await weeklyCards.cardFor({ _id: stu._id }, att.isValidKey(req.query.date) ? req.query.date : undefined);
+    res.setHeader("Content-Type", "image/png");
+    res.send(c.png);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+app.post("/api/admin/weekly-cards/send-now", requireAdmin, async (req, res) => {
+  try {
+    res.json(await weeklyCards.sendAll(bot));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 const PORT = Number(process.env.PORT) || 3000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

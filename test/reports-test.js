@@ -18,6 +18,8 @@ const att = require("../attendance-utils");
 const absence = require("../absence");
 const { createReports, resolvePeriod, previousPeriod } = require("../reports");
 const registerWebapp = require("../webapp");
+const { createWeeklyCards } = require("../weekly-card");
+const { createAssistant } = require("../ai-assistant");
 const { verifyInitData } = registerWebapp;
 
 const { Schema } = fake;
@@ -98,6 +100,8 @@ async function t(name, fn) {
   });
 
   // ── Мини-приложение по HTTP ──
+  const subjectsStub = async () => [{ key: "math", label: "Математика", section: "theory" }];
+  const weeklyCards = createWeeklyCards({ Group, Student, TgSub, SummaryRecord, ensureGroupSummarySubjects: subjectsStub, getTodayKey });
   const app = express();
   app.use(express.json());
   const sent = [];
@@ -117,6 +121,7 @@ async function t(name, fn) {
     getTodayKey,
     getBot: () => fakeBot,
     mdv2: (v) => v,
+    weeklyCards,
   });
   const reports = createReports({ Group, Student, Curator, TgSub, getTodayKey });
   const srv = app.listen(0);
@@ -235,6 +240,97 @@ async function t(name, fn) {
     const wb = xlsx.read(toAdm.buf);
     assert.ok(wb.SheetNames.includes("Итог") && wb.SheetNames.includes("ИТ-21"));
     assert.ok(!wb.SheetNames.includes("Учителя"));
+  });
+
+  console.log("Итог недели:");
+  await t("данные карточки: дни, опоздания, причины, оценки", async () => {
+    await SummaryRecord.create({ group: String(gA._id), student: String(s2._id), month: "2026-10", grades: { math: "5" } });
+    const c = await weeklyCards.cardFor({ inn: "222222222222" }, "2026-10-07");
+    assert.deepEqual(c.data.cells.map((x) => x.st), ["p", "e", "e", "e", "a"]);
+    assert.deepEqual([c.data.present, c.data.excused, c.data.absent], [1, 2, 2]);
+    assert.deepEqual(c.data.grades, [{ label: "Математика", value: "5" }]);
+    assert.equal(c.png.slice(1, 4).toString(), "PNG");
+  });
+  await t("родитель получает картинку только своего ребёнка", async () => {
+    const ok = await fetch(base + "/api/webapp/parent/week-card?inn=222222222222", { headers: { "x-tg-init-data": initData(600) } });
+    assert.equal(ok.status, 200);
+    assert.equal(ok.headers.get("content-type"), "image/png");
+    assert.equal((await call(600, "GET", "/api/webapp/parent/week-card?inn=111111111111")).status, 403);
+  });
+  await t("рассылка родителям (пятница)", async () => {
+    sent.length = 0;
+    fakeBot.sendPhoto = async (chatId, buf, opts) => sent.push({ chatId, photo: true, caption: opts.caption });
+    const r = await weeklyCards.sendAll(fakeBot, { onlySaturday: false });
+    assert.equal(r.sent, 1);
+    assert.ok(sent[0].chatId === "600" && /Бекова/.test(sent[0].caption));
+  });
+
+  console.log("Геолокация практики:");
+  await t("расстояние, координаты из ссылок, решение по радиусу", () => {
+    const g = require("../practice")._geo;
+    assert.deepEqual(g.readPoint({ text: "https://2gis.kg/bishkek/geo/74.5698,42.8746" }), { lat: 42.8746, lng: 74.5698 });
+    assert.deepEqual(g.readPoint({ text: "https://maps.google.com/?q=42.8746,74.5698" }), { lat: 42.8746, lng: 74.5698 });
+    assert.equal(g.readPoint({ text: "нет координат" }), null);
+    const org = { lat: 42.8746, lng: 74.5698, radius: 300 };
+    assert.equal(g.judgeCheckIn(org, { lat: 42.876, lng: 74.5698 }, 20).ok, true);
+    assert.equal(g.judgeCheckIn(org, { lat: 42.8846, lng: 74.5698 }, 20).ok, false);
+    assert.equal(g.judgeCheckIn(org, { lat: 42.8780, lng: 74.5698 }, 100).ok, true); // 378 м, но погрешность 100 м
+  });
+
+  console.log("ИИ-помощник:");
+  // Модель-заглушка: сначала просит инструменты, потом отвечает по их результату
+  const scripted = (steps) => {
+    const seen = [];
+    let i = 0;
+    const fn = async (body) => {
+      seen.push(body);
+      const st = steps[i++];
+      if (typeof st === "function") return st(body);
+      return st;
+    };
+    fn.seen = seen;
+    return fn;
+  };
+  const toolUse = (id, name, input) => ({ stop_reason: "tool_use", content: [{ type: "tool_use", id, name, input }] });
+  await t("куратор: ответ строится по данным своей группы", async () => {
+    const model = scripted([
+      toolUse("t1", "group_attendance", { group: "ит21", from: "2026-10-05", to: "2026-10-09" }),
+      (body) => {
+        const res = JSON.parse(body.messages.at(-1).content[0].content);
+        const worst = res.students.sort((a, b) => b.unexcused - a.unexcused)[0];
+        return { stop_reason: "end_turn", content: [{ type: "text", text: `Больше всех пропустил: ${worst.fio} (${worst.unexcused})` }] };
+      },
+    ]);
+    const ai = createAssistant({ Group, Student, Curator, SummaryRecord, ensureGroupSummarySubjects: subjectsStub, getTodayKey, reports, callModel: model });
+    const r = await ai.ask("500", { role: "curator", groupIds: [String(gA._id)] }, "кто больше всех пропустил на этой неделе?");
+    assert.equal(r.text, "Больше всех пропустил: Бекова Айгуль (2)");
+    assert.ok(model.seen[0].system.includes("куратор"));
+    assert.ok(model.seen[0].tools.some((x) => x.name === "group_attendance"));
+  });
+  await t("куратор не видит чужую группу через ИИ", async () => {
+    const ai = createAssistant({ Group, Student, Curator, SummaryRecord, ensureGroupSummarySubjects: subjectsStub, getTodayKey, reports, callModel: async () => ({}) });
+    const ctx = { role: "curator", groupIds: [String(gA._id)] };
+    const r = await ai.tools.group_attendance(ctx, { group: "СВ-11", from: "2026-10-05", to: "2026-10-09" });
+    assert.ok(r.error);
+    assert.deepEqual((await ai.tools.list_groups(ctx)).map((g) => g.name), ["ИТ-21"]);
+    assert.equal((await ai.tools.find_student(ctx, { query: "Чужой" })).length, 0);
+    assert.ok((await ai.tools.student_attendance(ctx, { student_id: String(s3._id), from: "2026-10-05", to: "2026-10-09" })).error);
+    assert.ok((await ai.tools.send_excel_report(ctx, { group: "all", period: "week", date: "2026-10-07" }, [])).error);
+  });
+  await t("ИИ присылает Excel по запросу", async () => {
+    const model = scripted([toolUse("t1", "send_excel_report", { group: "ИТ-21", period: "week", date: "2026-10-07" }), { stop_reason: "end_turn", content: [{ type: "text", text: "Файл ниже." }] }]);
+    const ai = createAssistant({ Group, Student, Curator, SummaryRecord, ensureGroupSummarySubjects: subjectsStub, getTodayKey, reports, callModel: model });
+    const r = await ai.ask("900", { role: "admin" }, "пришли excel по ит-21 за эту неделю");
+    assert.equal(r.files.length, 1);
+    assert.ok(r.files[0].filename.includes("ИТ-21"));
+  });
+  await t("без ключа ИИ честно говорит, что не настроен; родителю недоступен", async () => {
+    delete process.env.ANTHROPIC_API_KEY;
+    const off = createAssistant({ Group, Student, Curator, SummaryRecord, ensureGroupSummarySubjects: subjectsStub, getTodayKey, reports });
+    assert.equal(off.enabled(), false);
+    assert.match((await off.ask("1", { role: "admin" }, "?")).text, /ANTHROPIC_API_KEY/);
+    const on = createAssistant({ Group, Student, Curator, SummaryRecord, ensureGroupSummarySubjects: subjectsStub, getTodayKey, reports, callModel: async () => ({}) });
+    assert.match((await on.ask("1", { role: "parent" }, "?")).text, /администратору и кураторам/);
   });
 
   console.log(`\nИтог: ${passed} прошло, ${failed} упало`);

@@ -6,6 +6,7 @@ const newId = () => crypto.randomBytes(12).toString("hex");
 
 class Schema {
   constructor(def, opts = {}) { this.def = def; this.opts = opts; }
+  index() { return this; }
 }
 Schema.Types = { ObjectId: "ObjectId", Mixed: "Mixed" };
 

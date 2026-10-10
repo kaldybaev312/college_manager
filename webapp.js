@@ -42,7 +42,7 @@ function verifyInitData(initData, botToken, nowSec = Math.floor(Date.now() / 100
 const isMonth = (m) => /^\d{4}-\d{2}$/.test(String(m || ""));
 
 module.exports = function registerWebapp(app, deps) {
-  const { Group, Student, TgSub, Curator, SummaryRecord, ensureGroupSummarySubjects, formatMonthLabel, notifyParents, getTodayKey, getBot, mdv2 } = deps;
+  const { Group, Student, TgSub, Curator, SummaryRecord, ensureGroupSummarySubjects, formatMonthLabel, notifyParents, getTodayKey, getBot, mdv2, weeklyCards } = deps;
   const BOT_TOKEN = process.env.TG_TOKEN;
 
   // ── Аутентификация ──
@@ -317,6 +317,19 @@ module.exports = function registerWebapp(app, deps) {
         };
       }
       res.json({ fio: stu.fio, saturday: !!stu.group?.saturday, attMap });
+    }),
+  );
+
+  // Итог недели картинкой (родитель — своему ребёнку)
+  app.get(
+    "/api/webapp/parent/week-card",
+    wrap(async (req, res) => {
+      const stu = await needChild(req, req.query.inn);
+      if (!weeklyCards) throw fail(503, "Функция недоступна");
+      const c = await weeklyCards.cardFor({ _id: stu._id });
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "private, max-age=300");
+      res.send(c.png);
     }),
   );
 

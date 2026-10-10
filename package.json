@@ -12,6 +12,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "digest-fetch": "^3.1.1",
     "docxtemplater": "^3.67.6",
     "docxtemplater-image-module-free": "^1.1.1",

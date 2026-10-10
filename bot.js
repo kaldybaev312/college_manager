@@ -11,7 +11,7 @@ const crypto      = require("crypto");
 
 module.exports = function createBot(models, helpers, buildSummaryDocx) {
   const { Group, Student, TgSub, Curator, SummaryRecord } = models;
-  const { pad2, getBishkekNow, getTodayKey, ensureGroupSummarySubjects, getSummaryDocumentData, getSkudEvents } = helpers;
+  const { pad2, getBishkekNow, getTodayKey, ensureGroupSummarySubjects, getSummaryDocumentData, getSkudEvents, ai, weeklyCards } = helpers;
 
   const TG_TOKEN     = process.env.TG_TOKEN;
   if (!TG_TOKEN) throw new Error("❌ TG_TOKEN не задан в .env!");
@@ -92,6 +92,7 @@ module.exports = function createBot(models, helpers, buildSummaryDocx) {
     [{text:"📊 Статистика"},           {text:"📅 Посещаемость групп"}],
     [{text:"🔍 Найти студента"},        {text:"📝 Ведомость"}],
     [{text:"⏰ Список опозданий"},      {text:"🔗 Ссылки кураторов"}],
+    [{text:"🤖 Спросить ИИ"}],
     [{text:"📱 Мини-приложение", web_app:{url: process.env.RENDER_EXTERNAL_URL ? process.env.RENDER_EXTERNAL_URL+"/api/webapp/open" : "https://pl3service.onrender.com/api/webapp/open"}}],
   ], resize_keyboard:true }};
 
@@ -100,12 +101,14 @@ module.exports = function createBot(models, helpers, buildSummaryDocx) {
     [{text:"⏰ Опоздания сегодня"},     {text:"📥 Посещаемость Excel"}],
     [{text:"📝 Заполнить ведомость"},  {text:"📚 Предметы группы"}],
     [{text:"📤 Отправить ведомость"},  {text:"📋 Оценки группы"}],
+    [{text:"🤖 Спросить ИИ"}],
     [{text:"👥 Список студентов"},      {text:"📱 Мини-приложение", web_app:{url: process.env.RENDER_EXTERNAL_URL ? process.env.RENDER_EXTERNAL_URL+"/api/webapp/open" : "https://pl3service.onrender.com/api/webapp/open"}}],
   ], resize_keyboard:true }}; }
 
   const KB_PAR = { reply_markup:{ keyboard:[
     [{text:"📊 Оценки ребёнка"},    {text:"🗓 Посещаемость"}],
     [{text:"👨‍👩‍👧 Мои дети"},          {text:"➕ Привязать ребёнка"}],
+    [{text:"🖼 Итог недели"}],
     [{text:"📱 Мини-приложение", web_app:{url: process.env.RENDER_EXTERNAL_URL ? process.env.RENDER_EXTERNAL_URL+"/api/webapp/open" : "https://pl3service.onrender.com/api/webapp/open"}}],
   ], resize_keyboard:true }};
 
@@ -352,12 +355,12 @@ module.exports = function createBot(models, helpers, buildSummaryDocx) {
     // Кнопки меню всегда работают — даже если есть активный step
     // Это исправляет проблему когда родитель нажимает кнопку меню
     // но step:"link_inn" ещё активен из предыдущего действия
-    const PARENT_BTNS = ["📊 Оценки ребёнка","🗓 Посещаемость","👨‍👩‍👧 Мои дети","➕ Привязать ребёнка"];
+    const PARENT_BTNS = ["📊 Оценки ребёнка","🗓 Посещаемость","👨‍👩‍👧 Мои дети","➕ Привязать ребёнка","🖼 Итог недели"];
     const CURATOR_BTNS = ["📅 Посещаемость сегодня","🔍 Найти студента","⏰ Опоздания сегодня",
       "📥 Посещаемость Excel","📝 Заполнить ведомость","📚 Предметы группы",
-      "📤 Отправить ведомость","📋 Оценки группы","👥 Список студентов"];
+      "📤 Отправить ведомость","📋 Оценки группы","👥 Список студентов","🤖 Спросить ИИ"];
     const ADMIN_BTNS = ["📊 Статистика","📅 Посещаемость групп","🔍 Найти студента",
-      "📝 Ведомость","⏰ Список опозданий","🔗 Ссылки кураторов"];
+      "📝 Ведомость","⏰ Список опозданий","🔗 Ссылки кураторов","🤖 Спросить ИИ"];
 
     const isMenuBtn = (s.role==="parent"  && PARENT_BTNS.includes(txt))  ||
                       (s.role==="curator" && CURATOR_BTNS.includes(txt)) ||
@@ -396,7 +399,10 @@ module.exports = function createBot(models, helpers, buildSummaryDocx) {
       case "📝 Ведомость":              return stepGroupThen(cid,"a_ved_g","a_ved_m",null);
       case "⏰ Список опозданий":       return adminLateAll(cid);
       case "🔗 Ссылки кураторов":       return adminCuratorLinks(cid);
-      default: await send(cid,"Используйте кнопки меню 👇", KB_ADMIN);
+      case "🤖 Спросить ИИ":            return aiIntro(cid, KB_ADMIN);
+      default:
+        if (ai?.enabled()) return aiReply(cid, s, txt, KB_ADMIN);
+        await send(cid,"Используйте кнопки меню 👇", KB_ADMIN);
     }
   }
 
@@ -602,7 +608,10 @@ _Перешлите нужную ссылку куратору — он нажи
       case "📤 Отправить ведомость":     return stepGroupThen(cid,"c_send_g","c_send_m",gids);
       case "📋 Оценки группы":          return stepGroupThen(cid,"c_grades_g","c_grades_m",gids);
       case "👥 Список студентов":        return curStudents(cid, s);
-      default: await send(cid,"Используйте кнопки меню 👇", KB_CUR());
+      case "🤖 Спросить ИИ":            return aiIntro(cid, KB_CUR());
+      default:
+        if (ai?.enabled()) return aiReply(cid, s, txt, KB_CUR());
+        await send(cid,"Используйте кнопки меню 👇", KB_CUR());
     }
   }
 
@@ -1245,8 +1254,50 @@ _Все оценки студента тоже будут удалены_`,
       case "🗓 Посещаемость":        return parAtt(cid, s);
       case "👨‍👩‍👧 Мои дети":           return parKids(cid, s);
       case "➕ Привязать ребёнка":  set(cid,{step:"link_inn"}); return send(cid,"Введите *ИНН ребёнка* \\(12–14 цифр\\):",KB_X);
+      case "🖼 Итог недели":         return parWeekCard(cid, s);
       default: await send(cid,"Используйте кнопки меню 👇",KB_PAR);
     }
+  }
+
+  /* ── Родитель: итог недели картинкой ── */
+  async function parWeekCard(cid, s) {
+    const inns = s.inns || [];
+    if (!inns.length) { await send(cid,"Нет привязанных детей\\. Нажмите *Привязать ребёнка*\\.",KB_PAR); return; }
+    if (!weeklyCards) { await send(cid,"Функция недоступна\\.",KB_PAR); return; }
+    for (const inn of inns) {
+      try {
+        const c = await weeklyCards.cardFor({ inn });
+        if (!c) continue;
+        await bot.sendPhoto(cid, c.png, { caption: weeklyCards.caption(c.data), ...KB_PAR }, { filename: "itog-nedeli.png", contentType: "image/png" });
+      } catch (e) { console.error("week card:", e.message); await send(cid, `❌ Ошибка: ${ev(e.message)}`, KB_PAR); }
+    }
+  }
+
+  /* ── ИИ-помощник (админ, кураторы) ── */
+  async function aiIntro(cid, kb) {
+    if (!ai?.enabled()) return send(cid, "🤖 ИИ\\-помощник пока не подключён\\. Администратору нужно добавить ANTHROPIC\\_API\\_KEY в настройки сервера\\.", kb);
+    ai.reset(cid);
+    return send(cid,
+      "🤖 *Спросите обычным текстом*, например:\n" +
+      "• Какая группа хуже всех ходила в октябре?\n" +
+      "• Кто из ИТ\\-21 пропустил больше 3 дней на этой неделе?\n" +
+      "• Кто сегодня опоздал в СВ\\-11?\n" +
+      "• Пришли Excel по ИТ\\-21 за прошлую неделю\n\n" +
+      "_Ответы строятся только по данным лицея\\. Можно задавать уточняющие вопросы\\._", kb);
+  }
+  async function aiReply(cid, s, txt, kb) {
+    bot.sendChatAction(cid, "typing").catch(() => null);
+    const typing = setInterval(() => bot.sendChatAction(cid, "typing").catch(() => null), 4500);
+    try {
+      const r = await ai.ask(cid, { role: s.role, groupIds: s.groupIds || [] }, txt);
+      const text = r.text || "—";
+      for (let i = 0; i < text.length; i += 3900) await bot.sendMessage(cid, text.slice(i, i + 3900), kb).catch(() => null);
+      for (const f of r.files || [])
+        await bot.sendDocument(cid, f.buf, {}, { filename: f.filename, contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }).catch((e) => console.error("ai file:", e.message));
+    } catch (e) {
+      console.error("ai:", e.message);
+      await bot.sendMessage(cid, "🤖 Не получилось ответить: " + e.message, kb).catch(() => null);
+    } finally { clearInterval(typing); }
   }
 
   async function parKids(cid, s) {

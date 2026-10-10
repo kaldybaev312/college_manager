@@ -315,14 +315,16 @@ function PracticeManage({ p, settings, replace, reload }) {
   return html`<div className="card stack">
     <div className="row between"><div style=${{ minWidth: 0 }}><h3 style=${{ fontSize: 18 }}>${p.groupName} <${Chip} map=${PHASE} k=${phase(p)} /></h3>
       <div className="small muted">${p.course} курс, ${p.profession}. ${fmt(p.start)}–${fmt(p.end)}, ${p.days.length} дн., ${p.hoursTotal} ч. Мастер п/о: ${p.master?.name || "—"}</div></div>
-      <div className="tabs">${[["dist", "Распределение"], ["links", "Ссылки"], ["hours", "Сроки и часы"]].map(([k, t]) => html`<button key=${k} aria-selected=${tab === k} onClick=${() => setTab(k)}>${t}</button>`)}</div></div>
+      <div className="tabs">${[["dist", "Распределение"], ["map", "Карта"], ["links", "Ссылки"], ["hours", "Сроки и часы"]].map(([k, t]) => html`<button key=${k} aria-selected=${tab === k} onClick=${() => setTab(k)}>${t}</button>`)}</div></div>
 
     ${tab === "hours" && html`<${HoursTab} p=${p} call=${call} reload=${reload} />`}
     ${tab === "links" && html`<${LinksTab} p=${p} call=${call} />`}
+    ${tab === "map" && html`<${MapTab} p=${p} call=${call} />`}
     ${tab === "dist" && html`<div className="stack">
       ${p.orgs.map((o) => editing === o._id ? html`<${OrgForm} key=${o._id} init=${o} p=${p} settings=${settings} onSave=${async (d) => { await call(`/orgs/${o._id}`, "PUT", d); setEditing(null); toast("Сохранено"); }} onCancel=${() => setEditing(null)} />` : html`<div key=${o._id} className="card tight">
         <div className="row between" style=${{ alignItems: "flex-start" }}>
-          <div style=${{ minWidth: 0 }}><b>${o.name}</b><div className="small muted">${o.address}${o.address ? ". " : ""}Руководитель: ${o.supName}, ${o.supPos}${o.supPhone ? ", " + o.supPhone : ""}</div></div>
+          <div style=${{ minWidth: 0 }}><b>${o.name}</b><div className="small muted">${o.address}${o.address ? ". " : ""}Руководитель: ${o.supName}, ${o.supPos}${o.supPhone ? ", " + o.supPhone : ""}</div>
+            <div className="small" style=${{ marginTop: 4 }}>${o.geo?.lat ? html`<span className="chip st-ok">📍 место отмечено, радиус ${o.geo.radius || 300} м</span>` : html`<span className="chip st-draft">📍 место не отмечено</span> <span className="muted">— вкладка «Карта» или ссылка руководителя</span>`}</div></div>
           <select id=${"ct-" + o._id} style=${{ width: "auto" }} value=${o.contract} onChange=${run((e) => call(`/orgs/${o._id}`, "PUT", { contract: e.target.value }), "Статус договора обновлён")} aria-label="Статус договора">
             ${Object.entries(CONTRACT).map(([k, [t]]) => html`<option key=${k} value=${k}>${t}</option>`)}</select></div>
         <div className="row" style=${{ marginTop: 8 }}>${p.students.filter((s) => String(s.org) === String(o._id)).map((s) => html`<span key=${s.student} className="chip st-info">${short(s.fio)}</span>`)}
@@ -347,6 +349,85 @@ function PracticeManage({ p, settings, replace, reload }) {
       <${AddStudents} p=${p} call=${call} />
       ${unassigned.length > 0 && p.orgs.length > 0 && html`<div className="alert">Не распределено: ${unassigned.length}. В договор попадают только студенты, назначенные в эту организацию.</div>`}
     </div>`}
+  </div>`;
+}
+
+/* ---------- карта: организации и отметки прихода ---------- */
+let leafletLoading;
+function loadLeaflet() {
+  if (window.L) return Promise.resolve(window.L);
+  return (leafletLoading ||= new Promise((ok, fail) => {
+    const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"; document.head.appendChild(css);
+    const js = document.createElement("script"); js.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+    js.onload = () => ok(window.L); js.onerror = () => fail(new Error("Карта не загрузилась")); document.head.appendChild(js);
+  }));
+}
+function OrgGeoRow({ o, call }) {
+  const [text, setText] = useState(o.geo?.lat ? `${o.geo.lat}, ${o.geo.lng}` : "");
+  const [radius, setRadius] = useState(o.geo?.radius || 300);
+  const here = run(async () => {
+    const pos = await new Promise((ok, fail) => navigator.geolocation ? navigator.geolocation.getCurrentPosition((x) => ok(x.coords), () => fail(new Error("Нет доступа к геолокации")), { enableHighAccuracy: true, timeout: 20000 }) : fail(new Error("Нет геолокации")));
+    setText(`${pos.latitude.toFixed(6)}, ${pos.longitude.toFixed(6)}`);
+  });
+  return html`<div className="row small" style=${{ alignItems: "flex-end" }}>
+    <div style=${{ flex: "1 1 180px", minWidth: 0 }}><b>${o.name}</b><div className="muted">${o.address || ""}</div></div>
+    <label className="f" style=${{ flex: "2 1 220px" }}><span>Координаты или ссылка Google/2GIS</span><input value=${text} placeholder="42.8746, 74.5698" onInput=${(e) => setText(e.target.value)} /></label>
+    <label className="f" style=${{ flex: "0 0 90px" }}><span>Радиус, м</span><input type="number" min="50" max="2000" step="50" value=${radius} onInput=${(e) => setRadius(e.target.value)} /></label>
+    <${Btn} sm kind="ghost" onClick=${here}>Я здесь<//>
+    <${Btn} sm onClick=${run(() => call(`/orgs/${o._id}/geo`, "PUT", { text, radius }), "Место сохранено")}>Сохранить<//>
+  </div>`;
+}
+function MapTab({ p, call }) {
+  const [date, setDate] = useState(TODAY);
+  const [d, setD] = useState(null);
+  const ref = React.useRef(null);
+  const mapRef = React.useRef(null);
+  const load = run(async () => setD(await api(`/api/practice/practices/${p._id}/checkins?date=${date}`)));
+  useEffect(() => { load(); }, [date, p]);
+  useEffect(() => {
+    if (!d || !ref.current) return;
+    let alive = true;
+    loadLeaflet().then((L) => {
+      if (!alive) return;
+      if (!mapRef.current) {
+        mapRef.current = L.map(ref.current, { scrollWheelZoom: false }).setView([42.84, 74.85], 11); // Кант / Бишкек
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(mapRef.current);
+      }
+      const map = mapRef.current;
+      map.eachLayer((l) => { if (!(l instanceof L.TileLayer)) map.removeLayer(l); });
+      const pts = [];
+      for (const o of d.orgs) {
+        if (!o.geo) continue;
+        const here = d.students.filter((s) => String(s.orgId) === String(o.id));
+        const ok = here.filter((s) => s.checkIn?.ok).length;
+        L.circle([o.geo.lat, o.geo.lng], { radius: o.geo.radius, color: "#1F3A93", weight: 1, fillOpacity: 0.08 }).addTo(map);
+        L.marker([o.geo.lat, o.geo.lng]).addTo(map).bindPopup(`<b>${o.name.replace(/</g, "&lt;")}</b><br>Отметились: ${ok} из ${here.length}`);
+        pts.push([o.geo.lat, o.geo.lng]);
+      }
+      for (const s of d.students) {
+        const c = s.checkIn; if (!c?.lat) continue;
+        L.circleMarker([c.lat, c.lng], { radius: 6, color: c.ok ? "#2E7D4F" : "#B42318", fillOpacity: 0.9 }).addTo(map).bindPopup(`${s.fio.replace(/</g, "&lt;")}<br>${c.time} · ${c.dist} м ${c.ok ? "✓" : "— далеко"}`);
+        pts.push([c.lat, c.lng]);
+      }
+      if (pts.length) map.fitBounds(pts, { padding: [30, 30], maxZoom: 16 });
+      setTimeout(() => map.invalidateSize(), 50);
+    }).catch((e) => toast(e.message, true));
+    return () => { alive = false; };
+  }, [d]);
+  const orgName = (id) => p.orgs.find((o) => String(o._id) === String(id))?.name || "— не распределён —";
+  const done = d ? d.students.filter((s) => s.checkIn?.ok).length : 0;
+  return html`<div className="stack">
+    <div className="row between"><div className="row"><label className="f"><span>Дата</span><input type="date" value=${date} onChange=${(e) => setDate(e.target.value || TODAY)} /></label></div>
+      ${d && html`<div className="small">${d.isPracticeDay ? html`Отметились: <b>${done}</b> из ${d.students.length}` : html`<span className="muted">В этот день практики нет по графику</span>`}</div>`}</div>
+    <div ref=${ref} style=${{ height: 360, borderRadius: 10, border: "1px solid var(--line)", background: "#EEF1F6" }} aria-label="Карта организаций и отметок прихода"></div>
+    ${d && html`<div className="tbl"><table className="list"><thead><tr><th>Студент</th><th>Организация</th><th>Приход</th></tr></thead><tbody>
+      ${d.students.map((s) => html`<tr key=${s.id}><td>${s.fio}</td><td className="small">${orgName(s.orgId)}</td>
+        <td>${s.checkIn?.ok ? html`<span className="chip st-ok">${s.checkIn.time} · ${s.checkIn.dist} м</span>` : s.checkIn ? html`<span className="chip st-back">${s.checkIn.time} · ${s.checkIn.dist} м, далеко</span>` : html`<span className="chip st-draft">нет отметки</span>`}</td></tr>`)}
+    </tbody></table></div>`}
+    <details className="card tight"><summary>Места организаций (${p.orgs.filter((o) => o.geo?.lat).length} из ${p.orgs.length} отмечено)</summary>
+      <p className="small muted">Проще всего: руководитель практики открывает свою ссылку в организации и нажимает «Отметить место организации». Или вставьте координаты/ссылку с карты здесь.</p>
+      <div className="stack">${p.orgs.map((o) => html`<${OrgGeoRow} key=${o._id} o=${o} call=${call} />`)}</div>
+    </details>
   </div>`;
 }
 

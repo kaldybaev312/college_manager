@@ -104,6 +104,17 @@ function toast(text, err) {
   let el = document.getElementById("toast"); if (!el) { el = document.createElement("div"); el.id = "toast"; document.body.appendChild(el); }
   el.className = "toast" + (err ? " err" : ""); el.textContent = text; el.hidden = false; clearTimeout(tt); tt = setTimeout(() => (el.hidden = true), err ? 5000 : 2500);
 }
+// Текущее местоположение телефона
+function getPos() {
+  return new Promise((ok, fail) => {
+    if (!navigator.geolocation) return fail(new Error("Браузер не поддерживает геолокацию"));
+    navigator.geolocation.getCurrentPosition(
+      (p) => ok({ lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy) }),
+      (e) => fail(new Error(e.code === 1 ? "Разрешите доступ к геолокации для этого сайта в настройках браузера" : "Не удалось определить местоположение. Включите GPS и попробуйте снова")),
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
+    );
+  });
+}
 const run = (fn, okText) => async (...a) => { try { const r = await fn(...a); if (okText) toast(okText); return r; } catch (e) { toast(e.message, true); } };
 function compressImage(file, max = 1600) {
   return new Promise((res) => {
@@ -162,6 +173,32 @@ function Login() {
 }
 
 /* =================== СТУДЕНТ =================== */
+function CheckInCard({ d, onEntry }) {
+  const [busy, setBusy] = useState(false);
+  const day = d.practice.days.find((x) => x.date === d.today);
+  if (!day || !d.org) return null;
+  const e = d.entries.find((x) => x.date === d.today);
+  const ci = e?.checkIn;
+  const go = async () => {
+    setBusy(true);
+    try {
+      const pos = await getPos();
+      const r = await fetch(`/api/p/s/${TOKEN}/checkin`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(pos) });
+      const j = await r.json().catch(() => ({}));
+      if (j.checkIn) onEntry({ ...(e || { date: d.today, text: "", status: "draft", media: [] }), checkIn: j.checkIn });
+      if (!r.ok) throw new Error(j.error || "Ошибка");
+      toast(j.already ? "Вы уже отметились сегодня" : "Приход отмечен ✓");
+    } catch (x) { toast(x.message, true); }
+    setBusy(false);
+  };
+  return html`<div className="card stack" style=${{ gap: 8 }}>
+    <div className="row between"><h3>📍 Отметка прихода — сегодня</h3>${ci?.ok && html`<span className="chip st-ok">в ${ci.time}</span>`}</div>
+    ${!d.org.hasGeo ? html`<div className="alert">Место организации ещё не отмечено. Попросите руководителя практики открыть свою ссылку и нажать «Отметить место организации».</div>`
+      : ci?.ok ? html`<div className="small muted">Вы отметились в ${ci.time}, ${ci.dist} м от организации. Хорошего дня!</div>`
+      : html`<div className="small muted">Когда придёте в организацию, нажмите кнопку — телефон определит, что вы на месте (радиус ${d.org.radius} м).${ci && !ci.ok ? ` Прошлая попытка в ${ci.time}: ${ci.dist} м — слишком далеко.` : ""}</div>
+        <div><${Btn} disabled=${busy} onClick=${go}>${busy ? "Определяю место…" : "📍 Я на месте"}<//></div>`}
+  </div>`;
+}
 function DayRow({ d, e, today, onChange }) {
   const [text, setText] = useState(e?.text || "");
   const [dirty, setDirty] = useState(false); // пока студент печатает, ответы сервера (например, после загрузки фото) не затирают текст
@@ -185,7 +222,7 @@ function DayRow({ d, e, today, onChange }) {
     setBusy(false);
   };
   return html`<div className="card">
-    <div className="row between"><b className="num">${fmt(d.date)} <span className="muted" style=${{ fontWeight: 400 }}>${wd(d.date)}, ${d.hours} ч</span></b><${Chip} k=${st} extra=${st === "ok" && e?.grade ? ", оценка " + e.grade : ""} /></div>
+    <div className="row between"><b className="num">${fmt(d.date)} <span className="muted" style=${{ fontWeight: 400 }}>${wd(d.date)}, ${d.hours} ч</span></b><div className="row">${e?.checkIn?.ok && html`<span className="chip st-ok" title="Отметка прихода по геолокации">📍 ${e.checkIn.time}</span>`}<${Chip} k=${st} extra=${st === "ok" && e?.grade ? ", оценка " + e.grade : ""} /></div></div>
     ${st === "back" && e?.comment && html`<div className="alert bad" style=${{ marginTop: 8 }}>Руководитель: ${e.comment}</div>`}
     ${locked ? (e?.text && html`<p style=${{ margin: "8px 0 0", whiteSpace: "pre-wrap" }}>${e.text}</p>`)
       : html`<textarea id=${"t-" + d.date} rows="3" style=${{ marginTop: 8 }} value=${text} onInput=${(x) => { setText(x.target.value); setDirty(true); }} placeholder="Что выполняли в этот день"></textarea>`}
@@ -220,6 +257,7 @@ function StudentPage() {
         : html`<div className="small muted">Документы откроются для печати, когда все дни подтверждены (${ok}/${p.days.length}) и руководитель заполнит характеристику${d.characteristic ? " — она готова" : ""}.</div>`}
       <div className="row"><${Btn} sm disabled=${!ready} onClick=${run(() => download(`/api/p/s/${TOKEN}/diary.docx`))}>Скачать дневник<//><${Btn} sm disabled=${!ready} onClick=${run(() => download(`/api/p/s/${TOKEN}/characteristic.docx`))}>Скачать характеристику<//></div>
     </div>
+    <${CheckInCard} d=${d} onEntry=${upd} />
     ${p.days.map((x) => html`<${DayRow} key=${x.date} d=${x} e=${E[x.date]} today=${d.today} onChange=${upd} />`)}`}
   </main><//>`;
 }
@@ -230,6 +268,7 @@ function ReviewRow({ d, e, onDone }) {
   const act = (body, msg) => run(async () => onDone(await api(`/api/p/r/${TOKEN}/entries/${e._id}`, { method: "PUT", body })), msg)();
   return html`<div className="card">
     <b className="num">${fmt(d.date)} <span className="muted" style=${{ fontWeight: 400 }}>${wd(d.date)}, ${d.hours} ч</span></b>
+    ${e.checkIn?.ok ? html` <span className="chip st-ok">📍 пришёл в ${e.checkIn.time}</span>` : html` <span className="chip st-draft">без отметки прихода</span>`}
     <p style=${{ margin: "6px 0", whiteSpace: "pre-wrap" }}>${e.text}</p>
     <${Media} list=${e.media} big />
     <div className="row" style=${{ marginTop: 10 }}><span className="small muted">Оценка</span><${Grades} value=${grade} onChange=${setGrade} /><${Btn} kind="ok" onClick=${() => act({ action: "ok", grade }, "Подтверждено")}>Подтвердить<//></div>
@@ -266,9 +305,21 @@ function SupervisorPage() {
   const updEntry = (e) => setD({ ...d, students: d.students.map((x) => (String(x.id) === String(e.student) ? { ...x, entries: x.entries.map((y) => (y._id === e._id ? e : y)) } : x)) });
   const updChar = (c) => setD({ ...d, students: d.students.map((x) => (String(x.id) === String(c.student) ? { ...x, characteristic: c } : x)) });
   const totalPending = d.students.reduce((a, x) => a + x.entries.filter((e) => e.status === "sent").length, 0);
+  const setGeo = run(async () => {
+    const pos = await getPos();
+    const r = await api(`/api/p/r/${TOKEN}/geo`, { method: "PUT", body: pos });
+    setD({ ...d, org: r.org });
+  }, "Место организации сохранено");
+  const todayIn = d.students.filter((x) => x.entries.some((e) => e.date === d.today && e.checkIn?.ok));
   return html`<${React.Fragment}><${Header} sub=${`${d.org.supName} — ${d.org.name}`} />
   <main className="wrap stack">
     <div className="note">Практиканты группы ${p.group}, ${fmt(p.start)}–${fmt(p.end)}. ${totalPending ? `Ждут проверки записей: ${totalPending}.` : "Новых записей нет."} Мастер п/о: ${p.master?.name || "—"}${p.master?.phone ? ", " + p.master.phone : ""}.</div>
+    <div className="card stack" style=${{ gap: 8 }}>
+      <div className="row between"><h3>📍 Отметка прихода</h3>${d.org.hasGeo && html`<span className="small muted">сегодня отметились: ${todayIn.length} из ${d.students.length}</span>`}</div>
+      ${d.org.hasGeo ? html`<div className="small muted">Практиканты отмечают приход кнопкой «Я на месте» в радиусе ${d.org.radius} м от организации.</div>`
+        : html`<div className="alert">Нажмите кнопку, находясь в организации: телефон запомнит её место, и практиканты смогут отмечать приход.</div>`}
+      <div><${Btn} sm kind=${d.org.hasGeo ? "ghost" : ""} onClick=${setGeo}>${d.org.hasGeo ? "Обновить место организации" : "📍 Отметить место организации"}<//></div>
+    </div>
     <div className="card slist" style=${{ padding: 0 }}>${d.students.map((x) => {
       const pend = x.entries.filter((e) => e.status === "sent").length; const ok = x.entries.filter((e) => e.status === "ok").length;
       return html`<button key=${x.id} className="item" aria-current=${String(x.id) === String(sid)} onClick=${() => { setSid(String(x.id) === String(sid) ? null : x.id); setTab(pend || x.characteristic ? "diary" : "diary"); }}>
