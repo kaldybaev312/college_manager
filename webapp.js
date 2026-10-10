@@ -249,7 +249,7 @@ module.exports = function registerWebapp(app, deps) {
       await SummaryRecord.findOneAndUpdate(
         { group: gid, student: studentId, month },
         { group: gid, student: studentId, month, grades: clean },
-        { upsert: true, new: true },
+        { upsert: true, returnDocument: "after" },
       );
       if (stu.inn && Object.values(clean).some(Boolean))
         notifyParents(stu.inn, `📊 *${mdv2("Новые оценки!")}*\n👤 ${mdv2(stu.fio)}\n📅 ${mdv2(formatMonthLabel(month))}`).catch(() => {});
@@ -280,7 +280,7 @@ module.exports = function registerWebapp(app, deps) {
       await TgSub.findOneAndUpdate(
         { chatId },
         { $set: { chatId, role: "parent", ...(name ? { name } : {}) }, $addToSet: { linkedInns: clean } },
-        { upsert: true, new: true },
+        { upsert: true, returnDocument: "after" },
       );
       res.json({ ok: true, fio: stu.fio, groupName: stu.group?.name || "", groupId: String(stu.group?._id || "") });
     }),

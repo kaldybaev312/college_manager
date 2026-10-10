@@ -115,7 +115,7 @@ module.exports = function mountStaff(app, ctx, core) {
 
   async function nextEmployeeNo(kind) {
     for (let i = 0; i < 50; i++) {
-      const c = await Counter.findOneAndUpdate({ _id: "staff_" + kind }, { $inc: { seq: 1 } }, { upsert: true, new: true });
+      const c = await Counter.findOneAndUpdate({ _id: "staff_" + kind }, { $inc: { seq: 1 } }, { upsert: true, returnDocument: "after" });
       const no = String(KINDS[kind].base + c.seq);
       if (!(await Student.exists({ lyceumId: no }))) return no;
     }
@@ -124,7 +124,7 @@ module.exports = function mountStaff(app, ctx, core) {
 
   async function ensureGroup(kind) {
     const cfg = KINDS[kind];
-    const run = () => Group.findOneAndUpdate({ name: cfg.group }, { $set: { kind }, $setOnInsert: { shiftStart: "08:00" } }, { upsert: true, new: true });
+    const run = () => Group.findOneAndUpdate({ name: cfg.group }, { $set: { kind }, $setOnInsert: { shiftStart: "08:00" } }, { upsert: true, returnDocument: "after" });
     try { return await run(); } catch { return run(); } // гонка двух одновременных одобрений
   }
 

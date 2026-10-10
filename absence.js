@@ -113,7 +113,7 @@ async function createReason({ student, body, source, createdBy }) {
 
 async function updateReason(id, body) {
   const data = cleanInput(body, { partial: true });
-  const doc = await AbsenceReason.findByIdAndUpdate(id, { $set: data }, { new: true }).lean();
+  const doc = await AbsenceReason.findByIdAndUpdate(id, { $set: data }, { returnDocument: "after" }).lean();
   return doc ? serialize(doc) : null;
 }
 

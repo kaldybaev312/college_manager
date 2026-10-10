@@ -37,7 +37,7 @@ module.exports = function mountAgentApi(app, ctx, core) {
           ],
         },
         { status: "processing", leaseUntil: new Date(now.getTime() + LEASE_MS), $inc: { attempts: 1 } },
-        { sort: { createdAt: 1 }, new: true },
+        { sort: { createdAt: 1 }, returnDocument: "after" },
       );
       const flag = await SkudReport.findOneAndUpdate({ _id: "last", requested: true }, { requested: false });
 
