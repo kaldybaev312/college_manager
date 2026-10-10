@@ -2273,6 +2273,42 @@ reports.registerReportRoutes(app, {
 });
 reports.scheduleReports(bot);
 
+// «Не пришёл»: уведомления родителям и кураторам (absent-alerts.js)
+const absentAlerts = require("./absent-alerts").createAbsentAlerts({
+  Group,
+  Student,
+  Curator,
+  TgSub,
+  getTodayKey,
+  getBishkekMinutes: () => {
+    const d = getBishkekNow();
+    return d.getHours() * 60 + d.getMinutes();
+  },
+  // студенты на производственной практике по графику в этот день — их в лицее не ждём
+  practiceStudentIds: async (day) => {
+    const P = mongoose.models.Practice;
+    if (!P) return [];
+    const list = await P.find({ "days.date": day }).select("students.student").lean();
+    return list.flatMap((p) => (p.students || []).map((s) => s.student));
+  },
+});
+absentAlerts.schedule(bot);
+app.post("/api/admin/absent-alerts/run", requireAdmin, async (req, res) => {
+  try {
+    // по умолчанию — предпросмотр (кому ушло бы уведомление); send=1 — отправить сейчас,
+    // но не повторно: группы, по которым сегодня уже отправляли, пропускаются
+    const send = req.query.send === "1";
+    res.json(await absentAlerts.run(bot, send ? { ignoreTime: true } : { dry: true, force: true }));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Еженедельный бэкап базы в Telegram администраторам (backup.js)
+const backup = require("./backup").createBackup({ getDb: () => mongoose.connection.db, TgSub, getTodayKey });
+backup.schedule(bot);
+backup.registerRoutes(app, { requireAdmin, getBot: () => bot });
+
 // Дашборд посещаемости и «зона риска» (dashboard.js)
 require("./dashboard").registerDashboard(app, { Group, reports, getTodayKey, getAccessibleGroupIds, requireAuth });
 weeklyCards.schedule(bot);
