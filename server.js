@@ -15,7 +15,6 @@ const att = require("./attendance-utils");
 const absence = require("./absence");
 const { createReports } = require("./reports");
 const { createWeeklyCards } = require("./weekly-card");
-const { createAssistant } = require("./ai-assistant");
 
 // Секреты берутся ТОЛЬКО из переменных окружения (.env / Render → Environment).
 // Если переменной нет, сервер не запускается и сразу говорит какой.
@@ -2266,10 +2265,9 @@ const createBot = require("./bot");
 // SKUD events buffer (shared with bot)
 const SKUD_EVENTS_REF = SKUD_EVENTS;
 
-// Отчёты, «итог недели» и ИИ-помощник не зависят от бота: бот передаётся при отправке
+// Отчёты и «итог недели» не зависят от бота: бот передаётся при отправке
 const reports = createReports({ Group, Student, Curator, TgSub, getTodayKey });
 const weeklyCards = createWeeklyCards({ Group, Student, TgSub, SummaryRecord, ensureGroupSummarySubjects, getTodayKey });
-const ai = createAssistant({ Group, Student, Curator, SummaryRecord, ensureGroupSummarySubjects, getTodayKey, reports });
 
 const _botExports = createBot(
   // models
@@ -2283,7 +2281,6 @@ const _botExports = createBot(
     getSummaryDocumentData,
     formatMonthLabel,
     getSkudEvents: () => SKUD_EVENTS_REF,
-    ai,
     weeklyCards,
   },
   // buildSummaryDocx

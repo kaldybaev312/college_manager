@@ -11,7 +11,7 @@ const crypto      = require("crypto");
 
 module.exports = function createBot(models, helpers, buildSummaryDocx) {
   const { Group, Student, TgSub, Curator, SummaryRecord } = models;
-  const { pad2, getBishkekNow, getTodayKey, ensureGroupSummarySubjects, getSummaryDocumentData, getSkudEvents, ai, weeklyCards } = helpers;
+  const { pad2, getBishkekNow, getTodayKey, ensureGroupSummarySubjects, getSummaryDocumentData, getSkudEvents, weeklyCards } = helpers;
 
   const TG_TOKEN     = process.env.TG_TOKEN;
   if (!TG_TOKEN) throw new Error("❌ TG_TOKEN не задан в .env!");
@@ -92,7 +92,6 @@ module.exports = function createBot(models, helpers, buildSummaryDocx) {
     [{text:"📊 Статистика"},           {text:"📅 Посещаемость групп"}],
     [{text:"🔍 Найти студента"},        {text:"📝 Ведомость"}],
     [{text:"⏰ Список опозданий"},      {text:"🔗 Ссылки кураторов"}],
-    [{text:"🤖 Спросить ИИ"}],
     [{text:"📱 Мини-приложение", web_app:{url: process.env.RENDER_EXTERNAL_URL ? process.env.RENDER_EXTERNAL_URL+"/api/webapp/open" : "https://pl3service.onrender.com/api/webapp/open"}}],
   ], resize_keyboard:true }};
 
@@ -101,7 +100,6 @@ module.exports = function createBot(models, helpers, buildSummaryDocx) {
     [{text:"⏰ Опоздания сегодня"},     {text:"📥 Посещаемость Excel"}],
     [{text:"📝 Заполнить ведомость"},  {text:"📚 Предметы группы"}],
     [{text:"📤 Отправить ведомость"},  {text:"📋 Оценки группы"}],
-    [{text:"🤖 Спросить ИИ"}],
     [{text:"👥 Список студентов"},      {text:"📱 Мини-приложение", web_app:{url: process.env.RENDER_EXTERNAL_URL ? process.env.RENDER_EXTERNAL_URL+"/api/webapp/open" : "https://pl3service.onrender.com/api/webapp/open"}}],
   ], resize_keyboard:true }}; }
 
@@ -358,9 +356,9 @@ module.exports = function createBot(models, helpers, buildSummaryDocx) {
     const PARENT_BTNS = ["📊 Оценки ребёнка","🗓 Посещаемость","👨‍👩‍👧 Мои дети","➕ Привязать ребёнка","🖼 Итог недели"];
     const CURATOR_BTNS = ["📅 Посещаемость сегодня","🔍 Найти студента","⏰ Опоздания сегодня",
       "📥 Посещаемость Excel","📝 Заполнить ведомость","📚 Предметы группы",
-      "📤 Отправить ведомость","📋 Оценки группы","👥 Список студентов","🤖 Спросить ИИ"];
+      "📤 Отправить ведомость","📋 Оценки группы","👥 Список студентов"];
     const ADMIN_BTNS = ["📊 Статистика","📅 Посещаемость групп","🔍 Найти студента",
-      "📝 Ведомость","⏰ Список опозданий","🔗 Ссылки кураторов","🤖 Спросить ИИ"];
+      "📝 Ведомость","⏰ Список опозданий","🔗 Ссылки кураторов"];
 
     const isMenuBtn = (s.role==="parent"  && PARENT_BTNS.includes(txt))  ||
                       (s.role==="curator" && CURATOR_BTNS.includes(txt)) ||
@@ -399,10 +397,7 @@ module.exports = function createBot(models, helpers, buildSummaryDocx) {
       case "📝 Ведомость":              return stepGroupThen(cid,"a_ved_g","a_ved_m",null);
       case "⏰ Список опозданий":       return adminLateAll(cid);
       case "🔗 Ссылки кураторов":       return adminCuratorLinks(cid);
-      case "🤖 Спросить ИИ":            return aiIntro(cid, KB_ADMIN);
-      default:
-        if (ai?.enabled()) return aiReply(cid, s, txt, KB_ADMIN);
-        await send(cid,"Используйте кнопки меню 👇", KB_ADMIN);
+      default: await send(cid,"Используйте кнопки меню 👇", KB_ADMIN);
     }
   }
 
@@ -608,10 +603,7 @@ _Перешлите нужную ссылку куратору — он нажи
       case "📤 Отправить ведомость":     return stepGroupThen(cid,"c_send_g","c_send_m",gids);
       case "📋 Оценки группы":          return stepGroupThen(cid,"c_grades_g","c_grades_m",gids);
       case "👥 Список студентов":        return curStudents(cid, s);
-      case "🤖 Спросить ИИ":            return aiIntro(cid, KB_CUR());
-      default:
-        if (ai?.enabled()) return aiReply(cid, s, txt, KB_CUR());
-        await send(cid,"Используйте кнопки меню 👇", KB_CUR());
+      default: await send(cid,"Используйте кнопки меню 👇", KB_CUR());
     }
   }
 
@@ -1273,32 +1265,6 @@ _Все оценки студента тоже будут удалены_`,
     }
   }
 
-  /* ── ИИ-помощник (админ, кураторы) ── */
-  async function aiIntro(cid, kb) {
-    if (!ai?.enabled()) return send(cid, "🤖 ИИ\\-помощник пока не подключён\\. Администратору нужно добавить ANTHROPIC\\_API\\_KEY в настройки сервера\\.", kb);
-    ai.reset(cid);
-    return send(cid,
-      "🤖 *Спросите обычным текстом*, например:\n" +
-      "• Какая группа хуже всех ходила в октябре?\n" +
-      "• Кто из ИТ\\-21 пропустил больше 3 дней на этой неделе?\n" +
-      "• Кто сегодня опоздал в СВ\\-11?\n" +
-      "• Пришли Excel по ИТ\\-21 за прошлую неделю\n\n" +
-      "_Ответы строятся только по данным лицея\\. Можно задавать уточняющие вопросы\\._", kb);
-  }
-  async function aiReply(cid, s, txt, kb) {
-    bot.sendChatAction(cid, "typing").catch(() => null);
-    const typing = setInterval(() => bot.sendChatAction(cid, "typing").catch(() => null), 4500);
-    try {
-      const r = await ai.ask(cid, { role: s.role, groupIds: s.groupIds || [] }, txt);
-      const text = r.text || "—";
-      for (let i = 0; i < text.length; i += 3900) await bot.sendMessage(cid, text.slice(i, i + 3900), kb).catch(() => null);
-      for (const f of r.files || [])
-        await bot.sendDocument(cid, f.buf, {}, { filename: f.filename, contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }).catch((e) => console.error("ai file:", e.message));
-    } catch (e) {
-      console.error("ai:", e.message);
-      await bot.sendMessage(cid, "🤖 Не получилось ответить: " + e.message, kb).catch(() => null);
-    } finally { clearInterval(typing); }
-  }
 
   async function parKids(cid, s) {
     const inns=s.inns||[];
