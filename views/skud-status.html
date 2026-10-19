@@ -88,7 +88,7 @@
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 const fmt = d => d ? new Date(d).toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" }) : "—";
-const KIND = { students:"студенты", teachers:"преподаватели", masters:"мастера", guests:"гости" };
+const KIND = { students:"студенты", teachers:"преподаватели", masters:"мастера", admin:"администрация", guests:"гости" };
 const ACT = { photo_upload:"Фото отправлено", terminal_remove:"Удаление с терминалов", terminal_remove_auto:"Автоудаление (студент удалён)", job_retry:"Повтор отправки", job_result:"Результат отправки",
   link_create:"Создана ссылка", link_revoke:"Ссылка отозвана", selflink_create:"Ссылка студенту", staff_approve:"Сотрудник одобрен", student_photo_approve:"Фото студента принято",
   submission_reject:"Заявка отклонена", reconcile_request:"Запрошена сверка" };

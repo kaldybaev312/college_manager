@@ -20,7 +20,7 @@ const SMALL = fs.readFileSync(path.join(__dirname, "fixtures/small.jpg"));
 const KEY = "test-agent-key";
 
 const { Schema } = fake;
-const Group = fake.model("Group", new Schema({ name: { type: String, unique: true }, shiftStart: { type: String, default: "08:00" }, kind: { type: String, enum: ["students", "teachers", "masters", "guests"], default: "students" } }));
+const Group = fake.model("Group", new Schema({ name: { type: String, unique: true }, shiftStart: { type: String, default: "08:00" }, kind: { type: String, enum: ["students", "teachers", "masters", "admin", "guests"], default: "students" } }));
 const Student = fake.model("Student", new Schema({ fio: String, inn: String, lyceumId: String, skudConsentAt: Date, skudConsentBy: String, group: Schema.Types.ObjectId }));
 
 const sessionOf = (req) => { try { return JSON.parse(req.headers["x-test-session"]); } catch { return null; } };
@@ -421,6 +421,98 @@ const t = async (name, fn) => {
     const n = skud.core.buildDeviceName("Абдрахманова-Кадырбекова Айгерим Нурлановна", "12345678901234");
     assert.ok(n.length <= 32 && n.endsWith(" 12345678901234"), n);
     assert.equal(skud.core.buildDeviceName("Иванов Иван", "12345678901234"), "Иванов Иван 12345678901234");
+  });
+
+  console.log("Администрация и массовая загрузка сотрудников");
+  const xlsx = require("xlsx");
+  const book = (aoa) => { const wb = xlsx.utils.book_new(); xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(aoa), "s"); return xlsx.write(wb, { type: "buffer", bookType: "xlsx" }); };
+  const importForm = (buf, fields) => { const f = new FormData(); f.append("file", new Blob([buf]), "staff.xlsx"); for (const [k, v] of Object.entries(fields)) f.append(k, v); return f; };
+  const FILE = book([
+    ["ФИО", "Дата рождения", "ИНН", "Номер"],
+    ["Администраторов Админ Админович", "01.02.1980", "60000000000001", ""],
+    ["Директорова Айнура Бековна", 29221, "60000000000002", "6100777"], // дата числом Excel, свой номер
+    ["Секретарёва Мээрим Талантовна", "", "60000000000003", ""],
+    ["Двойной Инн Иванович", "", "60000000000003", ""],
+    ["Короткий Инн Иванович", "", "123", ""],
+    ["Одно", "", "60000000000004", ""],
+    ["Иванов Иван Иванович", "", "12345678901234", ""], // уже есть среди студентов
+  ]);
+  await t("шаблон Excel скачивается, куратору загрузка закрыта", async () => {
+    const r = await api(ADMIN, "GET", "/api/admin/staff-import/template.xlsx");
+    assert.equal(r.status, 200);
+    assert.ok(xlsx.read(r.data).SheetNames.length);
+    assert.equal((await api(curA, "POST", "/api/admin/staff-import", { form: importForm(FILE, { kind: "admin" }) })).status, 403);
+  });
+  await t("предпросмотр: статусы строк, в базу ничего не пишет", async () => {
+    const before = await Student.countDocuments({});
+    const r = await api(ADMIN, "POST", "/api/admin/staff-import", { form: importForm(FILE, { kind: "admin" }) });
+    assert.equal(r.status, 200, JSON.stringify(r.data));
+    assert.deepEqual(r.data.summary, { total: 7, new: 3, exists: 1, bad: 3 });
+    const by = (n) => r.data.rows.find((x) => x.fio.startsWith(n));
+    assert.equal(by("Директорова").birthDate, "01.01.1980");
+    assert.equal(by("Директорова").no, "6100777");
+    assert.match(by("Двойной").note, /повтор ИНН/);
+    assert.match(by("Короткий").note, /ИНН/);
+    assert.match(by("Одно").note, /ФИО/);
+    assert.match(by("Иванов").note, /ЭС-21/);
+    assert.equal(await Student.countDocuments({}), before);
+    assert.equal(await Group.findOne({ name: "Администрация" }), null);
+  });
+  await t("загрузка требует согласия; затем создаёт группу «Администрация» и номера 6…", async () => {
+    let r = await api(ADMIN, "POST", "/api/admin/staff-import", { form: importForm(FILE, { kind: "admin", commit: "1" }) });
+    assert.equal(r.status, 400); assert.match(r.data.error, /огласие/);
+    r = await api(ADMIN, "POST", "/api/admin/staff-import", { form: importForm(FILE, { kind: "admin", commit: "1", consent: "1" }) });
+    assert.equal(r.status, 200, JSON.stringify(r.data));
+    assert.equal(r.data.created, 3);
+    const g = await Group.findOne({ name: "Администрация" });
+    assert.equal(g.kind, "admin");
+    const people = await Student.find({ group: g._id }).sort({ fio: 1 });
+    assert.equal(people.length, 3);
+    const nos = people.map((p) => p.lyceumId).sort();
+    assert.ok(nos.includes("6100777") && nos.filter((n) => /^600000\d$/.test(n)).length === 2, nos.join());
+    assert.ok(people.every((p) => p.skudConsentAt && /импорт Excel/.test(p.skudConsentBy)));
+    assert.equal(people.find((p) => p.fio.startsWith("Директорова")).birthDate, "01.01.1980");
+  });
+  await t("повторная загрузка того же файла ничего не дублирует", async () => {
+    const r = await api(ADMIN, "POST", "/api/admin/staff-import", { form: importForm(FILE, { kind: "admin", commit: "1", consent: "1" }) });
+    assert.equal(r.data.created, 0);
+    assert.equal(await Student.countDocuments({ inn: "60000000000001" }), 1);
+  });
+  await t("файл без заголовков из двух столбцов (ФИО, ИНН), мастера получают 8…", async () => {
+    const f = book([["Мастеров Первый Иванович", "70000000000001"], ["Мастерова Вторая Ивановна", "70000000000002"]]);
+    const r = await api(ADMIN, "POST", "/api/admin/staff-import", { form: importForm(f, { kind: "masters", commit: "1", consent: "1" }) });
+    assert.equal(r.data.created, 2, JSON.stringify(r.data));
+    const ps = await Student.find({ inn: { $in: ["70000000000001", "70000000000002"] } });
+    assert.ok(ps.every((p) => /^800000\d$/.test(p.lyceumId)));
+    assert.equal((await Group.findOne({ name: "Мастера" })).kind, "masters");
+  });
+  await t("неверная категория и не-Excel файл отклоняются", async () => {
+    assert.equal((await api(ADMIN, "POST", "/api/admin/staff-import", { form: importForm(FILE, { kind: "guests" }) })).status, 400);
+    const junk = await api(ADMIN, "POST", "/api/admin/staff-import", { form: importForm(Buffer.from("это не excel"), { kind: "admin", commit: "1", consent: "1" }) });
+    assert.equal(junk.data.created || 0, 0); // мусор вместо таблицы ничего не создаёт
+    const f = new FormData(); f.append("file", new Blob([FILE]), "staff.pdf"); f.append("kind", "admin");
+    assert.equal((await api(ADMIN, "POST", "/api/admin/staff-import", { form: f })).status, 400);
+  });
+  await t("список сотрудников; фото отправляется на терминалы как у остальных", async () => {
+    const list = (await api(ADMIN, "GET", "/api/admin/staff-people?kind=admin")).data;
+    assert.equal(list.length, 3); assert.ok(list.every((p) => p.status === "none" && p.consent));
+    const p = list.find((x) => x.fio.startsWith("Администраторов"));
+    const r = await api(ADMIN, "POST", `/api/admin/skud-reg/${p.id}`, { form: photoForm() }); // согласие уже сохранено при импорте
+    assert.equal(r.status, 200, JSON.stringify(r.data));
+    await drain();
+    assert.ok(hik.users.has(p.lyceumId) && hik.faces.get(p.lyceumId));
+    assert.equal((await api(ADMIN, "GET", "/api/admin/staff-people?kind=admin")).data.find((x) => x.id === p.id).status, "done");
+    assert.equal((await api(curA, "GET", "/api/admin/staff-people?kind=admin")).status, 403);
+  });
+  await t("ссылка-анкета для администрации: номер 6…", async () => {
+    const mk = await api(ADMIN, "POST", "/api/admin/staff-links", { json: { kind: "admin", hours: 1, maxUses: 3 } });
+    assert.equal(mk.status, 200); assert.equal(mk.data.label, "Администрация");
+    const tok = mk.data.url.split("/join/")[1];
+    assert.equal((await api(null, "POST", `/api/join/${tok}`, { form: photoForm(FACE, { fio: "Завучева Зарина Усеновна", inn: "80000000000001", consent: "1" }) })).status, 200);
+    const sub = (await api(ADMIN, "GET", "/api/admin/staff-submissions")).data.find((x) => x.fio.startsWith("Завучева"));
+    assert.equal(sub.label, "Администрация");
+    const r = await api(ADMIN, "POST", `/api/admin/staff-submissions/${sub.id}/approve`);
+    assert.match(r.data.employeeNo, /^6\d{6}$/); assert.equal(r.data.group, "Администрация");
   });
 
   console.log(`\nИтог: ${passed} прошло, ${failed} упало`);

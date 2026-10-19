@@ -6,11 +6,13 @@ const path = require("path");
 const multer = require("multer");
 const mongoose = require("mongoose");
 const QRCode = require("qrcode");
+const xlsx = require("xlsx");
 
 // У сотрудников нет поименных номеров, поэтому Employee ID выдаётся автоматически
 const KINDS = {
   teachers: { label: "Преподаватели", group: "Преподаватели", base: 7000000, days: null },
   masters: { label: "Мастера", group: "Мастера", base: 8000000, days: null },
+  admin: { label: "Администрация", group: "Администрация", base: 6000000, days: null },
   guests: { label: "Гости и практиканты", group: "Гости", base: 9000000, days: 30 },
 };
 const STAFF_KINDS = Object.keys(KINDS);
@@ -57,6 +59,8 @@ const Submission = model(
 
 const Counter = model("StaffCounter", new Schema({ _id: String, seq: { type: Number, default: 0 } }, { versionKey: false }));
 
+// Для каких категорий доступна массовая загрузка из Excel (гости временные и приходят по ссылке)
+const IMPORT_KINDS = ["teachers", "masters", "admin"];
 const TOKEN_RE = /^[A-Za-z0-9_-]{16,64}$/;
 const NAME_RE = /^[\p{L}][\p{L}\s.'’-]{3,78}$/u;
 const NO_STORE = { "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow", "Referrer-Policy": "no-referrer" };
@@ -75,6 +79,7 @@ module.exports = function mountStaff(app, ctx, core) {
   setInterval(() => { for (const ip of hits.keys()) if (!recent(ip).length) hits.delete(ip); }, 600e3).unref();
 
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1e6, files: 1, fields: 10 } });
+  const uploadXlsx = multer({ storage: multer.memoryStorage(), limits: { fileSize: 3e6, files: 1, fields: 10 } });
   const uploadPhoto = (req, res, next) =>
     upload.single("photo")(req, res, (err) => (err ? res.status(400).json({ error: "Файл слишком большой или повреждён" }) : next()));
 
@@ -213,7 +218,7 @@ module.exports = function mountStaff(app, ctx, core) {
   app.post("/api/admin/staff-links", requireAdmin, async (req, res) => {
     try {
       const kind = String(req.body.kind || "");
-      if (!KINDS[kind]) throw httpErr(400, "Выберите: преподаватели, мастера или гости");
+      if (!KINDS[kind]) throw httpErr(400, "Выберите: преподаватели, мастера, администрация или гости");
       const hours = Math.min(Math.max(Number(req.body.hours) || 24, 1), 24 * 14);
       const maxUses = Math.min(Math.max(parseInt(req.body.maxUses) || 30, 1), 500);
       const rawDays = req.body.accessDays === "" || req.body.accessDays == null ? KINDS[kind].days : parseInt(req.body.accessDays);
@@ -246,6 +251,137 @@ module.exports = function mountStaff(app, ctx, core) {
       await Invite.updateOne({ _id: req.params.id }, { revoked: true });
       await audit(req, "link_revoke", String(req.params.id));
       res.json({ ok: true });
+    } catch (e) { fail(res, e); }
+  });
+
+  /* ---------- Массовая загрузка сотрудников из Excel ---------- */
+
+  const pad2 = (n) => String(n).padStart(2, "0");
+  // Дата рождения: текст оставляем как есть, число Excel (серийная дата) переводим в ДД.ММ.ГГГГ
+  function birthOf(v) {
+    if (v instanceof Date && !isNaN(v)) return `${pad2(v.getUTCDate())}.${pad2(v.getUTCMonth() + 1)}.${v.getUTCFullYear()}`;
+    if (typeof v === "number" && v > 10000 && v < 80000) {
+      const d = new Date(Math.round((v - 25569) * 864e5));
+      return `${pad2(d.getUTCDate())}.${pad2(d.getUTCMonth() + 1)}.${d.getUTCFullYear()}`;
+    }
+    return String(v ?? "").trim();
+  }
+  const digits = (v) => String(v ?? "").replace(/\s/g, "").replace(/\.0+$/, "");
+
+  // Столбцы как в загрузке студентов: A ФИО, B дата рождения, C ИНН, D поименный №.
+  // Если в первой строке есть заголовки, столбцы определяются по ним. Если в файле только ФИО и ИНН, это тоже понятно.
+  function parseStaffSheet(buf) {
+    const wb = xlsx.read(buf, { type: "buffer", cellDates: true });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    if (!ws) throw httpErr(400, "В файле нет листов");
+    const rows = xlsx.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" });
+    let col = { fio: 0, birth: 1, inn: 2, no: 3 };
+    let start = 0;
+    const head = (rows[0] || []).map((c) => String(c).trim().toLowerCase());
+    if (head.some((c) => /^(ф\.?\s?и\.?\s?о|фио|фамилия|инн|сотрудник)/.test(c))) {
+      start = 1;
+      const find = (re, d) => { const i = head.findIndex((c) => re.test(c)); return i >= 0 ? i : d; };
+      col = { fio: find(/^(ф\.?\s?и\.?\s?о|фио|фамилия|сотрудник)/, 0), birth: find(/(рожд|дата)/, -1), inn: find(/инн/, 2), no: find(/(№|номер|поимен|табел)/, -1) };
+    }
+    const out = [];
+    rows.slice(start).forEach((r, i) => {
+      if (!r.some((c) => String(c).trim())) return;
+      let inn = digits(r[col.inn]);
+      let birth = col.birth >= 0 ? birthOf(r[col.birth]) : "";
+      // только ФИО и ИНН: ИНН попал во второй столбец
+      if (!/^\d{14}$/.test(inn) && col.birth === 1 && /^\d{14}$/.test(digits(r[1]))) { inn = digits(r[1]); birth = ""; }
+      out.push({ line: i + start + 1, fio: String(r[col.fio] ?? "").replace(/\s+/g, " ").trim(), birthDate: birth, inn, no: col.no >= 0 ? digits(r[col.no]) : "" });
+    });
+    return out;
+  }
+
+  async function checkStaffRows(rows, groupName) {
+    const seenInn = new Set(), seenNo = new Set();
+    const out = [];
+    for (const r of rows) {
+      const x = { ...r, status: "new", note: "" };
+      const bad = (note) => { x.status = "bad"; x.note = note; return x; };
+      out.push(x);
+      if (!NAME_RE.test(r.fio) || r.fio.split(" ").length < 2) { bad("ФИО: нужны фамилия и имя полностью"); continue; }
+      if (!/^\d{14}$/.test(r.inn) || !normalizeINN(r.inn)) { bad("ИНН: 14 цифр"); continue; }
+      if (r.no && !/^\d{1,32}$/.test(r.no)) { bad("№: только цифры"); continue; }
+      if (seenInn.has(r.inn)) { bad("повтор ИНН в файле"); continue; }
+      if (r.no && seenNo.has(r.no)) { bad("повтор № в файле"); continue; }
+      seenInn.add(r.inn); if (r.no) seenNo.add(r.no);
+      const ex = await Student.findOne({ inn: r.inn });
+      if (ex) {
+        const g = ex.group ? await Group.findById(ex.group) : null;
+        x.status = "exists"; x.note = g ? `уже есть в группе «${g.name}»` : "уже есть в базе";
+        continue;
+      }
+      if (r.no && (await Student.exists({ lyceumId: r.no }))) { bad("этот № уже у другого человека"); continue; }
+      if (await Submission.exists({ inn: r.inn, status: "new" })) { x.status = "exists"; x.note = "ждёт одобрения в заявках"; }
+    }
+    return out;
+  }
+
+  app.get("/api/admin/staff-import/template.xlsx", requireAdmin, (_req, res) => {
+    const ws = xlsx.utils.aoa_to_sheet([
+      ["ФИО", "Дата рождения", "ИНН", "Номер (необязательно)"],
+      ["Иванов Иван Иванович", "01.02.1980", "12345678901234", ""],
+      ["Петрова Айгуль Асановна", "15.09.1985", "22345678901234", ""],
+    ]);
+    ws["!cols"] = [{ wch: 34 }, { wch: 16 }, { wch: 18 }, { wch: 22 }];
+    const wb = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(wb, ws, "Сотрудники");
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", 'attachment; filename="staff_template.xlsx"');
+    res.send(xlsx.write(wb, { type: "buffer", bookType: "xlsx" }));
+  });
+
+  // commit=1: записать в базу; иначе только проверить файл (предпросмотр)
+  app.post("/api/admin/staff-import", requireAdmin, (req, res, next) =>
+    uploadXlsx.single("file")(req, res, (err) => (err ? res.status(400).json({ error: "Файл слишком большой (до 3 МБ)" }) : next())), async (req, res) => {
+    try {
+      const kind = String(req.body?.kind || "");
+      if (!IMPORT_KINDS.includes(kind)) throw httpErr(400, "Выберите: преподаватели, мастера или администрация");
+      if (!req.file?.buffer?.length) throw httpErr(400, "Выберите файл Excel");
+      if (!/\.(xlsx|xls)$/i.test(req.file.originalname || "")) throw httpErr(400, "Нужен файл Excel (.xlsx или .xls)");
+      let rows;
+      try { rows = parseStaffSheet(req.file.buffer); } catch (e) { throw e.status ? e : httpErr(400, "Не удалось прочитать файл. Нужен Excel (.xlsx или .xls)"); }
+      if (!rows.length) throw httpErr(400, "В файле нет строк с данными");
+      if (rows.length > 500) throw httpErr(400, "Слишком много строк (максимум 500 за раз)");
+
+      const checked = await checkStaffRows(rows, KINDS[kind].group);
+      const count = (st) => checked.filter((r) => r.status === st).length;
+      const summary = { total: checked.length, new: count("new"), exists: count("exists"), bad: count("bad") };
+      const view = checked.map(({ line, fio, birthDate, inn, no, status, note }) => ({ line, fio, birthDate, inn, no, status, note }));
+      if (req.body?.commit !== "1") return res.json({ ok: true, preview: true, summary, rows: view });
+
+      if (req.body?.consent !== "1") throw httpErr(400, "Подтвердите, что согласие сотрудников на обработку данных и фото получено");
+      const by = actorOf(req).actor;
+      const group = await ensureGroup(kind);
+      let created = 0;
+      for (const r of checked) {
+        if (r.status !== "new") continue;
+        try {
+          const lyceumId = r.no || (await nextEmployeeNo(kind));
+          // между проверкой и записью номер мог занять другой запрос
+          if (r.no && (await Student.exists({ lyceumId }))) { r.status = "bad"; r.note = "этот № уже у другого человека"; continue; }
+          await Student.create({ fio: r.fio, birthDate: r.birthDate || undefined, inn: r.inn, lyceumId, group: group._id, skudConsentAt: new Date(), skudConsentBy: `импорт Excel (${by})` });
+          r.status = "created"; r.lyceumId = lyceumId; created++;
+        } catch (e) { r.status = "bad"; r.note = "не записан: " + e.message; }
+      }
+      await audit(req, "staff_import", KINDS[kind].group, `добавлено ${created} из ${checked.length}, файл ${String(req.file.originalname || "").slice(0, 60)}`);
+      const done = checked.map(({ line, fio, birthDate, inn, no, lyceumId, status, note }) => ({ line, fio, birthDate, inn, no: lyceumId || no, status, note }));
+      res.json({ ok: true, created, summary: { ...summary, created, bad: done.filter((r) => r.status === "bad").length }, rows: done, group: group.name });
+    } catch (e) { fail(res, e); }
+  });
+
+  // Список сотрудников по категориям и состояние их записи на терминалы
+  app.get("/api/admin/staff-people", requireAdmin, async (req, res) => {
+    try {
+      const kind = String(req.query.kind || "");
+      if (!KINDS[kind]) throw httpErr(400, "Неизвестная категория");
+      const groups = await Group.find({ kind }, "name").lean();
+      const people = groups.length ? await Student.find({ group: { $in: groups.map((g) => g._id) } }, "fio inn lyceumId skudConsentAt").sort({ fio: 1 }).limit(1000).lean() : [];
+      const states = await core.jobStates(people.map((p) => p._id));
+      res.json(people.map((p) => ({ id: p._id, fio: p.fio, inn: p.inn || "", lyceumId: p.lyceumId || "", consent: !!p.skudConsentAt, status: (states.get(String(p._id)) || { status: "none" }).status })));
     } catch (e) { fail(res, e); }
   });
 

@@ -95,6 +95,7 @@ code{background:var(--surface-2);padding:1px 5px;border-radius:5px}
     <div class="kpis" id="d-kpis"></div>
     <div class="card"><h2>Преподаватели</h2><p class="hint">Опоздание — от начала первого урока, ранний уход — до конца последнего. В дни без уроков отсутствие не считается.</p><div class="tbl" id="d-teachers"></div></div>
     <div class="card"><h2>Мастера</h2><p class="hint">Был или не был в рабочий день и сколько часов провёл в лицее.</p><div class="tbl" id="d-masters"></div></div>
+    <div class="card"><h2>Администрация</h2><p class="hint">Был или не был в рабочий день и сколько часов провёл в лицее.</p><div class="tbl" id="d-admins"></div></div>
   </section>
 
   <!-- ТАБЕЛЬ -->
@@ -102,6 +103,7 @@ code{background:var(--surface-2);padding:1px 5px;border-radius:5px}
     <div class="row" style="margin-bottom:12px"><input type="month" id="m-month" aria-label="Месяц"><a class="btn" id="m-xlsx" href="#">📥 Табель в Excel</a></div>
     <div class="card"><h2>Преподаватели</h2><p class="hint">В клетке — время прихода; <span class="warn">+N</span> — опоздание (мин), подчёркнуто — ушёл раньше; <span class="bad">Н</span> — не пришёл в день с уроками; У — по уважительной причине.</p><div class="tbl" id="m-teachers"></div></div>
     <div class="card"><h2>Мастера</h2><p class="hint">В клетке — часы в лицее; <span class="bad">Н</span> — не был в рабочий день.</p><div class="tbl" id="m-masters"></div></div>
+    <div class="card"><h2>Администрация</h2><p class="hint">В клетке — часы в лицее; <span class="bad">Н</span> — не был в рабочий день.</p><div class="tbl" id="m-admins"></div></div>
   </section>
 
   <!-- РАСПИСАНИЕ -->
@@ -152,7 +154,7 @@ async function loadDay() {
   try {
     DAY = await api(`/api/admin/staff/day?date=${$("d-date").value}`);
   } catch (e) { $("d-teachers").innerHTML = `<div class="msg err">${esc(e.message)}</div>`; return window.pl3Ready?.(); }
-  const t = DAY.teachers, m = DAY.masters;
+  const t = DAY.teachers, m = DAY.masters, ad = DAY.admins || [];
   const withL = t.filter((x) => x.lessons.length);
   $("d-warn").innerHTML = DAY.scheduleLoaded ? "" : `<div class="msg info" style="margin-bottom:12px">На эту дату расписание не загружено — опоздания преподавателей не считаются. Загрузите его во вкладке «Расписание».</div>`;
   const k = [
@@ -162,6 +164,7 @@ async function loadDay() {
     [`<span class="${t.some((x) => x.status === "absent") ? "bad" : ""}">${t.filter((x) => x.status === "absent").length}</span>`, "не пришли"],
     [`${m.filter((x) => x.status === "ok").length} из ${m.filter((x) => x.workday).length}`, "мастеров на месте"],
   ];
+  if (ad.length) k.push([`${ad.filter((x) => x.status === "ok").length} из ${ad.filter((x) => x.workday).length}`, "администрации на месте"]);
   $("d-kpis").innerHTML = k.map(([v, l]) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join("");
   const order = { absent: 0, late: 1, ok: 2, excused: 3, extra: 4, free: 5 };
   const ts = [...t].sort((a, b) => order[a.status] - order[b.status] || a.fio.localeCompare(b.fio, "ru"));
@@ -172,9 +175,11 @@ async function loadDay() {
       <td class="num">${x.out || "—"}</td><td class="num">${x.early ? `<span class="warn">${x.early} мин</span>` : "—"}</td>
       <td class="num">${hm(x.minutes)}</td><td>${badge(x.status)}${x.reason ? `<div class="lessons">${esc(x.reason)}</div>` : ""}</td>
       <td>${x.status === "absent" ? `<button class="btn ghost sm" data-reason="${x.id}" data-fio="${esc(x.fio)}">Причина</button>` : ""}</td></tr>`).join("")}</tbody></table>` : '<div class="empty">Нет зарегистрированных преподавателей. Добавьте их через «СКУД → Сотрудники».</div>';
-  $("d-masters").innerHTML = m.length ? `<table><thead><tr><th>ФИО</th><th>Приход</th><th>Уход</th><th>В лицее</th><th>Статус</th><th></th></tr></thead><tbody>
-    ${m.map((x) => `<tr><td><b>${esc(x.fio)}</b></td><td class="num">${x.in || "—"}</td><td class="num">${x.out || "—"}</td><td class="num">${hm(x.minutes)}</td><td>${badge(x.status, STM)}${x.reason ? `<div class="lessons">${esc(x.reason)}</div>` : ""}</td>
-      <td>${x.status === "absent" ? `<button class="btn ghost sm" data-reason="${x.id}" data-fio="${esc(x.fio)}">Причина</button>` : ""}</td></tr>`).join("")}</tbody></table>` : '<div class="empty">Нет зарегистрированных мастеров.</div>';
+  const simple = (list, empty) => list.length ? `<table><thead><tr><th>ФИО</th><th>Приход</th><th>Уход</th><th>В лицее</th><th>Статус</th><th></th></tr></thead><tbody>
+    ${list.map((x) => `<tr><td><b>${esc(x.fio)}</b></td><td class="num">${x.in || "—"}</td><td class="num">${x.out || "—"}</td><td class="num">${hm(x.minutes)}</td><td>${badge(x.status, STM)}${x.reason ? `<div class="lessons">${esc(x.reason)}</div>` : ""}</td>
+      <td>${x.status === "absent" ? `<button class="btn ghost sm" data-reason="${x.id}" data-fio="${esc(x.fio)}">Причина</button>` : ""}</td></tr>`).join("")}</tbody></table>` : `<div class="empty">${empty}</div>`;
+  $("d-masters").innerHTML = simple(m, "Нет зарегистрированных мастеров.");
+  $("d-admins").innerHTML = simple(ad, "Нет зарегистрированных сотрудников администрации. Добавьте их через «СКУД → Сотрудники».");
   window.pl3Ready?.();
 }
 document.addEventListener("click", (e) => {
@@ -204,9 +209,11 @@ async function loadMonth() {
     ${d.teachers.map((r) => { const by = Object.fromEntries(r.days.map((x) => [x.date, x])); const t = r.totals;
       return `<tr><td class="fio">${esc(r.fio)}</td>${d.days.map((x) => cellT(by[x])).join("")}<td>${t.lessonDays}</td><td>${t.attended}</td><td class="${t.absent ? "bad" : ""}">${t.absent}</td><td class="${t.late ? "warn" : ""}">${t.late}</td><td>${t.lateMin}</td><td>${t.early}</td><td>${Math.round(t.minutes / 6) / 10}</td></tr>`; }).join("")}</tbody></table>` : '<div class="empty">Нет преподавателей</div>';
   const cellM = (c) => !c || c.status === "free" ? "<td></td>" : c.status === "absent" ? `<td class="c-absent">Н</td>` : c.status === "excused" ? `<td class="c-excused">У</td>` : `<td class="c-ok" title="${c.in}–${c.out}">${c.minutes ? (c.minutes / 60).toFixed(1) : "+"}</td>`;
-  $("m-masters").innerHTML = d.masters.length ? `<table class="grid"><thead><tr>${head}<th>Раб. дней</th><th>Был</th><th>Н</th><th>Часы</th></tr></thead><tbody>
-    ${d.masters.map((r) => { const by = Object.fromEntries(r.days.map((x) => [x.date, x])); const t = r.totals;
-      return `<tr><td class="fio">${esc(r.fio)}</td>${d.days.map((x) => cellM(by[x])).join("")}<td>${t.workdays}</td><td>${t.present}</td><td class="${t.absent ? "bad" : ""}">${t.absent}</td><td>${Math.round(t.minutes / 6) / 10}</td></tr>`; }).join("")}</tbody></table>` : '<div class="empty">Нет мастеров</div>';
+  const simpleM = (list, empty) => list.length ? `<table class="grid"><thead><tr>${head}<th>Раб. дней</th><th>Был</th><th>Н</th><th>Часы</th></tr></thead><tbody>
+    ${list.map((r) => { const by = Object.fromEntries(r.days.map((x) => [x.date, x])); const t = r.totals;
+      return `<tr><td class="fio">${esc(r.fio)}</td>${d.days.map((x) => cellM(by[x])).join("")}<td>${t.workdays}</td><td>${t.present}</td><td class="${t.absent ? "bad" : ""}">${t.absent}</td><td>${Math.round(t.minutes / 6) / 10}</td></tr>`; }).join("")}</tbody></table>` : `<div class="empty">${empty}</div>`;
+  $("m-masters").innerHTML = simpleM(d.masters, "Нет мастеров");
+  $("m-admins").innerHTML = simpleM(d.admins || [], "Нет сотрудников администрации");
 }
 $("m-month").addEventListener("change", loadMonth);
 

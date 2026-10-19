@@ -6,6 +6,11 @@
 <title>Сотрудники и гости | СКУД</title>
 <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  .tbl2 { width:100%; border-collapse:collapse; font-size:13px; } .tbl2 th,.tbl2 td { text-align:left; padding:5px 6px; border-bottom:1px solid var(--border); } .tbl2 th { color:var(--muted); font-size:12px; }
+  .tbl2 .ok { color:var(--ok); } .tbl2 .no { color:var(--bad); } .tbl2 .skip { color:var(--muted); } .scroll { max-height:340px; overflow:auto; margin-top:10px; }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; } .tabs button[aria-selected=true] { background:var(--accent); color:#fff; }
+  .check { display:flex; gap:10px; align-items:flex-start; font-size:13px; color:#475569; margin-top:10px; line-height:1.4; } .check input { width:18px; height:18px; margin-top:1px; flex:none; }
+  [hidden] { display:none !important; }
   :root { --accent:#4f46e5; --accent-light:#eef2ff; --bg:#f1f5f9; --card:#fff; --border:#e2e8f0; --text:#0f172a; --muted:#64748b; --ok:#16a34a; --warn:#d97706; --bad:#dc2626; }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { background:var(--bg); color:var(--text); font-family:"Golos Text","Segoe UI",sans-serif; min-height:100vh; }
@@ -44,13 +49,37 @@
     <h2>Временная ссылка-анкета</h2>
     <p class="note">Сотрудник сам вводит ФИО, ИНН и добавляет фото. Поименный номер выдаётся автоматически после вашего одобрения. Для гостей по умолчанию пропуск на 30 дней, потом он перестаёт действовать сам; для остальных можно указать срок в днях.</p>
     <div class="bar">
-      <label>Кому<select id="kind"><option value="teachers">Преподаватели</option><option value="masters">Мастера</option><option value="guests">Гости и практиканты</option></select></label>
+      <label>Кому<select id="kind"><option value="teachers">Преподаватели</option><option value="masters">Мастера</option><option value="admin">Администрация</option><option value="guests">Гости и практиканты</option></select></label>
       <label>Срок действия<select id="hours"><option value="1">1 час</option><option value="24" selected>24 часа</option><option value="72">3 дня</option><option value="168">7 дней</option></select></label>
       <label>Макс. заявок<input type="number" id="max" min="1" max="500" value="30"></label>
       <label>Пропуск, дней<input type="number" id="days" min="1" max="3650" placeholder="без срока"></label>
       <button id="mk">Создать ссылку</button>
     </div>
     <div class="list" id="links"></div>
+  </section>
+
+  <section class="card">
+    <h2>Массовая загрузка из Excel</h2>
+    <p class="note">Столбцы как при загрузке студентов: ФИО, дата рождения, ИНН, номер (номер необязательно, без него выдаётся автоматически). Первой строкой могут быть заголовки. Можно только ФИО и ИНН. <a href="/api/admin/staff-import/template.xlsx" download>Скачать шаблон</a></p>
+    <div class="bar">
+      <label>Категория<select id="i-kind"><option value="teachers">Преподаватели</option><option value="masters">Мастера</option><option value="admin">Администрация</option></select></label>
+      <label>Файл Excel<input type="file" id="i-file" accept=".xlsx,.xls"></label>
+      <button class="ghost" id="i-check" disabled>Проверить файл</button>
+    </div>
+    <div class="meta" id="i-sum" style="margin-top:8px"></div>
+    <div class="scroll" id="i-rows" hidden><table class="tbl2" id="i-table"></table></div>
+    <label class="check" id="i-consent-wrap" hidden><input type="checkbox" id="i-consent"><span>Согласие сотрудников на обработку персональных данных и фото получено</span></label>
+    <div class="bar" style="margin-top:10px"><button id="i-go" hidden disabled>Загрузить в базу</button></div>
+    <p class="note" style="margin-top:8px">После загрузки сотрудникам нужно добавить фото: страница «Регистрация студентов», выбрать группу (Преподаватели, Мастера, Администрация). Фото можно загрузить по одному, массово (имя файла = номер или ИНН) или отправить сотруднику ссылку с QR.</p>
+  </section>
+
+  <section class="card">
+    <h2>Сотрудники и фото на терминалах</h2>
+    <div class="tabs" id="p-tabs">
+      <button class="ghost" data-k="teachers" aria-selected="true">Преподаватели</button><button class="ghost" data-k="masters" aria-selected="false">Мастера</button>
+      <button class="ghost" data-k="admin" aria-selected="false">Администрация</button><button class="ghost" data-k="guests" aria-selected="false">Гости</button>
+    </div>
+    <div class="scroll" style="max-height:420px"><table class="tbl2" id="p-table"></table></div>
   </section>
 
   <section class="card">
@@ -123,6 +152,43 @@ document.addEventListener("click", async e => {
     else if (t.id === "close") $("dlg").close();
   } catch (err) { toast(err.message); all(); }
 });
+/* ---------- массовая загрузка ---------- */
+const IST = { new:["новый","ok"], created:["добавлен","ok"], exists:["пропуск","skip"], bad:["ошибка","no"] };
+function showImport(d, done) {
+  const s = d.summary;
+  $("i-sum").textContent = done
+    ? `Добавлено: ${d.created}. Пропущено: ${s.exists}. С ошибками: ${s.bad}. Группа «${d.group}».`
+    : `Строк: ${s.total}. Новых: ${s.new}. Уже есть: ${s.exists}. С ошибками: ${s.bad}.`;
+  $("i-rows").hidden = false;
+  $("i-table").innerHTML = "<tr><th>Стр.</th><th>ФИО</th><th>ИНН</th><th>Дата рожд.</th><th>№</th><th>Статус</th></tr>" + d.rows.map(r =>
+    `<tr><td>${r.line}</td><td>${esc(r.fio)}</td><td>${esc(r.inn)}</td><td>${esc(r.birthDate)}</td><td>${esc(r.no) || "авто"}</td><td class="${IST[r.status][1]}">${IST[r.status][0]}${r.note ? ": " + esc(r.note) : ""}</td></tr>`).join("");
+  const can = !done && s.new > 0;
+  $("i-go").hidden = !can; $("i-consent-wrap").hidden = !can; $("i-consent").checked = false; $("i-go").disabled = true;
+}
+const iForm = commit => { const f = new FormData(); f.append("kind", $("i-kind").value); f.append("file", $("i-file").files[0]); if (commit) { f.append("commit", "1"); f.append("consent", "1"); } return f; };
+$("i-file").onchange = () => { $("i-check").disabled = !$("i-file").files.length; $("i-rows").hidden = true; $("i-sum").textContent = ""; $("i-go").hidden = true; $("i-consent-wrap").hidden = true; };
+$("i-kind").onchange = () => { $("i-go").hidden = true; $("i-consent-wrap").hidden = true; };
+$("i-consent").onchange = () => { $("i-go").disabled = !$("i-consent").checked; };
+$("i-check").onclick = async () => {
+  try { showImport(await j("/api/admin/staff-import", { method: "POST", body: iForm(false) }), false); } catch (e) { toast(e.message); }
+};
+$("i-go").onclick = async () => {
+  $("i-go").disabled = true;
+  try { const d = await j("/api/admin/staff-import", { method: "POST", body: iForm(true) }); showImport(d, true); toast(`Добавлено: ${d.created}`); $("i-file").value = ""; $("i-check").disabled = true; loadPeople(); }
+  catch (e) { toast(e.message); $("i-go").disabled = false; }
+};
+
+/* ---------- список сотрудников ---------- */
+const PST = { none:"нет фото", pending:"в очереди", processing:"отправляется", done:"на терминалах", partial:"не на всех", failed:"ошибка", removing:"удаляется", removed:"удалён", remove_failed:"ошибка удаления" };
+let pKind = "teachers";
+async function loadPeople() {
+  try {
+    const ps = await j("/api/admin/staff-people?kind=" + pKind);
+    $("p-table").innerHTML = ps.length ? "<tr><th>ФИО</th><th>ИНН</th><th>№</th><th>Статус</th></tr>" + ps.map(p => `<tr><td>${esc(p.fio)}</td><td>${esc(p.inn)}</td><td>${esc(p.lyceumId)}</td><td><span class="chip ${p.status}">${PST[p.status] || p.status}</span></td></tr>`).join("") : '<tr><td class="empty" colspan="4">Пока никого</td></tr>';
+  } catch (e) { toast(e.message); }
+}
+$("p-tabs").onclick = e => { const b = e.target.closest("button[data-k]"); if (!b) return; pKind = b.dataset.k; document.querySelectorAll("#p-tabs button").forEach(x => x.setAttribute("aria-selected", x === b)); loadPeople(); };
+loadPeople();
 all(); setInterval(() => { if (!document.hidden && !$("dlg").open) all(); }, 8000);
 </script>
 </body>

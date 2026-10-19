@@ -150,7 +150,7 @@ function createStaffAttendance({ Group, Student, TgSub, getTodayKey, getBishkekM
   /* ---------- сопоставление с сотрудниками СКУД ---------- */
   async function staffGroups() {
     const gs = await Group.find().lean();
-    return { teachers: gs.filter(isKind("teachers")), masters: gs.filter(isKind("masters")) };
+    return { teachers: gs.filter(isKind("teachers")), masters: gs.filter(isKind("masters")), admins: gs.filter(isKind("admin")) };
   }
   async function teacherIndex() {
     const { teachers } = await staffGroups();
@@ -228,18 +228,22 @@ function createStaffAttendance({ Group, Student, TgSub, getTodayKey, getBishkekM
   };
 
   async function day(date) {
-    const { teachers, masters } = await staffGroups();
+    const { teachers, masters, admins } = await staffGroups();
     const tPeople = teachers.length ? await Student.find({ group: { $in: teachers.map((g) => g._id) } }).sort({ fio: 1 }).lean() : [];
     const mPeople = masters.length ? await Student.find({ group: { $in: masters.map((g) => g._id) } }).sort({ fio: 1 }).lean() : [];
+    const aPeople = admins.length ? await Student.find({ group: { $in: admins.map((g) => g._id) } }).sort({ fio: 1 }).lean() : [];
     const map = await lessonsBy(date, date);
     const keys = await keysByPerson(tPeople);
-    const reasons = await reasonsIndex({ student: { $in: [...tPeople, ...mPeople].map((p) => p._id) } }, date, date);
+    const reasons = await reasonsIndex({ student: { $in: [...tPeople, ...mPeople, ...aPeople].map((p) => p._id) } }, date, date);
     const masterSat = masters.some((g) => g.saturday);
+    const adminSat = admins.some((g) => g.saturday);
     const scheduleLoaded = (await StaffLesson.countDocuments({ date })) > 0;
     return {
       date, scheduleLoaded,
       teachers: tPeople.map((p) => teacherDay(p, date, lessonsFor(map, keys.get(String(p._id)), date), reasons.get(`${p._id}|${date}`))),
       masters: mPeople.map((p) => masterDay(p, date, masterSat, reasons.get(`${p._id}|${date}`))),
+      // администрация учитывается как мастера: был/не был и часы в лицее
+      admins: aPeople.map((p) => masterDay(p, date, adminSat, reasons.get(`${p._id}|${date}`))),
     };
   }
 
@@ -247,13 +251,15 @@ function createStaffAttendance({ Group, Student, TgSub, getTodayKey, getBishkekM
     const { from, to } = monthRange(monthKey);
     const today = getTodayKey();
     const days = datesBetween(from, to);
-    const { teachers, masters } = await staffGroups();
+    const { teachers, masters, admins } = await staffGroups();
     const tPeople = teachers.length ? await Student.find({ group: { $in: teachers.map((g) => g._id) } }).sort({ fio: 1 }).lean() : [];
     const mPeople = masters.length ? await Student.find({ group: { $in: masters.map((g) => g._id) } }).sort({ fio: 1 }).lean() : [];
+    const aPeople = admins.length ? await Student.find({ group: { $in: admins.map((g) => g._id) } }).sort({ fio: 1 }).lean() : [];
     const map = await lessonsBy(from, to);
     const keys = await keysByPerson(tPeople);
-    const reasons = await reasonsIndex({ student: { $in: [...tPeople, ...mPeople].map((p) => p._id) } }, from, to);
+    const reasons = await reasonsIndex({ student: { $in: [...tPeople, ...mPeople, ...aPeople].map((p) => p._id) } }, from, to);
     const masterSat = masters.some((g) => g.saturday);
+    const adminSat = admins.some((g) => g.saturday);
     const past = days.filter((d) => d <= today);
     const teacherRows = tPeople.map((p) => {
       const ds = past.map((d) => teacherDay(p, d, lessonsFor(map, keys.get(String(p._id)), d), reasons.get(`${p._id}|${d}`)));
@@ -273,14 +279,16 @@ function createStaffAttendance({ Group, Student, TgSub, getTodayKey, getBishkekM
         },
       };
     });
-    const masterRows = mPeople.map((p) => {
-      const ds = past.map((d) => masterDay(p, d, masterSat, reasons.get(`${p._id}|${d}`)));
+    const simpleRows = (people, sat) => people.map((p) => {
+      const ds = past.map((d) => masterDay(p, d, sat, reasons.get(`${p._id}|${d}`)));
       return {
         id: String(p._id), fio: p.fio, days: ds,
         totals: { workdays: ds.filter((d) => d.workday).length, present: ds.filter((d) => d.status === "ok").length, absent: ds.filter((d) => d.status === "absent").length, excused: ds.filter((d) => d.status === "excused").length, minutes: ds.reduce((a, d) => a + d.minutes, 0) },
       };
     });
-    return { month: monthKey, days, teachers: teacherRows, masters: masterRows };
+    const masterRows = simpleRows(mPeople, masterSat);
+    const adminRows = simpleRows(aPeople, adminSat);
+    return { month: monthKey, days, teachers: teacherRows, masters: masterRows, admins: adminRows };
   }
 
   const hm = (min) => (min ? `${Math.floor(min / 60)}:${pad2(min % 60)}` : "");
@@ -312,20 +320,23 @@ function createStaffAttendance({ Group, Student, TgSub, getTodayKey, getBishkekM
     ws1["!cols"] = [{ wch: 4 }, { wch: 30 }, ...m.days.map(() => ({ wch: 9 })), ...Array(9).fill({ wch: 11 })];
     xlsx.utils.book_append_sheet(wb, ws1, "Преподаватели");
     const cellM = (d) => (!d ? "" : d.status === "absent" ? "Н" : d.status === "excused" ? "У" : d.status === "free" ? "" : hm(d.minutes) || "+");
-    const mm = [
-      [`Табель мастеров — ${m.month}`],
+    const simpleSheet = (title, rows) => [
+      [`Табель ${title} — ${m.month}`],
       ["Часы в лицее за день; Н — не было в рабочий день; У — по уважительной причине"],
       [],
       ["№", "ФИО", ...dayHead, "Рабочих дней", "Был", "Не был", "Уваж.", "Часов в лицее"],
-      ...m.masters.map((r, i) => {
+      ...rows.map((r, i) => {
         const byDate = Object.fromEntries(r.days.map((d) => [d.date, d]));
         const x = r.totals;
         return [i + 1, r.fio, ...m.days.map((d) => cellM(byDate[d])), x.workdays, x.present, x.absent, x.excused, hm(x.minutes)];
       }),
     ];
-    const ws2 = xlsx.utils.aoa_to_sheet(mm);
-    ws2["!cols"] = [{ wch: 4 }, { wch: 30 }, ...m.days.map(() => ({ wch: 7 })), ...Array(5).fill({ wch: 12 })];
-    xlsx.utils.book_append_sheet(wb, ws2, "Мастера");
+    for (const [title, sheet, rows] of [["мастеров", "Мастера", m.masters], ["администрации", "Администрация", m.admins || []]]) {
+      if (sheet === "Администрация" && !rows.length) continue;
+      const ws2 = xlsx.utils.aoa_to_sheet(simpleSheet(title, rows));
+      ws2["!cols"] = [{ wch: 4 }, { wch: 30 }, ...m.days.map(() => ({ wch: 7 })), ...Array(5).fill({ wch: 12 })];
+      xlsx.utils.book_append_sheet(wb, ws2, sheet);
+    }
     return xlsx.write(wb, { type: "buffer", bookType: "xlsx" });
   }
 
