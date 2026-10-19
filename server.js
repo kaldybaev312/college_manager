@@ -2304,6 +2304,9 @@ app.post("/api/admin/absent-alerts/run", requireAdmin, async (req, res) => {
   }
 });
 
+// Общий журнал по лицею (листы по курсам)
+require("./journal-all").create({ Group, Student, absence, att, getTodayKey }).registerRoutes(app, { requireAdmin, contentDisposition });
+
 // Учёт сотрудников: преподаватели по расписанию Kundoluk, мастера — присутствие (staff-attendance.js)
 const staffAttendance = require("./staff-attendance").createStaffAttendance({
   Group,

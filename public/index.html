@@ -1237,6 +1237,13 @@
               >
                 📥 Excel
               </button>
+              <button
+                class="btn btn-outline-success fw-bold"
+                title="Все группы лицея по курсам: 2 курс, 1 курс, 10 месяцев"
+                onclick="downloadJournalAll()"
+              >
+                📚 Все
+              </button>
             </div>
           </div>
           <div class="mt-3 pt-3 border-top">
@@ -2403,6 +2410,11 @@
           return;
         }
         window.open(`/api/admin/report-food/${gid}/${month}`);
+      }
+      function downloadJournalAll() {
+        const month = document.getElementById("j-month").value;
+        if (!month) return toast("Выберите месяц", "error");
+        window.open(`/api/admin/export-journal-all/${month}`, "_blank");
       }
       function downloadJournalExcel() {
         const gid = document.getElementById("j-group-select").value,
