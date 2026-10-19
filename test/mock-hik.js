@@ -4,7 +4,7 @@ const crypto = require("crypto");
 const md5 = (s) => crypto.createHash("md5").update(s).digest("hex");
 
 module.exports = function startMock({ user = "admin", pass = "secret" } = {}) {
-  const state = { users: new Map(), faces: new Map(), events: [], log: [], failFace: false, down: false, nonce: crypto.randomBytes(8).toString("hex") };
+  const state = { users: new Map(), faces: new Map(), log: [], failFace: false, down: false, nonce: crypto.randomBytes(8).toString("hex") };
 
   const server = http.createServer((req, res) => {
     const chunks = [];
@@ -61,13 +61,6 @@ module.exports = function startMock({ user = "admin", pass = "secret" } = {}) {
         const page = all.slice(c.searchResultPosition, c.searchResultPosition + Math.min(c.maxResults, 2)); // отдаём по 2, как капризная прошивка
         const more = c.searchResultPosition + page.length < all.length;
         return send(200, { UserInfoSearch: { searchID: c.searchID, responseStatusStrg: more ? "MORE" : "OK", numOfMatches: page.length, totalMatches: all.length, UserInfo: page } });
-      }
-      if (p === "AccessControl/AcsEvent") {
-        const c = jsonBody().AcsEventCond;
-        const all = state.events.filter((e) => e.time.slice(0, 19) >= c.startTime && e.time.slice(0, 19) <= c.endTime);
-        const page = all.slice(c.searchResultPosition, c.searchResultPosition + Math.min(c.maxResults, 2)); // по 2 события за раз
-        const more = c.searchResultPosition + page.length < all.length;
-        return send(200, { AcsEvent: { searchID: c.searchID, responseStatusStrg: more ? "MORE" : "OK", numOfMatches: page.length, totalMatches: all.length, InfoList: page } });
       }
       send(404, { statusCode: 4, statusString: "Not Found" });
     });

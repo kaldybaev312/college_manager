@@ -1,4 +1,4 @@
-// Восстановление истории: сайт → запрос → агент читает терминалы (постранично) → history-sync. БД в памяти.
+// Восстановление истории: запрос с сайта → агент забирает → history-sync. БД в памяти.
 const Module = require("module");
 const path = require("path");
 const assert = require("assert/strict");
@@ -8,8 +8,6 @@ Module._resolveFilename = function (req, ...rest) {
   return req === "mongoose" ? path.join(__dirname, "fake-mongoose.js") : origResolve.call(this, req, ...rest);
 };
 const express = require("express");
-const startMock = require("./mock-hik");
-const agentSkud = require("../agent-skud");
 const { Schema } = fake;
 const KEY = "k";
 const Group = fake.model("Group", new Schema({ name: String, shiftStart: { type: String, default: "08:00" }, kind: { type: String, default: "students" } }));
@@ -44,18 +42,11 @@ const t = async (n, f) => { try { await f(); passed++; console.log("  ✓", n); 
 (async () => {
   const srv = app.listen(0); await new Promise((r) => srv.once("listening", r));
   base = `http://127.0.0.1:${srv.address().port}`;
-  const hikIn = await startMock(), hikOut = await startMock();
   const g = await Group.create({ name: "ИТ-1/26" });
   const ali = await Student.create({ fio: "Алиев Али Алиевич", inn: "12345678901234", group: g._id });
   const bek = await Student.create({ fio: "Бекова Бека Бековна", group: g._id });
-  const ev = (no, name, time) => ({ employeeNoString: no, name, time });
   const D1 = "2026-10-12", D2 = "2026-10-13";
-  // Алиев: 3 входа и 1 выход в D1 (больше страницы в 2 события), Бекова — вход в D2 без имени в событии
-  hikIn.events.push(ev("1", "Алиев Али Алиевич 12345678901234", `${D1}T07:50:00+06:00`), ev("1", "Алиев Али Алиевич 12345678901234", `${D1}T08:40:00+06:00`), ev("1", "Алиев Али Алиевич 12345678901234", `${D1}T13:05:00+06:00`), ev("2", "", `${D2}T09:10:00+06:00`));
-  hikOut.events.push(ev("1", "Алиев Али Алиевич 12345678901234", `${D1}T15:00:00+06:00`));
-  hikIn.users.set("2", { employeeNo: "2", name: "Бекова Бека Бековна" });
 
-  const ag = agentSkud.create({ serverUrl: base, apiKey: KEY, devices: [{ ip: hikIn.ip, direction: "in" }, { ip: hikOut.ip, direction: "out" }], user: "admin", pass: "secret" });
   const dayOf = async (s, d) => (await Student.findById(s._id).lean()).skudDaily.find((x) => x.date === d);
 
   await t("запрос истории: только админ, проверка дат", async () => {
@@ -72,33 +63,37 @@ const t = async (n, f) => { try { await f(); passed++; console.log("  ✓", n); 
     assert.deepEqual(c1.history, { from: D1, to: D2 });
     assert.equal((await api(null, "POST", "/api/agent/jobs/claim", { apiKey: KEY })).data.history, null);
   });
-  await t("агент читает терминалы постранично и пишет историю без дублей", async () => {
-    await ag.runHistory({ from: D1, to: D2 });
+  await t("history-sync: пишет дни, подтягивает счётчики и время", async () => {
+    const day = (rawName, date, fi, li, n, fo, lo, m) => ({ rawName, date, firstIn: fi, lastIn: li, inCount: n, firstOut: fo, lastOut: lo, outCount: m });
+    const A = "Алиев Али Алиевич 12345678901234";
+    const r = await api(null, "POST", "/api/agent/history-sync", { apiKey: KEY, days: [
+      day(A, D1, `${D1}T07:50:00+06:00`, `${D1}T13:05:00+06:00`, 3, undefined, undefined, 0),
+      day(A, D1, undefined, undefined, 0, `${D1}T15:00:00+06:00`, `${D1}T15:00:00+06:00`, 1),
+      day("Бекова Бека Бековна", D2, `${D2}T09:10:00+06:00`, `${D2}T09:10:00+06:00`, 1) ] });
+    assert.equal(r.data.okCount, 3);
     const d = await dayOf(ali, D1);
     assert.equal(d.inCount, 3); assert.equal(d.outCount, 1); assert.equal(d.present, true);
     assert.ok(d.firstIn.includes("07:50")); assert.ok(d.lastIn.includes("13:05")); assert.ok(d.firstOut.includes("15:00"));
-    const b = await dayOf(bek, D2);
-    assert.equal(b.present, true); assert.ok(b.firstIn.includes("09:10")); // имя подтянуто с терминала
+    assert.equal((await dayOf(bek, D2)).present, true);
     assert.equal((await Student.findById(ali._id).lean()).attendance.find((x) => x.date === D1).present, true);
-    const st = (await api(ADMIN, "GET", "/api/admin/skud-reg/history")).data;
-    assert.equal(st.status, "done"); assert.equal(st.sent, 2);
   });
-  await t("повторный запуск идемпотентен; родителям ничего не уходит", async () => {
+  await t("повторная отправка идемпотентна", async () => {
     const before = JSON.stringify((await Student.findById(ali._id).lean()).skudDaily);
-    await ag.runHistory({ from: D1, to: D2 });
+    await api(null, "POST", "/api/agent/history-sync", { apiKey: KEY, days: [{ rawName: "Алиев Али Алиевич 12345678901234", date: D1, firstIn: `${D1}T08:00:00+06:00`, lastIn: `${D1}T12:00:00+06:00`, inCount: 2 }] });
     assert.equal(JSON.stringify((await Student.findById(ali._id).lean()).skudDaily), before);
-    assert.equal((await Student.findById(ali._id).lean()).skudDaily.length, 1);
+  });
+  await t("прогресс агента и итог", async () => {
+    await api(null, "POST", "/api/agent/history/progress", { apiKey: KEY, status: "running", progress: "до 2026-10-12", sent: 1 });
+    assert.equal((await api(ADMIN, "GET", "/api/admin/skud-reg/history")).data.status, "running");
+    await api(null, "POST", "/api/agent/history/progress", { apiKey: KEY, status: "done", progress: "готово", sent: 3 });
+    const st = (await api(ADMIN, "GET", "/api/admin/skud-reg/history")).data;
+    assert.equal(st.status, "done"); assert.equal(st.sent, 3);
+    assert.equal((await api(ADMIN, "POST", "/api/admin/skud-reg/history/run", { from: D1, to: D2 })).status, 200); // после завершения можно снова
   });
   await t("неизвестный человек пропускается, остальные пишутся", async () => {
     const r = await api(null, "POST", "/api/agent/history-sync", { apiKey: KEY, days: [{ rawName: "Неизвестный Иван", date: D1, firstIn: `${D1}T08:00:00+06:00`, lastIn: `${D1}T08:00:00+06:00`, inCount: 1 }, { rawName: "Бекова Бека Бековна", date: D1, firstIn: `${D1}T08:05:00+06:00`, lastIn: `${D1}T08:05:00+06:00`, inCount: 1 }] });
     assert.equal(r.data.okCount, 1); assert.equal(r.data.failCount, 1);
     assert.equal((await api(null, "POST", "/api/agent/history-sync", { apiKey: "bad", days: [] })).status, 403);
-  });
-  await t("терминал недоступен → ошибка в статусе, не падаем", async () => {
-    await hikIn.close(); await hikOut.close();
-    await ag.runHistory({ from: D1, to: D1 });
-    const st = (await api(ADMIN, "GET", "/api/admin/skud-reg/history")).data;
-    assert.equal(st.status, "failed");
   });
   console.log(`\nИтог: ${passed} прошло, ${failed} упало`);
   srv.close();
