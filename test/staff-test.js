@@ -190,6 +190,24 @@ async function t(name, fn) {
     assert.equal(d.teachers.find((x) => x.id === String(pe._id)).first, "09:30");
   });
 
+  await t("администрация: был/не был и часы, табель и лист Excel", async () => {
+    const gA = await Group.create({ name: "Администрация", kind: "admin" });
+    await Student.create({ fio: "Директоров Талант Сапарович", group: gA._id, skudDaily: [day(MON, "08:00", "17:00")] });
+    await Student.create({ fio: "Завучева Зарина Усеновна", group: gA._id, skudDaily: [] });
+    const d = (await call("GET", `/api/admin/staff/day?date=${MON}`)).data;
+    assert.equal(d.admins.length, 2);
+    assert.equal(d.admins.find((x) => x.fio.startsWith("Директоров")).status, "ok");
+    assert.equal(d.admins.find((x) => x.fio.startsWith("Директоров")).minutes, 540);
+    assert.equal(d.admins.find((x) => x.fio.startsWith("Завучева")).status, "absent");
+    assert.equal(d.teachers.length >= 3 && d.masters.length, 1); // остальные категории не смешиваются
+    const m = (await call("GET", "/api/admin/staff/month?month=2026-10")).data;
+    assert.equal(m.admins.length, 2);
+    assert.equal(m.admins.find((x) => x.fio.startsWith("Директоров")).totals.present, 1);
+    const x = await fetch(`${base}/api/admin/staff/month?month=2026-10&format=xlsx`, { headers: { "x-role": "admin" } });
+    const wb = xlsx.read(Buffer.from(await x.arrayBuffer()));
+    assert.deepEqual(wb.SheetNames, ["Преподаватели", "Мастера", "Администрация"]);
+  });
+
   console.log(`\nИтог: ${passed} прошло, ${failed} упало`);
   srv.close();
   process.exit(failed ? 1 : 0);

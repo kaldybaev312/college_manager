@@ -1070,10 +1070,12 @@
         📋 Сводные ведомости
       </button>
       <a href="/dashboard" class="nav-btn">📊 Дашборд и зона риска</a>
-      <a href="/staff" class="nav-btn">👩‍🏫 Преподаватели и мастера</a>
+      <a href="/staff" class="nav-btn">👩‍🏫 Преподаватели, мастера, администрация</a>
       <a href="/summary.html" class="nav-btn">📝 Кабинет куратора</a>
       <a href="/admin/events" class="nav-btn">📡 СКУД события</a>
       <a href="/skud-register.html" class="nav-btn">📷 Регистрация в СКУД</a>
+      <a href="/skud-staff.html" class="nav-btn">👥 Сотрудники и гости (СКУД)</a>
+      <a href="/skud-status.html" class="nav-btn">📈 Сводка СКУД</a>
       <a href="/practice" class="nav-btn">🏭 Производственная практика</a>
       <div class="sidebar-footer">
         <a href="/logout" class="logout-btn">🚪 Выйти</a>
@@ -1317,6 +1319,11 @@
         <div class="row g-3">
           <div class="col-12 col-md-6">
             <div class="card-st">
+              <div class="btn-group w-100 mb-3" role="group" aria-label="Кого загружаем">
+                <button type="button" class="btn btn-primary fw-bold" id="imp-m-students" onclick="setImportMode('students')">🎓 Студенты</button>
+                <button type="button" class="btn btn-outline-primary fw-bold" id="imp-m-staff" onclick="setImportMode('staff')">👩‍🏫 Сотрудники</button>
+              </div>
+              <div id="imp-students">
               <div class="mb-3">
                 <label class="form-label fw-bold small">Название группы</label
                 ><input
@@ -1341,6 +1348,17 @@
                 class="alert alert-info py-2 fw-bold d-none mb-3"
                 style="border-radius: 10px; font-size: 13px"
               ></div>
+              </div>
+              <div id="imp-staff" style="display:none" class="d-none">
+                <div class="mb-3">
+                  <label class="form-label fw-bold small">Категория</label>
+                  <select id="imp-staff-kind" class="form-select" style="border-radius: 10px" onchange="resetStaffPreview()">
+                    <option value="teachers">Преподаватели</option>
+                    <option value="masters">Мастера</option>
+                    <option value="admin">Администрация</option>
+                  </select>
+                </div>
+              </div>
               <div class="mb-4">
                 <label class="form-label fw-bold small">Файл Excel</label>
                 <div
@@ -1368,6 +1386,17 @@
               >
                 🚀 ЗАГРУЗИТЬ ГРУППУ
               </button>
+              <div id="imp-preview" style="display:none" class="d-none mt-3">
+                <div id="imp-sum" class="fw-bold small mb-2"></div>
+                <div style="max-height: 280px; overflow: auto">
+                  <table class="table table-sm mb-2" style="font-size: 12px" id="imp-table"></table>
+                </div>
+                <label class="d-flex gap-2 align-items-start small mb-2" id="imp-consent-wrap">
+                  <input type="checkbox" id="imp-consent" class="form-check-input mt-1" onchange="document.getElementById('imp-go').disabled = !this.checked" />
+                  <span>Согласие сотрудников на обработку персональных данных и фото получено</span>
+                </label>
+                <button class="btn btn-success w-100 fw-bold" style="border-radius: 12px" id="imp-go" onclick="commitStaffImport()" disabled>✅ Добавить в базу</button>
+              </div>
             </div>
           </div>
           <div class="col-12 col-md-6">
@@ -1409,6 +1438,15 @@
                 style="font-size: 12px; border-radius: 10px"
               >
                 ⚠️ Если группа уже существует — студенты добавятся к ней.
+              </div>
+              <div id="imp-staff-hint" style="display:none" class="d-none">
+                <div class="alert alert-info py-2" style="font-size: 12px; border-radius: 10px">
+                  Для сотрудников столбец D (номер) необязателен: без него номер выдаётся автоматически. Первой строкой могут быть заголовки. Перед записью файл проверяется, дубли по ИНН пропускаются.
+                  <a href="/api/admin/staff-import/template.xlsx" download>Скачать шаблон</a>
+                </div>
+                <div class="alert alert-warning py-2 mb-0" style="font-size: 12px; border-radius: 10px">
+                  ⚠️ Фото сотрудникам добавляется потом на странице «Регистрация в СКУД» (группы Преподаватели, Мастера, Администрация).
+                </div>
               </div>
             </div>
           </div>
@@ -2153,6 +2191,7 @@
       function onFileSelect(input) {
         document.getElementById("dz-name").textContent =
           input.files[0]?.name || "Файл не выбран";
+        resetStaffPreview();
       }
       const dz = document.getElementById("dropzone");
       dz.addEventListener("dragover", (e) => {
@@ -2169,9 +2208,73 @@
           dt.items.add(file);
           document.getElementById("import-file").files = dt.files;
           document.getElementById("dz-name").textContent = file.name;
+          resetStaffPreview();
         }
       });
+      // Показ/скрытие не через классы Bootstrap: работает и без загрузки CDN
+      const impShow = (id, on, disp = "block") => { const e = document.getElementById(id); e.classList.remove("d-none"); e.style.display = on ? disp : "none"; };
+      let importMode = "students";
+      function setImportMode(m) {
+        importMode = m;
+        const st = m === "students";
+        impShow("imp-students", st);
+        impShow("imp-staff", !st);
+        impShow("imp-staff-hint", !st);
+        document.getElementById("imp-m-students").className = "btn fw-bold " + (st ? "btn-primary" : "btn-outline-primary");
+        document.getElementById("imp-m-staff").className = "btn fw-bold " + (st ? "btn-outline-primary" : "btn-primary");
+        document.getElementById("import-btn").textContent = st ? "🚀 ЗАГРУЗИТЬ ГРУППУ" : "🔎 ПРОВЕРИТЬ ФАЙЛ";
+        resetStaffPreview();
+      }
+      function resetStaffPreview() {
+        impShow("imp-preview", false);
+      }
+      const IMP_ST = { new: ["новый", "text-success"], created: ["добавлен", "text-success"], exists: ["пропуск", "text-muted"], bad: ["ошибка", "text-danger"] };
+      const impEsc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+      function showStaffRows(d, done) {
+        const s = d.summary;
+        document.getElementById("imp-sum").textContent = done
+          ? `Добавлено: ${d.created}. Пропущено: ${s.exists}. С ошибками: ${s.bad}. Группа «${d.group}».`
+          : `Строк: ${s.total}. Новых: ${s.new}. Уже есть: ${s.exists}. С ошибками: ${s.bad}.`;
+        document.getElementById("imp-table").innerHTML =
+          "<tr><th>Стр.</th><th>ФИО</th><th>ИНН</th><th>№</th><th>Статус</th></tr>" +
+          d.rows.map((r) => `<tr><td>${r.line}</td><td>${impEsc(r.fio)}</td><td>${impEsc(r.inn)}</td><td>${impEsc(r.no) || "авто"}</td><td class="${IMP_ST[r.status][1]}">${IMP_ST[r.status][0]}${r.note ? ": " + impEsc(r.note) : ""}</td></tr>`).join("");
+        const can = !done && s.new > 0;
+        impShow("imp-consent-wrap", can, "flex");
+        impShow("imp-go", can);
+        document.getElementById("imp-consent").checked = false;
+        document.getElementById("imp-go").disabled = true;
+        impShow("imp-preview", true);
+      }
+      async function staffImportCall(commit) {
+        const file = document.getElementById("import-file").files[0];
+        if (!file) { toast("Выберите файл Excel", "error"); return null; }
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("kind", document.getElementById("imp-staff-kind").value);
+        if (commit) { fd.append("commit", "1"); fd.append("consent", "1"); }
+        showLoader();
+        try {
+          const res = await fetch("/api/admin/staff-import", { method: "POST", body: fd }), data = await res.json();
+          if (!res.ok) { toast("Ошибка: " + (data.error || "неизвестная"), "error"); return null; }
+          return data;
+        } catch (e) { toast("Ошибка соединения", "error"); return null; }
+        finally { hideLoader(); }
+      }
+      async function commitStaffImport() {
+        document.getElementById("imp-go").disabled = true;
+        const d = await staffImportCall(true);
+        if (!d) { document.getElementById("imp-go").disabled = false; return; }
+        showStaffRows(d, true);
+        toast(`Добавлено сотрудников: ${d.created}`);
+        document.getElementById("import-file").value = "";
+        document.getElementById("dz-name").textContent = "Файл не выбран";
+      }
       async function processImport() {
+        if (importMode === "staff") {
+          const d = await staffImportCall(false);
+          if (d) showStaffRows(d, false);
+          return;
+        }
         const gname = document.getElementById("import-gname").value.trim();
         const profId = document.getElementById("import-prof-select").value;
         const file = document.getElementById("import-file").files[0];

@@ -428,10 +428,10 @@ const Group = mongoose.model(
     duration: String,
     shiftStart: { type: String, default: "08:00" },
     saturday: { type: Boolean, default: false }, // учебная суббота
-    // students: обычная группа; teachers/masters/guests: сотрудники и гости СКУД
+    // students: обычная группа; teachers/masters/admin/guests: сотрудники и гости СКУД
     kind: {
       type: String,
-      enum: ["students", "teachers", "masters", "guests"],
+      enum: ["students", "teachers", "masters", "admin", "guests"],
       default: "students",
     },
     summarySubjects: [
