@@ -90,6 +90,16 @@ const SkudReport = model(
       requestedAt: Date,
       at: Date,
       sig: String,
+      // _id "history": запрос на восстановление истории посещаемости с терминалов
+      from: String, // YYYY-MM-DD
+      to: String,
+      status: String, // queued | running | done | failed
+      progress: String,
+      sent: Number,
+      by: String,
+      startedAt: Date,
+      lastBeat: Date,
+      finishedAt: Date,
       devices: [
         {
           _id: false,

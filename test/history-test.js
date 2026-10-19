@@ -1,0 +1,101 @@
+// Восстановление истории: запрос с сайта → агент забирает → history-sync. БД в памяти.
+const Module = require("module");
+const path = require("path");
+const assert = require("assert/strict");
+const fake = require("./fake-mongoose");
+const origResolve = Module._resolveFilename;
+Module._resolveFilename = function (req, ...rest) {
+  return req === "mongoose" ? path.join(__dirname, "fake-mongoose.js") : origResolve.call(this, req, ...rest);
+};
+const express = require("express");
+const { Schema } = fake;
+const KEY = "k";
+const Group = fake.model("Group", new Schema({ name: String, shiftStart: { type: String, default: "08:00" }, kind: { type: String, default: "students" } }));
+const Student = fake.model("Student", new Schema({ fio: String, inn: String, lyceumId: String, group: Schema.Types.ObjectId, attendance: [], skudDaily: [] }));
+const sessionOf = (req) => { try { return JSON.parse(req.headers["x-test-session"]); } catch { return null; } };
+const requireAuth = (req, res, next) => (sessionOf(req)?.role ? next() : res.status(401).json({ error: "auth" }));
+const requireAdmin = (req, res, next) => (sessionOf(req)?.role === "admin" ? next() : res.status(403).json({ error: "Admin only" }));
+const normalizeINN = (s) => { const d = String(s || "").replace(/\D/g, ""); return d.length >= 12 ? d : null; };
+const normalizeFIO = (s) => String(s || "").replace(/[.,]/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+const extractINN = (s) => { const m = String(s || "").match(/\b(\d{12,16})\b/); return m ? m[1] : null; };
+const extractFIO = (s) => { const inn = extractINN(s); let f = String(s || ""); if (inn) f = f.replace(inn, ""); return f.replace(/,/g, " ").replace(/\s+/g, " ").trim(); };
+const safeEq = (a, b) => a === b;
+
+const notes = [];
+const app = express();
+app.use(express.json());
+app.use("/api/admin", requireAuth);
+const skud = require("../skud")(app, { Student, Group, requireAuth, requireAdmin, normalizeINN, AGENT_API_KEY: KEY, getSession: sessionOf, canAccessGroup: () => true, getAccessibleGroupIds: () => null, notify: async (m) => notes.push(m) });
+require("../history-sync")(app, { Student, AGENT_API_KEY: KEY, safeEq, normalizeINN, extractINN, normalizeFIO, extractFIO });
+
+const ADMIN = { role: "admin", username: "boss" };
+let base;
+async function api(who, method, url, json) {
+  const headers = { "content-type": "application/json" };
+  if (who) headers["x-test-session"] = JSON.stringify(who);
+  const r = await fetch(base + url, { method, headers, body: method === "GET" ? undefined : JSON.stringify(json || {}) });
+  return { status: r.status, data: await r.json().catch(() => ({})) };
+}
+let passed = 0, failed = 0;
+const t = async (n, f) => { try { await f(); passed++; console.log("  ✓", n); } catch (e) { failed++; console.log("  ✗", n, "\n    ", e.stack.split("\n").slice(0, 3).join("\n     ")); } };
+
+(async () => {
+  const srv = app.listen(0); await new Promise((r) => srv.once("listening", r));
+  base = `http://127.0.0.1:${srv.address().port}`;
+  const g = await Group.create({ name: "ИТ-1/26" });
+  const ali = await Student.create({ fio: "Алиев Али Алиевич", inn: "12345678901234", group: g._id });
+  const bek = await Student.create({ fio: "Бекова Бека Бековна", group: g._id });
+  const D1 = "2026-10-12", D2 = "2026-10-13";
+
+  const dayOf = async (s, d) => (await Student.findById(s._id).lean()).skudDaily.find((x) => x.date === d);
+
+  await t("запрос истории: только админ, проверка дат", async () => {
+    assert.equal((await api(null, "POST", "/api/admin/skud-reg/history/run", { from: D1, to: D2 })).status, 401);
+    assert.equal((await api(ADMIN, "POST", "/api/admin/skud-reg/history/run", { from: "bad", to: D2 })).status, 400);
+    assert.equal((await api(ADMIN, "POST", "/api/admin/skud-reg/history/run", { from: D2, to: D1 })).status, 400);
+    assert.equal((await api(ADMIN, "POST", "/api/admin/skud-reg/history/run", { from: "2026-01-01", to: "2026-12-31" })).status, 400);
+  });
+  await t("запрос → агент получает его один раз", async () => {
+    assert.equal((await api(ADMIN, "POST", "/api/admin/skud-reg/history/run", { from: D1, to: D2 })).status, 200);
+    assert.equal((await api(ADMIN, "POST", "/api/admin/skud-reg/history/run", { from: D1, to: D2 })).status, 409);
+    assert.equal((await api(ADMIN, "GET", "/api/admin/skud-reg/history")).data.status, "queued");
+    const c1 = (await api(null, "POST", "/api/agent/jobs/claim", { apiKey: KEY })).data;
+    assert.deepEqual(c1.history, { from: D1, to: D2 });
+    assert.equal((await api(null, "POST", "/api/agent/jobs/claim", { apiKey: KEY })).data.history, null);
+  });
+  await t("history-sync: пишет дни, подтягивает счётчики и время", async () => {
+    const day = (rawName, date, fi, li, n, fo, lo, m) => ({ rawName, date, firstIn: fi, lastIn: li, inCount: n, firstOut: fo, lastOut: lo, outCount: m });
+    const A = "Алиев Али Алиевич 12345678901234";
+    const r = await api(null, "POST", "/api/agent/history-sync", { apiKey: KEY, days: [
+      day(A, D1, `${D1}T07:50:00+06:00`, `${D1}T13:05:00+06:00`, 3, undefined, undefined, 0),
+      day(A, D1, undefined, undefined, 0, `${D1}T15:00:00+06:00`, `${D1}T15:00:00+06:00`, 1),
+      day("Бекова Бека Бековна", D2, `${D2}T09:10:00+06:00`, `${D2}T09:10:00+06:00`, 1) ] });
+    assert.equal(r.data.okCount, 3);
+    const d = await dayOf(ali, D1);
+    assert.equal(d.inCount, 3); assert.equal(d.outCount, 1); assert.equal(d.present, true);
+    assert.ok(d.firstIn.includes("07:50")); assert.ok(d.lastIn.includes("13:05")); assert.ok(d.firstOut.includes("15:00"));
+    assert.equal((await dayOf(bek, D2)).present, true);
+    assert.equal((await Student.findById(ali._id).lean()).attendance.find((x) => x.date === D1).present, true);
+  });
+  await t("повторная отправка идемпотентна", async () => {
+    const before = JSON.stringify((await Student.findById(ali._id).lean()).skudDaily);
+    await api(null, "POST", "/api/agent/history-sync", { apiKey: KEY, days: [{ rawName: "Алиев Али Алиевич 12345678901234", date: D1, firstIn: `${D1}T08:00:00+06:00`, lastIn: `${D1}T12:00:00+06:00`, inCount: 2 }] });
+    assert.equal(JSON.stringify((await Student.findById(ali._id).lean()).skudDaily), before);
+  });
+  await t("прогресс агента и итог", async () => {
+    await api(null, "POST", "/api/agent/history/progress", { apiKey: KEY, status: "running", progress: "до 2026-10-12", sent: 1 });
+    assert.equal((await api(ADMIN, "GET", "/api/admin/skud-reg/history")).data.status, "running");
+    await api(null, "POST", "/api/agent/history/progress", { apiKey: KEY, status: "done", progress: "готово", sent: 3 });
+    const st = (await api(ADMIN, "GET", "/api/admin/skud-reg/history")).data;
+    assert.equal(st.status, "done"); assert.equal(st.sent, 3);
+    assert.equal((await api(ADMIN, "POST", "/api/admin/skud-reg/history/run", { from: D1, to: D2 })).status, 200); // после завершения можно снова
+  });
+  await t("неизвестный человек пропускается, остальные пишутся", async () => {
+    const r = await api(null, "POST", "/api/agent/history-sync", { apiKey: KEY, days: [{ rawName: "Неизвестный Иван", date: D1, firstIn: `${D1}T08:00:00+06:00`, lastIn: `${D1}T08:00:00+06:00`, inCount: 1 }, { rawName: "Бекова Бека Бековна", date: D1, firstIn: `${D1}T08:05:00+06:00`, lastIn: `${D1}T08:05:00+06:00`, inCount: 1 }] });
+    assert.equal(r.data.okCount, 1); assert.equal(r.data.failCount, 1);
+    assert.equal((await api(null, "POST", "/api/agent/history-sync", { apiKey: "bad", days: [] })).status, 403);
+  });
+  console.log(`\nИтог: ${passed} прошло, ${failed} упало`);
+  srv.close();
+  process.exit(failed ? 1 : 0);
+})().catch((e) => { console.error(e); process.exit(1); });

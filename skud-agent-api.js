@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 
 module.exports = function mountAgentApi(app, ctx, core) {
   const { Student, requireAdmin, AGENT_API_KEY } = ctx;
-  const { SkudJob, SkudDevice, SkudReport, notify, mdEsc, audit, safeEq } = core;
+  const { SkudJob, SkudDevice, SkudReport, notify, mdEsc, audit, safeEq, actorOf } = core;
 
   const LEASE_MS = 2 * 60 * 1000; // сколько агент "держит" задание
   const MAX_ATTEMPTS = 5; // всего попыток на задание
@@ -40,6 +40,12 @@ module.exports = function mountAgentApi(app, ctx, core) {
         { sort: { createdAt: 1 }, returnDocument: "after" },
       );
       const flag = await SkudReport.findOneAndUpdate({ _id: "last", requested: true }, { requested: false });
+      // Запрос истории с сайта: отдаём агенту один раз
+      const hist = await SkudReport.findOneAndUpdate(
+        { _id: "history", requested: true },
+        { requested: false, status: "running", startedAt: now, lastBeat: now, sent: 0, progress: "агент начал работу" },
+        { returnDocument: "before" },
+      );
 
       let out = null;
       if (job) {
@@ -54,7 +60,7 @@ module.exports = function mountAgentApi(app, ctx, core) {
           };
         }
       }
-      res.json({ job: out, reconcile: !!flag });
+      res.json({ job: out, reconcile: !!flag, history: hist && hist.from ? { from: hist.from, to: hist.to } : null });
     } catch (e) {
       res.status(500).json({ error: e.message });
     }
@@ -211,6 +217,61 @@ module.exports = function mountAgentApi(app, ctx, core) {
     await SkudReport.findOneAndUpdate({ _id: "last" }, { $set: { requested: true, requestedAt: new Date() } }, { upsert: true });
     await audit(req, "reconcile_request", "терминалы");
     res.json({ ok: true });
+  });
+
+  /* ============== восстановление истории посещаемости ============== */
+
+  const HIST_MAX_DAYS = 120;
+  const HIST_STALE_MS = 10 * 60 * 1000; // агент не подаёт признаков жизни: запрос можно повторить
+  const dkOk = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || "")) && !isNaN(new Date(s + "T00:00:00Z"));
+  const histBusy = (h) =>
+    h && (h.status === "queued" || h.status === "running") && Date.now() - new Date(h.lastBeat || h.requestedAt || 0).getTime() < HIST_STALE_MS;
+
+  app.post("/api/admin/skud-reg/history/run", requireAdmin, async (req, res) => {
+    try {
+      const from = String(req.body.from || ""), to = String(req.body.to || "");
+      if (!dkOk(from) || !dkOk(to)) return res.status(400).json({ error: "Неверная дата" });
+      if (to < from) return res.status(400).json({ error: "Конец периода раньше начала" });
+      const days = Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
+      if (days > HIST_MAX_DAYS) return res.status(400).json({ error: `Период не больше ${HIST_MAX_DAYS} дней` });
+      const cur = await SkudReport.findOne({ _id: "history" }).lean();
+      if (histBusy(cur)) return res.status(409).json({ error: "Восстановление уже идёт" });
+      const now = new Date();
+      await SkudReport.findOneAndUpdate(
+        { _id: "history" },
+        { $set: { requested: true, requestedAt: now, lastBeat: now, from, to, status: "queued", progress: "ждём агента в лицее", sent: 0, by: actorOf(req).actor }, $unset: { finishedAt: 1 } },
+        { upsert: true },
+      );
+      await audit(req, "history_request", "терминалы", `${from} — ${to}`);
+      res.json({ ok: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.get("/api/admin/skud-reg/history", requireAdmin, async (_req, res) => {
+    const h = await SkudReport.findOne({ _id: "history" }).lean();
+    if (!h || !h.from) return res.json({ status: "none" });
+    const stuck = (h.status === "queued" || h.status === "running") && !histBusy(h);
+    res.json({
+      status: stuck ? "stuck" : h.status, from: h.from, to: h.to, progress: h.progress || "", sent: h.sent || 0,
+      requestedAt: h.requestedAt, startedAt: h.startedAt, finishedAt: h.finishedAt,
+    });
+  });
+
+  app.post("/api/agent/history/progress", async (req, res) => {
+    if (!keyOk(req)) return res.status(403).send("Forbidden");
+    try {
+      const st = ["running", "done", "failed"].includes(req.body.status) ? req.body.status : "running";
+      const set = { status: st, lastBeat: new Date(), progress: String(req.body.progress || "").slice(0, 300) };
+      if (Number.isFinite(req.body.sent)) set.sent = req.body.sent;
+      if (st !== "running") set.finishedAt = new Date();
+      await SkudReport.updateOne({ _id: "history" }, { $set: set });
+      if (st !== "running") await notify(`${st === "done" ? "✅" : "⚠️"} *СКУД*: восстановление истории — ${mdEsc(set.progress)}`);
+      res.json({ ok: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
   });
 
   return { checkSilence };

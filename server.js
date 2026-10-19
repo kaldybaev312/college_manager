@@ -1043,6 +1043,9 @@ app.post("/api/agent/sync", async (req, res) => {
   res.json({ success: true, okCount: ok, failCount: fail });
 });
 
+// Восстановление истории с терминалов (history-sync.js): идемпотентно, без уведомлений родителям
+require("./history-sync")(app, { Student, AGENT_API_KEY, safeEq, normalizeINN, extractINN, normalizeFIO, extractFIO });
+
 /* === ЗАЩИТА СТРАНИЦ === */
 app.get(["/", "/index.html"], requireAuth, requireAdmin, (req, res) =>
   res.sendFile(path.join(__dirname, "public", "index.html")),
