@@ -70,7 +70,15 @@
     </div>
   </section>
 
-  <section id="t-dev" class="hide"><div class="dev" id="devs"></div><p class="meta" style="margin-top:10px">Состояние обновляется агентом каждую минуту. Об отключении терминала более 3 минут придёт уведомление в Telegram.</p></section>
+  <section id="t-dev" class="hide"><div class="dev" id="devs"></div><p class="meta" style="margin-top:10px">Состояние обновляется агентом каждую минуту. Об отключении терминала более 3 минут придёт уведомление в Telegram.</p>
+    <div class="card adm hide" id="hist-box" style="margin-top:14px">
+      <div class="bar"><b>Восстановить историю посещаемости с терминалов</b></div>
+      <p class="meta">Агент в лицее прочитает события за выбранные даты и запишет приходы/уходы в журнал. Можно запускать повторно: дубли не создаются, родителям уведомления не отправляются. Терминал хранит ограниченное число событий, поэтому очень старые даты могут оказаться пустыми.</p>
+      <div class="bar"><label class="meta">С <input type="date" id="h-from"></label><label class="meta">По <input type="date" id="h-to"></label>
+        <button id="h-run">⏪ Восстановить</button></div>
+      <div id="h-state" class="meta" style="margin-top:8px"></div>
+    </div>
+  </section>
 
   <section id="t-rec" class="hide">
     <div class="bar"><button id="rec-run">🔎 Запустить сверку</button><span class="meta" id="rec-at"></span></div>
@@ -91,7 +99,7 @@ const fmt = d => d ? new Date(d).toLocaleString("ru-RU", { dateStyle: "short", t
 const KIND = { students:"студенты", teachers:"преподаватели", masters:"мастера", admin:"администрация", guests:"гости" };
 const ACT = { photo_upload:"Фото отправлено", terminal_remove:"Удаление с терминалов", terminal_remove_auto:"Автоудаление (студент удалён)", job_retry:"Повтор отправки", job_result:"Результат отправки",
   link_create:"Создана ссылка", link_revoke:"Ссылка отозвана", selflink_create:"Ссылка студенту", staff_approve:"Сотрудник одобрен", student_photo_approve:"Фото студента принято",
-  submission_reject:"Заявка отклонена", reconcile_request:"Запрошена сверка" };
+  submission_reject:"Заявка отклонена", reconcile_request:"Запрошена сверка", history_request:"Запрошено восстановление истории" };
 const DEV = { online:"в сети", offline:"не отвечает", silent:"агент молчит" };
 let role = "", tabTimer;
 async function j(url, opt) { const r = await fetch(url, opt); const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || "Ошибка " + r.status); return d; }
@@ -153,6 +161,26 @@ $("rec").onclick = async e => {
   try { await post("/api/admin/skud-reg/remove-employee", { employeeNo: b.dataset.rm, name: b.dataset.nm }); b.textContent = "В очереди"; b.disabled = true; } catch (er) { alert(er.message); }
 };
 
+/* ---- восстановление истории ---- */
+const HS = { queued:"⏳ ждём агента", running:"🔄 идёт", done:"✅ готово", failed:"❌ ошибка", stuck:"⚠️ агент не отвечает (можно запустить заново)" };
+async function loadHist() {
+  const h = await j("/api/admin/skud-reg/history");
+  if (!$("h-from").value) { const t = new Date(); $("h-to").value = t.toISOString().slice(0, 10); t.setDate(t.getDate() - 7); $("h-from").value = t.toISOString().slice(0, 10); }
+  $("h-state").innerHTML = h.status === "none" ? "" :
+    `${HS[h.status] || h.status}: ${esc(h.from)} — ${esc(h.to)}<br>${esc(h.progress)}${h.sent ? ` · записано дней: ${h.sent}` : ""}`;
+  $("h-run").disabled = h.status === "queued" || h.status === "running";
+  return h;
+}
+let histTimer;
+$("h-run").onclick = async () => {
+  try {
+    await post("/api/admin/skud-reg/history/run", { from: $("h-from").value, to: $("h-to").value });
+    clearInterval(histTimer);
+    histTimer = setInterval(() => loadHist().then(h => { if (!["queued", "running"].includes(h.status)) clearInterval(histTimer); }).catch(() => {}), 4000);
+    loadHist();
+  } catch (er) { alert(er.message); }
+};
+
 /* ---- журнал ---- */
 async function loadLog() {
   const a = $("log-act").value;
@@ -164,7 +192,7 @@ async function loadLog() {
 $("log-act").onchange = loadLog; $("log-reload").onclick = loadLog;
 
 /* ---- вкладки ---- */
-const LOAD = { sum: loadSum, dev: loadDev, rec: loadRec, log: loadLog };
+const LOAD = { sum: loadSum, dev: async () => { await loadDev(); if (role === "admin") { $("hist-box").classList.remove("hide"); await loadHist(); } }, rec: loadRec, log: loadLog };
 function tab(name) {
   document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === name));
   for (const k of Object.keys(LOAD)) $("t-" + k).classList.toggle("hide", k !== name);

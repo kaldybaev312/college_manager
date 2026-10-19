@@ -138,13 +138,125 @@ function create(cfg) {
     return api("/api/agent/reconcile", { devices });
   }
 
+
+  /* ---------------- восстановление истории посещаемости ---------------- */
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const evMs = (t) => (!t ? NaN : /[zZ]|[+-]\d\d:?\d\d$/.test(t) ? new Date(t).getTime() : new Date(t + "+06:00").getTime());
+  const dayKey = (ms) => new Date(ms + TZ_SHIFT_MS).toISOString().slice(0, 10);
+  const nameCache = new Map();
+
+  async function nameByNo(c, ip, no) {
+    const k = ip + ":" + no;
+    if (nameCache.has(k)) return nameCache.get(k);
+    let name = "";
+    try {
+      const { r, t } = await call(c, `${base(ip)}/AccessControl/UserInfo/Search?format=json`, "POST", JSON.stringify({
+        UserInfoSearchCond: { searchID: "1", searchResultPosition: 0, maxResults: 1, EmployeeNoList: [{ employeeNo: String(no) }] },
+      }));
+      if (r.ok) name = JSON.parse(t)?.UserInfoSearch?.UserInfo?.[0]?.name || "";
+    } catch { /* имя не нашли: пропустим событие */ }
+    nameCache.set(k, name);
+    return name;
+  }
+
+  // Все события терминала за один день (с постраничным чтением)
+  async function eventsOfDay(c, ip, day) {
+    const all = [];
+    let pos = 0;
+    for (let page = 0; page < 300; page++) {
+      const { r, t } = await call(c, `${base(ip)}/AccessControl/AcsEvent?format=json`, "POST", JSON.stringify({
+        AcsEventCond: { searchID: "h" + Date.now(), searchResultPosition: pos, maxResults: 100, major: 5, minor: 75, startTime: `${day}T00:00:00`, endTime: `${day}T23:59:59` },
+      }));
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const j = JSON.parse(t)?.AcsEvent || {};
+      const list = j.InfoList || [];
+      all.push(...list);
+      pos += list.length;
+      if (!list.length || j.responseStatusStrg === "OK" || (j.totalMatches && pos >= j.totalMatches)) break;
+      await sleep(150);
+    }
+    return all;
+  }
+
+  async function sendDays(days) {
+    for (let i = 0; i < days.length; i += 200) {
+      const chunk = days.slice(i, i + 200);
+      let lastErr;
+      for (let a = 0; a < 3; a++) {
+        try { await api("/api/agent/history-sync", { days: chunk }); lastErr = null; break; }
+        catch (e) { lastErr = e; await sleep(2000 * (a + 1)); }
+      }
+      if (lastErr) throw lastErr;
+    }
+  }
+
+  const iterDays = (from, to) => {
+    const out = [];
+    for (let t = new Date(from + "T00:00:00Z").getTime(); t <= new Date(to + "T00:00:00Z").getTime(); t += 86400000) out.push(new Date(t).toISOString().slice(0, 10));
+    return out;
+  };
+
+  let histBusy = false;
+  async function runHistory({ from, to }) {
+    if (histBusy) return;
+    histBusy = true;
+    const prog = (status, progress, sent) => api("/api/agent/history/progress", { status, progress, sent }).catch(() => {});
+    const errs = new Map(); // ip -> число дней с ошибкой
+    let sent = 0, events = 0;
+    try {
+      console.log(`⏪ История: ${from} — ${to}`);
+      const c = client();
+      for (const day of iterDays(from, to)) {
+        const agg = new Map(); // empNo|date -> данные дня
+        for (const dev of cfg.devices) {
+          let list;
+          try { list = await eventsOfDay(c, dev.ip, day); }
+          catch (e) { errs.set(dev.ip, (errs.get(dev.ip) || 0) + 1); console.log(`   ${day} ${dev.ip}: ❌ ${e.message}`); continue; }
+          for (const ev of list) {
+            const no = String(ev.employeeNoString || ev.employeeNo || "").trim();
+            const ms = evMs(ev.time);
+            if (!no || isNaN(ms)) continue;
+            const date = dayKey(ms), key = no + "|" + date;
+            let a = agg.get(key);
+            if (!a) agg.set(key, (a = { id: no, date, rawName: String(ev.name || ev.personName || "").trim(), ip: dev.ip, in: null, out: null }));
+            if (!a.rawName) a.rawName = await nameByNo(c, dev.ip, no);
+            const side = dev.direction === "out" ? "out" : "in";
+            const s2 = (a[side] ||= { first: ev.time, firstMs: ms, last: ev.time, lastMs: ms, n: 0 });
+            if (ms < s2.firstMs) { s2.first = ev.time; s2.firstMs = ms; }
+            if (ms > s2.lastMs) { s2.last = ev.time; s2.lastMs = ms; }
+            s2.n++;
+            events++;
+          }
+          await sleep(200);
+        }
+        const days = [...agg.values()].filter((a) => a.rawName).map((a) => ({
+          id: a.id, rawName: a.rawName, date: a.date, deviceIp: a.ip,
+          firstIn: a.in?.first, lastIn: a.in?.last, inCount: a.in?.n || 0,
+          firstOut: a.out?.first, lastOut: a.out?.last, outCount: a.out?.n || 0,
+        }));
+        await sendDays(days);
+        sent += days.length;
+        console.log(`   ${day}: людей ${days.length}`);
+        await prog("running", `обработано до ${day}, событий прочитано: ${events}`, sent);
+      }
+      const bad = [...errs].map(([ip, n]) => `${ip} (${n} дн.)`).join(", ");
+      const allBad = errs.size >= cfg.devices.length && [...errs.values()].every((n) => n >= iterDays(from, to).length);
+      await prog(allBad ? "failed" : "done", `${allBad ? "терминалы не ответили" : "готово"}: ${from} — ${to}, событий ${events}, записей ${sent}${bad ? `. Ошибки терминалов: ${bad}` : ""}`, sent);
+      console.log(`⏪ История готова: событий ${events}, записей ${sent}`);
+    } catch (e) {
+      console.error("история:", e.message);
+      await prog("failed", `ошибка: ${e.message}`.slice(0, 250), sent);
+    } finally { histBusy = false; }
+  }
+
   let busy = false, reconBusy = false;
   async function tick() {
     if (busy) return;
     busy = true;
     try {
-      const { job, reconcile: wantRec } = await api("/api/agent/jobs/claim");
+      const { job, reconcile: wantRec, history } = await api("/api/agent/jobs/claim");
       if (wantRec) runReconcile();
+      if (history) runHistory(history);
       if (!job) return;
       const jpeg = job.photo ? Buffer.from(job.photo, "base64") : null;
       console.log(`${job.type === "delete" ? "🗑 Удаление" : "📷 Регистрация"}: ${job.name || ""} (№${job.employeeNo})`);
@@ -180,7 +292,7 @@ function create(cfg) {
     return () => timers.forEach(clearInterval);
   }
 
-  return { start, tick, heartbeat, reconcile, register, remove, listUsers, ping };
+  return { start, tick, runHistory, heartbeat, reconcile, register, remove, listUsers, ping };
 }
 
 module.exports = { create, start: (cfg) => create(cfg).start(), deviceTime };

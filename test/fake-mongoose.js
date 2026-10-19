@@ -18,6 +18,17 @@ const clone = (v) => {
   return v;
 };
 const get = (o, path) => path.split(".").reduce((a, k) => (a == null ? undefined : a[k]), o);
+// Значения по пути; если по пути встречается массив — собираем значения по всем его элементам (как в MongoDB)
+const getAll = (o, path) => {
+  const parts = path.split(".");
+  const walk = (cur, i) => {
+    if (i === parts.length) return [cur];
+    if (cur == null) return [undefined];
+    if (Array.isArray(cur) && !/^\d+$/.test(parts[i])) return cur.length ? cur.flatMap((el) => walk(el, i)) : [undefined];
+    return walk(cur[parts[i]], i + 1);
+  };
+  return walk(o, 0);
+};
 const norm = (v) => (v instanceof Date ? v.getTime() : v);
 const eq = (a, b) => {
   if (b instanceof RegExp) return typeof a === "string" && b.test(a);
@@ -44,10 +55,10 @@ function match(doc, q) {
     if (k === "$or") { if (!c.some((x) => match(doc, x))) return false; continue; }
     if (k === "$and") { if (!c.every((x) => match(doc, x))) return false; continue; }
     if (k === "$expr") { if (!evalExpr(c, doc)) return false; continue; }
-    const v = get(doc, k);
+    const vals = getAll(doc, k);
     if (c && typeof c === "object" && !(c instanceof RegExp) && !(c instanceof Date) && !Buffer.isBuffer(c)) {
       for (const [op, x] of Object.entries(c)) {
-        const ok =
+        const one = (v) =>
           op === "$in" ? x.some((y) => eq(v, y)) :
           op === "$nin" ? !x.some((y) => eq(v, y)) :
           op === "$ne" ? !eq(v, x) :
@@ -57,16 +68,35 @@ function match(doc, q) {
           op === "$gt" ? v != null && norm(v) > norm(x) :
           op === "$gte" ? v != null && norm(v) >= norm(x) :
           (() => { throw new Error("op " + op); })();
+        const ok = op === "$ne" || op === "$nin" ? vals.every(one) : vals.some(one);
         if (!ok) return false;
       }
-    } else if (!eq(v, c)) return false;
+    } else if (!vals.some((v) => eq(v, c))) return false;
   }
   return true;
 }
 
-function applyUpdate(doc, upd, inserting) {
-  const ops = { $set: {}, $setOnInsert: {}, $inc: {}, $unset: {}, $addToSet: {} };
+function applyUpdate(doc, upd, inserting, q) {
+  const ops = { $set: {}, $setOnInsert: {}, $inc: {}, $unset: {}, $addToSet: {}, $push: {} };
   for (const [k, v] of Object.entries(upd || {})) { if (k in ops) Object.assign(ops[k], v); else ops.$set[k] = v; }
+  // позиционный оператор: "массив.$.поле" — первый элемент, подходящий под условия запроса по этому массиву
+  const positional = (key) => {
+    const m = /^(.+?)\.\$\.(.+)$/.exec(key);
+    if (!m) return null;
+    const [, arr, field] = m;
+    const conds = Object.entries(q || {}).filter(([qk]) => qk.startsWith(arr + "."));
+    const i = (doc[arr] || []).findIndex((el) => conds.every(([qk, c]) => match(el, { [qk.slice(arr.length + 1)]: c })));
+    return i < 0 ? { skip: true } : { el: doc[arr][i], field };
+  };
+  for (const [k, v] of Object.entries(ops.$set)) {
+    const p = positional(k);
+    if (p) { if (!p.skip) p.el[p.field] = clone(v); delete ops.$set[k]; }
+  }
+  for (const [k, v] of Object.entries(ops.$inc)) {
+    const p = positional(k);
+    if (p) { if (!p.skip) p.el[p.field] = (p.el[p.field] || 0) + v; delete ops.$inc[k]; }
+  }
+  for (const [k, v] of Object.entries(ops.$push)) { doc[k] = Array.isArray(doc[k]) ? doc[k] : []; doc[k].push(clone(v)); }
   Object.assign(doc, clone(ops.$set));
   if (inserting) Object.assign(doc, clone(ops.$setOnInsert));
   for (const [k, v] of Object.entries(ops.$inc)) doc[k] = (doc[k] || 0) + v;
@@ -174,11 +204,11 @@ function model(name, schema) {
     insertMany: async (list) => M.create(list),
     updateOne: (q, u) => new Query(() => {
       const d = store.find((x) => match(x, q)); if (!d) return { matchedCount: 0, modifiedCount: 0 };
-      applyUpdate(d, u); if (ts) d.updatedAt = new Date(); return { matchedCount: 1, modifiedCount: 1 };
+      applyUpdate(d, u, false, q); if (ts) d.updatedAt = new Date(); return { matchedCount: 1, modifiedCount: 1 };
     }),
     updateMany: (q, u) => new Query(() => {
       const l = store.filter((x) => match(x, q));
-      for (const d of l) { applyUpdate(d, u); if (ts) d.updatedAt = new Date(); }
+      for (const d of l) { applyUpdate(d, u, false, q); if (ts) d.updatedAt = new Date(); }
       return { matchedCount: l.length, modifiedCount: l.length };
     }),
     deleteOne: (q) => new Query(() => {
