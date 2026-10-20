@@ -869,7 +869,7 @@ app.get("/api/admin/attendance-matrix/:gid/:month", journalAccess, async (req, r
           tml++;
         }
         if (dk === tdk && st.present) ipt = true;
-        days.push({ date: dk, present: st.present, late: st.late, time: st.time, isWeekend: iw, absent: !st.present && !iw && dk <= tdk, reason, manual: !!s.skudDaily?.find((r) => r.date === dk)?.manual });
+        days.push({ date: dk, present: st.present, late: st.late, time: st.time, isWeekend: iw, absent: !st.present && !iw && dk <= tdk, reason });
       }
       if (ipt) ptc++;
       return {
