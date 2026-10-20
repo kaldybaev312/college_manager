@@ -954,6 +954,29 @@
       </div>
     </div>
 
+    <!-- TRANSFER STUDENT MODAL -->
+    <div
+      class="m-overlay"
+      id="transfer-modal"
+      style="display: none"
+      onclick="if (event.target === this) closeTransfer();"
+    >
+      <div class="m-box">
+        <h5>➡️ Перевод в другую группу</h5>
+        <input type="hidden" id="t-id" />
+        <div id="t-info" class="small text-muted mb-2"></div>
+        <label class="m-label">Новая группа</label>
+        <select id="t-group" class="m-input"></select>
+        <div class="small text-muted mt-2">
+          Посещаемость и причины отсутствия переходят вместе со студентом. Оценки в сводке остаются в старой группе. На терминале ничего менять не нужно.
+        </div>
+        <div class="m-actions">
+          <button class="btn btn-light" onclick="closeTransfer()">Отмена</button>
+          <button class="btn btn-primary" onclick="saveTransfer()">Перевести</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ADD STUDENT MODAL -->
     <div
       class="m-overlay"
@@ -1897,6 +1920,49 @@
         );
       }
 
+      /* ── Transfer student ── */
+      async function openTransfer(id) {
+        const s = studentMap[id];
+        if (!s) return;
+        document.getElementById("t-id").value = id;
+        document.getElementById("t-info").textContent =
+          `${s.fio} · сейчас: ${document.getElementById("current-group-title").innerText}`;
+        const sel = document.getElementById("t-group");
+        sel.innerHTML = "<option value=''>Загрузка…</option>";
+        document.getElementById("transfer-modal").style.display = "flex";
+        const groups = await (await fetch("/api/admin/groups-list")).json();
+        sel.innerHTML =
+          "<option value=''>— выберите —</option>" +
+          groups
+            .filter((g) => (!g.kind || g.kind === "students") && g._id !== activeGroupId)
+            .map((g) => `<option value="${g._id}">${String(g.name).replace(/</g, "&lt;")}</option>`)
+            .join("");
+      }
+      function closeTransfer() {
+        document.getElementById("transfer-modal").style.display = "none";
+      }
+      async function saveTransfer() {
+        const id = document.getElementById("t-id").value,
+          groupId = document.getElementById("t-group").value;
+        if (!groupId) return toast("Выберите группу", "error");
+        showLoader();
+        const res = await fetch(`/api/admin/student/${id}/transfer`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ groupId }),
+        });
+        const d = await res.json().catch(() => ({}));
+        hideLoader();
+        if (!res.ok) return toast(d.error || "Ошибка перевода", "error");
+        closeTransfer();
+        toast(`Переведён: ${d.from} → ${d.to}`);
+        viewGroup(
+          activeGroupId,
+          document.getElementById("current-group-title").innerText,
+          document.getElementById("current-group-prof").innerText,
+        );
+      }
+
       /* ── Add student ── */
       function openAddStudent() {
         if (!activeGroupId) return;
@@ -2098,7 +2164,7 @@
               ? students
                   .map(
                     (s, i) =>
-                      `<tr><td class="text-muted" style="font-size:12px">${i + 1}</td><td class="fw-bold" style="font-size:13px">${s.fio}</td><td class="d-none d-md-table-cell" style="font-size:12px">${s.birthDate || "—"}</td><td><code style="font-size:11px">${s.inn || "—"}</code></td><td class="d-none d-sm-table-cell"><span class="badge bg-secondary">${s.lyceumId || "—"}</span></td><td class="text-end"><button class="btn btn-sm btn-outline-primary me-1" onclick="openEdit('${s._id}')">✏️</button><button class="btn btn-sm btn-outline-danger" onclick="confirmDeleteStudent('${s._id}')">🗑️</button></td></tr>`,
+                      `<tr><td class="text-muted" style="font-size:12px">${i + 1}</td><td class="fw-bold" style="font-size:13px">${s.fio}</td><td class="d-none d-md-table-cell" style="font-size:12px">${s.birthDate || "—"}</td><td><code style="font-size:11px">${s.inn || "—"}</code></td><td class="d-none d-sm-table-cell"><span class="badge bg-secondary">${s.lyceumId || "—"}</span></td><td class="text-end"><button class="btn btn-sm btn-outline-primary me-1" onclick="openEdit('${s._id}')">✏️</button><button class="btn btn-sm btn-outline-secondary me-1" title="Перевести в другую группу" onclick="openTransfer('${s._id}')">➡️</button><button class="btn btn-sm btn-outline-danger" onclick="confirmDeleteStudent('${s._id}')">🗑️</button></td></tr>`,
                   )
                   .join("")
               : `<tr><td colspan="6" class="text-center text-muted py-4">Студентов нет</td></tr>`;

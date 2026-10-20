@@ -1082,6 +1082,9 @@ const skud = require("./skud")(app, {
   notify: (m) => notifyAdmins(m),
 });
 
+// Перевод студента между группами (student-transfer.js)
+require("./student-transfer")(app, { Student, Group, AbsenceReason: absence.AbsenceReason, requireAdmin, audit: skud.core.audit });
+
 app.get("/api/admin/me", async (req, res) => {
   try {
     const s = req.auth || getSession(req);
