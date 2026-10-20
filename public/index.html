@@ -970,7 +970,7 @@
         <label class="m-label">Время ухода (необязательно)</label>
         <input type="time" id="m-out" class="m-input" />
         <div class="small text-muted mt-2">
-          Правка помечается ✎ в журнале и записывается в журнал действий СКУД. Живые отметки с терминала потом могут её дополнить.
+          Правка записывается в журнал действий СКУД. Живые отметки с терминала потом могут её дополнить.
         </div>
         <div class="m-actions">
           <button class="btn btn-light" onclick="closeManual()">Отмена</button>
@@ -1292,14 +1292,6 @@
                 onclick="downloadJournalAll()"
               >
                 📚 Все
-              </button>
-              <button
-                id="btn-manual-mode"
-                class="btn btn-outline-warning fw-bold"
-                title="Только админ: ручная отметка прихода или «не был»"
-                onclick="toggleManualMode()"
-              >
-                🛠 Правка
               </button>
             </div>
           </div>
@@ -2444,15 +2436,17 @@
       let manualMode = false,
         journalData = null,
         manualBound = false;
+      // Скрытая функция: Ctrl+Alt+M включает/выключает режим (никаких кнопок и рамок)
       function toggleManualMode() {
         manualMode = !manualMode;
-        const b = document.getElementById("btn-manual-mode");
-        b.classList.toggle("btn-warning", manualMode);
-        b.classList.toggle("btn-outline-warning", !manualMode);
-        b.textContent = manualMode ? "🛠 Правка: ВКЛ" : "🛠 Правка";
-        document.getElementById("journal-table").style.outline = manualMode ? "3px solid #f59e0b" : "";
-        if (manualMode) toast("Режим правки: нажмите на ячейку дня, чтобы поставить приход или «не был»", "info");
+        toast(manualMode ? "Режим правки включён" : "Режим правки выключен", "info");
       }
+      document.addEventListener("keydown", (e) => {
+        if (e.ctrlKey && e.altKey && (e.code === "KeyM" || e.key.toLowerCase() === "m" || e.key.toLowerCase() === "ь")) {
+          e.preventDefault();
+          toggleManualMode();
+        }
+      });
       function bindManualEdit(jBody) {
         if (manualBound) return;
         manualBound = true;
@@ -2544,9 +2538,9 @@
             else if (!day.present)
               tr += `<td class="${wClass}" data-sid="${row.id}" data-date="${day.date}" style="color:#cbd5e1">-</td>`;
             else if (day.late)
-              tr += `<td class="late ${wClass}" data-sid="${row.id}" data-date="${day.date}" title="${day.time}${day.manual ? " (вручную)" : ""}">О${day.manual ? "✎" : ""}<span class="cell-time">${day.time}</span></td>`;
+              tr += `<td class="late ${wClass}" data-sid="${row.id}" data-date="${day.date}" title="${day.time}">О<span class="cell-time">${day.time}</span></td>`;
             else
-              tr += `<td class="present ${wClass}" data-sid="${row.id}" data-date="${day.date}" title="${day.time}${day.manual ? " (вручную)" : ""}">П${day.manual ? "✎" : ""}<span class="cell-time">${day.time}</span></td>`;
+              tr += `<td class="present ${wClass}" data-sid="${row.id}" data-date="${day.date}" title="${day.time}">П<span class="cell-time">${day.time}</span></td>`;
           });
           tr += `</tr>`;
           bodyHtml += tr;
