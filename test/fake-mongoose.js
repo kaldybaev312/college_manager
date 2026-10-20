@@ -96,6 +96,10 @@ function applyUpdate(doc, upd, inserting, q) {
     const p = positional(k);
     if (p) { if (!p.skip) p.el[p.field] = (p.el[p.field] || 0) + v; delete ops.$inc[k]; }
   }
+  for (const k of Object.keys(ops.$unset)) {
+    const p = positional(k);
+    if (p) { if (!p.skip) delete p.el[p.field]; delete ops.$unset[k]; }
+  }
   for (const [k, v] of Object.entries(ops.$push)) { doc[k] = Array.isArray(doc[k]) ? doc[k] : []; doc[k].push(clone(v)); }
   Object.assign(doc, clone(ops.$set));
   if (inserting) Object.assign(doc, clone(ops.$setOnInsert));

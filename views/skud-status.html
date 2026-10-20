@@ -99,7 +99,7 @@ const fmt = d => d ? new Date(d).toLocaleString("ru-RU", { dateStyle: "short", t
 const KIND = { students:"студенты", teachers:"преподаватели", masters:"мастера", admin:"администрация", guests:"гости" };
 const ACT = { photo_upload:"Фото отправлено", terminal_remove:"Удаление с терминалов", terminal_remove_auto:"Автоудаление (студент удалён)", job_retry:"Повтор отправки", job_result:"Результат отправки",
   link_create:"Создана ссылка", link_revoke:"Ссылка отозвана", selflink_create:"Ссылка студенту", staff_approve:"Сотрудник одобрен", student_photo_approve:"Фото студента принято",
-  submission_reject:"Заявка отклонена", reconcile_request:"Запрошена сверка", history_request:"Запрошено восстановление истории", student_transfer:"Перевод студента в другую группу" };
+  submission_reject:"Заявка отклонена", reconcile_request:"Запрошена сверка", history_request:"Запрошено восстановление истории", student_transfer:"Перевод студента в другую группу", attendance_manual:"Ручная правка посещаемости" };
 const DEV = { online:"в сети", offline:"не отвечает", silent:"агент молчит" };
 let role = "", tabTimer;
 async function j(url, opt) { const r = await fetch(url, opt); const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || "Ошибка " + r.status); return d; }
