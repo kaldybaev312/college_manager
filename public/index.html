@@ -954,6 +954,32 @@
       </div>
     </div>
 
+    <!-- MANUAL ATTENDANCE MODAL -->
+    <div
+      class="m-overlay"
+      id="manual-modal"
+      style="display: none"
+      onclick="if (event.target === this) closeManual();"
+    >
+      <div class="m-box">
+        <h5>🛠 Ручная отметка посещения</h5>
+        <input type="hidden" id="m-sid" /><input type="hidden" id="m-date" /><input type="hidden" id="m-status" />
+        <div id="m-info" class="small text-muted mb-2"></div>
+        <label class="m-label">Время прихода</label>
+        <input type="time" id="m-time" class="m-input" />
+        <label class="m-label">Время ухода (необязательно)</label>
+        <input type="time" id="m-out" class="m-input" />
+        <div class="small text-muted mt-2">
+          Правка помечается ✎ в журнале и записывается в журнал действий СКУД. Живые отметки с терминала потом могут её дополнить.
+        </div>
+        <div class="m-actions">
+          <button class="btn btn-light" onclick="closeManual()">Отмена</button>
+          <button class="btn btn-outline-danger" onclick="saveManual('absent')">Не был</button>
+          <button class="btn btn-success" onclick="saveManual('present')">Был</button>
+        </div>
+      </div>
+    </div>
+
     <!-- TRANSFER STUDENT MODAL -->
     <div
       class="m-overlay"
@@ -1266,6 +1292,14 @@
                 onclick="downloadJournalAll()"
               >
                 📚 Все
+              </button>
+              <button
+                id="btn-manual-mode"
+                class="btn btn-outline-warning fw-bold"
+                title="Только админ: ручная отметка прихода или «не был»"
+                onclick="toggleManualMode()"
+              >
+                🛠 Правка
               </button>
             </div>
           </div>
@@ -2406,6 +2440,72 @@
         if (jS) jS.innerHTML = opts;
         if (fS) fS.innerHTML = opts;
       }
+      /* ── Ручная правка посещаемости (админ) ── */
+      let manualMode = false,
+        journalData = null,
+        manualBound = false;
+      function toggleManualMode() {
+        manualMode = !manualMode;
+        const b = document.getElementById("btn-manual-mode");
+        b.classList.toggle("btn-warning", manualMode);
+        b.classList.toggle("btn-outline-warning", !manualMode);
+        b.textContent = manualMode ? "🛠 Правка: ВКЛ" : "🛠 Правка";
+        document.getElementById("journal-table").style.outline = manualMode ? "3px solid #f59e0b" : "";
+        if (manualMode) toast("Режим правки: нажмите на ячейку дня, чтобы поставить приход или «не был»", "info");
+      }
+      function bindManualEdit(jBody) {
+        if (manualBound) return;
+        manualBound = true;
+        // capture: в режиме правки клик не доходит до окна причин отсутствия
+        jBody.addEventListener(
+          "click",
+          (e) => {
+            if (!manualMode) return;
+            const td = e.target.closest("td[data-sid]");
+            if (!td) return;
+            e.stopImmediatePropagation();
+            openManual(td.dataset.sid, td.dataset.date);
+          },
+          true,
+        );
+      }
+      function openManual(sid, date) {
+        const row = journalData?.matrix.find((r) => r.id === sid),
+          day = row?.days.find((d) => d.date === date);
+        if (!row || !day) return;
+        document.getElementById("m-sid").value = sid;
+        document.getElementById("m-date").value = date;
+        document.getElementById("m-info").textContent =
+          `${row.fio} · ${date.slice(8, 10)}.${date.slice(5, 7)}.${date.slice(0, 4)} · сейчас: ${day.present ? "был " + (day.time || "") : "не был"}`;
+        document.getElementById("m-status").value = "present";
+        document.getElementById("m-time").value = day.time || journalData.shiftStart || "08:00";
+        document.getElementById("m-out").value = "";
+        document.getElementById("manual-modal").style.display = "flex";
+      }
+      function closeManual() {
+        document.getElementById("manual-modal").style.display = "none";
+      }
+      async function saveManual(status) {
+        const body = {
+          studentId: document.getElementById("m-sid").value,
+          date: document.getElementById("m-date").value,
+          status,
+          time: document.getElementById("m-time").value,
+          outTime: document.getElementById("m-out").value || undefined,
+        };
+        showLoader();
+        const res = await fetch("/api/admin/attendance-manual", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const d = await res.json().catch(() => ({}));
+        hideLoader();
+        if (!res.ok) return toast(d.error || "Ошибка", "error");
+        closeManual();
+        toast(`Сохранено: ${d.after}`);
+        loadJournal();
+      }
       async function loadJournal() {
         const gid = document.getElementById("j-group-select").value,
           month = document.getElementById("j-month").value;
@@ -2442,11 +2542,11 @@
             const wClass = day.isWeekend ? "weekend-cell" : "";
             if (day.absent) tr += AbsenceUI.cell(row, day);
             else if (!day.present)
-              tr += `<td class="${wClass}" style="color:#cbd5e1">-</td>`;
+              tr += `<td class="${wClass}" data-sid="${row.id}" data-date="${day.date}" style="color:#cbd5e1">-</td>`;
             else if (day.late)
-              tr += `<td class="late ${wClass}" title="${day.time}">О<span class="cell-time">${day.time}</span></td>`;
+              tr += `<td class="late ${wClass}" data-sid="${row.id}" data-date="${day.date}" title="${day.time}${day.manual ? " (вручную)" : ""}">О${day.manual ? "✎" : ""}<span class="cell-time">${day.time}</span></td>`;
             else
-              tr += `<td class="present ${wClass}" title="${day.time}">П<span class="cell-time">${day.time}</span></td>`;
+              tr += `<td class="present ${wClass}" data-sid="${row.id}" data-date="${day.date}" title="${day.time}${day.manual ? " (вручную)" : ""}">П${day.manual ? "✎" : ""}<span class="cell-time">${day.time}</span></td>`;
           });
           tr += `</tr>`;
           bodyHtml += tr;
@@ -2454,6 +2554,8 @@
         const jBody = document.getElementById("journal-body");
         jBody.innerHTML = bodyHtml;
         AbsenceUI.bind(jBody, data, loadJournal);
+        journalData = data;
+        bindManualEdit(jBody);
       }
       async function openJournalShareLink() {
         try {

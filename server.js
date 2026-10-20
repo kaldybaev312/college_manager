@@ -469,6 +469,8 @@ const Student = mongoose.model(
           inCount: { type: Number, default: 0 },
           outCount: { type: Number, default: 0 },
           present: { type: Boolean, default: false },
+          manual: Boolean, // поставлено вручную администратором
+          manualBy: String,
         },
         { _id: false },
       ),
@@ -867,7 +869,7 @@ app.get("/api/admin/attendance-matrix/:gid/:month", journalAccess, async (req, r
           tml++;
         }
         if (dk === tdk && st.present) ipt = true;
-        days.push({ date: dk, present: st.present, late: st.late, time: st.time, isWeekend: iw, absent: !st.present && !iw && dk <= tdk, reason });
+        days.push({ date: dk, present: st.present, late: st.late, time: st.time, isWeekend: iw, absent: !st.present && !iw && dk <= tdk, reason, manual: !!s.skudDaily?.find((r) => r.date === dk)?.manual });
       }
       if (ipt) ptc++;
       return {
@@ -1084,6 +1086,9 @@ const skud = require("./skud")(app, {
 
 // Перевод студента между группами (student-transfer.js)
 require("./student-transfer")(app, { Student, Group, AbsenceReason: absence.AbsenceReason, requireAdmin, audit: skud.core.audit });
+
+// Ручная правка посещаемости, только админ (attendance-manual.js)
+require("./attendance-manual")(app, { Student, requireAdmin, audit: skud.core.audit, att, getTodayKey, getSession });
 
 app.get("/api/admin/me", async (req, res) => {
   try {
